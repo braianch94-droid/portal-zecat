@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(gh auth status)",
+      "PowerShell(Get-ChildItem \"$env:USERPROFILE\\\\gh\" -Recurse | Where-Object { $_.Name -eq \"gh.exe\" } | Select-Object FullName)",
+      "PowerShell(Get-ChildItem \"$env:USERPROFILE\\\\gh\" -Recurse | Select-Object FullName)"
+    ]
+  }
+}

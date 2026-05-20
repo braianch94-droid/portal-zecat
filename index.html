@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zecat — Portal de Gestión</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── VARIABLES ── */
+:root {
+  --sb-bg: #1A2235;
+  --sb-hover: #242E45;
+  --sb-active: #2D3A55;
+  --sb-border: rgba(255,255,255,.07);
+  --sb-accent: #F97171;
+  --sb-text-dim: rgba(255,255,255,.3);
+  --sb-text-mid: rgba(255,255,255,.58);
+  --sb-text: rgba(255,255,255,.88);
+  --sb-section: rgba(255,255,255,.22);
+  --portal-bg: #111520;
+  --toggle-bg: rgba(255,255,255,.06);
+  --toggle-hover: rgba(255,255,255,.1);
+}
+body.light {
+  --sb-bg: #FFFFFF;
+  --sb-hover: #F4F6FB;
+  --sb-active: #EEF1FF;
+  --sb-border: #E2E6F0;
+  --sb-text-dim: #94A3B8;
+  --sb-text-mid: #4A5568;
+  --sb-text: #0D1B2A;
+  --sb-section: #94A3B8;
+  --toggle-bg: rgba(0,0,0,.04);
+  --toggle-hover: rgba(0,0,0,.07);
+  --portal-bg: #F0F2F7;
+}
+
+/* ── RESET ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'DM Sans', 'Segoe UI', system-ui, sans-serif;
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--portal-bg);
+  transition: background .25s;
+}
+
+/* ── SIDEBAR ── */
+.sidebar {
+  width: 228px;
+  min-width: 228px;
+  background: var(--sb-bg);
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  flex-shrink: 0;
+  border-right: 1px solid var(--sb-border);
+  transition: background .25s, border-color .25s;
+  z-index: 10;
+}
+
+/* Brand */
+.brand {
+  padding: 16px 14px 14px;
+  border-bottom: 1px solid var(--sb-border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  transition: border-color .25s;
+}
+.brand-text { line-height: 1.2; }
+.brand-name {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--sb-text);
+  letter-spacing: .2px;
+  transition: color .25s;
+}
+.brand-sub {
+  font-size: 10px;
+  color: var(--sb-text-dim);
+  margin-top: 2px;
+  transition: color .25s;
+}
+.brand-version {
+  margin-left: auto;
+  font-size: 9.5px;
+  font-weight: 600;
+  color: var(--sb-text-dim);
+  background: rgba(249,113,113,.15);
+  color: #F97171;
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Nav */
+.nav {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px 0 4px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,.1) transparent;
+}
+body.light .nav {
+  scrollbar-color: rgba(0,0,0,.1) transparent;
+}
+.nav::-webkit-scrollbar { width: 4px; }
+.nav::-webkit-scrollbar-track { background: transparent; }
+.nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 4px; }
+body.light .nav::-webkit-scrollbar-thumb { background: rgba(0,0,0,.1); }
+
+/* Section header */
+.section { margin-bottom: 1px; }
+
+.sec-header {
+  display: flex;
+  align-items: center;
+  padding: 9px 14px;
+  cursor: pointer;
+  color: var(--sb-text-mid);
+  font-size: 12.5px;
+  font-weight: 600;
+  transition: background .12s, color .12s;
+  user-select: none;
+  border-left: 2.5px solid transparent;
+  letter-spacing: .1px;
+}
+.sec-header:hover { background: var(--sb-hover); color: var(--sb-text); }
+.sec-header.open { color: var(--sb-text); }
+.sec-header.open { border-left-color: var(--sb-accent); }
+
+.sec-ico {
+  width: 15px; height: 15px;
+  margin-right: 9px;
+  fill: currentColor;
+  opacity: .65;
+  flex-shrink: 0;
+  transition: opacity .12s;
+}
+.sec-header.open .sec-ico, .sec-header:hover .sec-ico { opacity: 1; }
+
+.sec-label { flex: 1; }
+
+.chevron {
+  font-size: 11px;
+  color: var(--sb-text-dim);
+  transition: transform .2s, color .12s;
+  line-height: 1;
+}
+.sec-header.open .chevron { transform: rotate(90deg); }
+
+/* Section items */
+.sec-items {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height .22s ease;
+}
+.sec-header.open + .sec-items { max-height: 400px; }
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  padding: 7px 14px 7px 36px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--sb-text-mid);
+  transition: background .12s, color .12s, border-color .12s;
+  border-left: 2.5px solid transparent;
+  user-select: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.nav-item:hover { background: var(--sb-hover); color: var(--sb-text); }
+.nav-item.active {
+  background: var(--sb-active);
+  color: var(--sb-text);
+  border-left-color: var(--sb-accent);
+  font-weight: 600;
+}
+.nav-dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.2);
+  margin-right: 9px;
+  flex-shrink: 0;
+  transition: background .12s, transform .12s;
+}
+body.light .nav-dot { background: rgba(0,0,0,.15); }
+.nav-item.active .nav-dot { background: var(--sb-accent); transform: scale(1.2); }
+.nav-item:hover .nav-dot { background: rgba(255,255,255,.4); }
+body.light .nav-item:hover .nav-dot { background: rgba(0,0,0,.3); }
+
+/* Footer */
+.sb-footer {
+  padding: 10px 12px;
+  border-top: 1px solid var(--sb-border);
+  flex-shrink: 0;
+  transition: border-color .25s;
+}
+.theme-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 7px;
+  cursor: pointer;
+  background: var(--toggle-bg);
+  color: var(--sb-text-mid);
+  font-size: 11.5px;
+  font-weight: 500;
+  transition: background .12s, color .12s;
+  user-select: none;
+  width: 100%;
+  border: none;
+  text-align: left;
+}
+.theme-btn:hover { background: var(--toggle-hover); color: var(--sb-text); }
+.theme-ico { font-size: 14px; }
+
+/* ── MAIN CONTENT ── */
+.main {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: var(--portal-bg);
+  transition: background .25s;
+}
+
+.frame-wrap {
+  position: absolute;
+  inset: 0;
+  display: none;
+}
+.frame-wrap.active { display: block; }
+
+iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+}
+
+/* Splash while loading */
+.splash {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--portal-bg);
+  color: var(--sb-text-dim);
+  font-size: 12.5px;
+  gap: 10px;
+  transition: opacity .3s;
+  pointer-events: none;
+}
+.splash-spinner {
+  width: 24px; height: 24px;
+  border: 2px solid rgba(249,113,113,.2);
+  border-top-color: #F97171;
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.splash.hidden { opacity: 0; }
+</style>
+</head>
+<body>
+
+<!-- ═══ SIDEBAR ═══ -->
+<div class="sidebar">
+
+  <!-- Brand -->
+  <div class="brand">
+    <svg width="34" height="34" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0">
+      <circle cx="18" cy="18" r="18" fill="#F97171"/>
+      <text x="18" y="25" text-anchor="middle" font-family="Arial Black,sans-serif" font-weight="900" font-size="21" fill="white">Z</text>
+    </svg>
+    <div class="brand-text">
+      <div class="brand-name">Zecat</div>
+      <div class="brand-sub">Portal de Gestión</div>
+    </div>
+    <div class="brand-version">AR 3.4</div>
+  </div>
+
+  <!-- Navigation -->
+  <nav class="nav">
+
+    <!-- ── PRODUCTIVIDAD ── -->
+    <div class="section">
+      <div class="sec-header open" onclick="toggleSection(this)">
+        <svg class="sec-ico" viewBox="0 0 24 24"><path d="M5 9.2h3V19H5V9.2zm5.6-4.2h2.8v14h-2.8V5zM16 13h3v6h-3v-6z"/></svg>
+        <span class="sec-label">Productividad</span>
+        <span class="chevron">›</span>
+      </div>
+      <div class="sec-items">
+        <div class="nav-item active" data-module="productividad" data-tab="picking" onclick="navigate(this)">
+          <span class="nav-dot"></span>Productividad Picking
+        </div>
+        <div class="nav-item" data-module="productividad" data-tab="pie" onclick="navigate(this)">
+          <span class="nav-dot"></span>Pie de Máquina
+        </div>
+        <div class="nav-item" data-module="productividad" data-tab="muestra" onclick="navigate(this)">
+          <span class="nav-dot"></span>Muestra Simple
+        </div>
+        <div class="nav-item" data-module="productividad" data-tab="reclamos" onclick="navigate(this)">
+          <span class="nav-dot"></span>Reclamos
+        </div>
+        <div class="nav-item" data-module="productividad" data-tab="control" onclick="navigate(this)">
+          <span class="nav-dot"></span>Control
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ASISTENCIA ── -->
+    <div class="section">
+      <div class="sec-header" onclick="toggleSection(this)">
+        <svg class="sec-ico" viewBox="0 0 24 24"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg>
+        <span class="sec-label">Asistencia</span>
+        <span class="chevron">›</span>
+      </div>
+      <div class="sec-items">
+        <div class="nav-item" data-module="asistencia" data-tab="resumen" onclick="navigate(this)">
+          <span class="nav-dot"></span>Resumen
+        </div>
+        <div class="nav-item" data-module="asistencia" data-tab="asistencia" onclick="navigate(this)">
+          <span class="nav-dot"></span>Asistencia
+        </div>
+        <div class="nav-item" data-module="asistencia" data-tab="descansos" onclick="navigate(this)">
+          <span class="nav-dot"></span>Descansos y Almuerzo
+        </div>
+        <div class="nav-item" data-module="asistencia" data-tab="novedades" onclick="navigate(this)">
+          <span class="nav-dot"></span>Novedades e Inconsistencias
+        </div>
+        <div class="nav-item" data-module="asistencia" data-tab="horasextras" onclick="navigate(this)">
+          <span class="nav-dot"></span>Horas Extras
+        </div>
+      </div>
+    </div>
+
+    <!-- ── TRANSPORTE ── -->
+    <div class="section">
+      <div class="sec-header" onclick="toggleSection(this)">
+        <svg class="sec-ico" viewBox="0 0 24 24"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg>
+        <span class="sec-label">Transporte</span>
+        <span class="chevron">›</span>
+      </div>
+      <div class="sec-items">
+        <div class="nav-item" data-module="transporte" data-page="upload" onclick="navigate(this)">
+          <span class="nav-dot"></span>Cargar archivos
+        </div>
+        <div class="nav-item" data-module="transporte" data-page="resumen" onclick="navigate(this)">
+          <span class="nav-dot"></span>Resumen
+        </div>
+        <div class="nav-item" data-module="transporte" data-page="empresas" onclick="navigate(this)">
+          <span class="nav-dot"></span>Empresas
+        </div>
+        <div class="nav-item" data-module="transporte" data-page="conductores" onclick="navigate(this)">
+          <span class="nav-dot"></span>Conductores
+        </div>
+        <div class="nav-item" data-module="transporte" data-page="viajes" onclick="navigate(this)">
+          <span class="nav-dot"></span>Viajes / Rutas
+        </div>
+        <div class="nav-item" data-module="transporte" data-page="visitas" onclick="navigate(this)">
+          <span class="nav-dot"></span>Visitas / Entregas
+        </div>
+        <div class="nav-item" data-module="transporte" data-page="tarifas" onclick="navigate(this)">
+          <span class="nav-dot"></span>Tarifas
+        </div>
+        <div class="nav-item" data-module="transporte" data-page="zonas" onclick="navigate(this)">
+          <span class="nav-dot"></span>Zonas
+        </div>
+        <div class="nav-item" data-module="transporte" data-page="mejoras" onclick="navigate(this)">
+          <span class="nav-dot"></span>Mejoras
+        </div>
+      </div>
+    </div>
+
+  </nav>
+
+  <!-- Footer: theme toggle -->
+  <div class="sb-footer">
+    <button class="theme-btn" onclick="toggleTheme()">
+      <span class="theme-ico" id="theme-ico">☀️</span>
+      <span id="theme-lbl">Modo claro</span>
+    </button>
+  </div>
+</div>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main">
+
+  <!-- Productividad frame -->
+  <div class="frame-wrap active" id="fw-productividad">
+    <div class="splash" id="splash-productividad">
+      <div class="splash-spinner"></div>
+      <span>Cargando Productividad…</span>
+    </div>
+    <iframe id="ifr-productividad"
+      src="./dashboard-productividad-zecat/index.html"
+      onload="onLoad('productividad')">
+    </iframe>
+  </div>
+
+  <!-- Asistencia frame -->
+  <div class="frame-wrap" id="fw-asistencia">
+    <div class="splash" id="splash-asistencia">
+      <div class="splash-spinner"></div>
+      <span>Cargando Asistencia…</span>
+    </div>
+    <iframe id="ifr-asistencia"
+      src="./reporte-personal-zecat/index.html"
+      onload="onLoad('asistencia')">
+    </iframe>
+  </div>
+
+  <!-- Transporte frame -->
+  <div class="frame-wrap" id="fw-transporte">
+    <div class="splash" id="splash-transporte">
+      <div class="splash-spinner"></div>
+      <span>Cargando Transporte…</span>
+    </div>
+    <iframe id="ifr-transporte"
+      src="./Logistica4/index.html"
+      onload="onLoad('transporte')">
+    </iframe>
+  </div>
+
+</div>
+
+<script>
+// ── CSS to inject into each iframe to hide its own navigation ──
+const INJECT = {
+  productividad: `
+    .tab-nav { display: none !important; }
+    body { overflow: auto !important; }
+    #app, .app-root { padding-top: 0 !important; }
+  `,
+  asistencia: `
+    header { display: none !important; }
+    .main-tabs { display: none !important; }
+  `,
+  transporte: `
+    .sidebar { display: none !important; }
+    .topbar  { display: none !important; }
+    html, body { overflow: auto !important; height: auto !important; }
+    .main { height: 100vh; }
+  `
+};
+
+// Map page names → nav-item IDs in Logistica4
+const PAGE_ID = {
+  upload: 'ni-upload', resumen: 'ni-resumen', empresas: 'ni-emp',
+  conductores: 'ni-cond', viajes: 'ni-vj', visitas: 'ni-vis',
+  tarifas: 'ni-tar', zonas: 'ni-zonas', mejoras: 'ni-mej'
+};
+
+let currentModule = 'productividad';
+let isDark = false;
+const loaded = { productividad: false, asistencia: false, transporte: false };
+// Queue: pending navigation calls waiting for iframe to finish loading
+const pending = {};
+
+function onLoad(module) {
+  loaded[module] = true;
+  // Inject CSS to hide the app's own nav
+  try {
+    const doc = document.getElementById('ifr-' + module).contentDocument;
+    if (!doc.getElementById('_portal_css')) {
+      const s = doc.createElement('style');
+      s.id = '_portal_css';
+      s.textContent = INJECT[module];
+      doc.head.appendChild(s);
+    }
+    // Apply dark mode if active and module supports it
+    if (isDark && module === 'productividad') {
+      doc.body.classList.add('dark');
+    }
+  } catch(e) {}
+
+  // Hide splash
+  const splash = document.getElementById('splash-' + module);
+  if (splash) splash.classList.add('hidden');
+  setTimeout(() => { if (splash) splash.style.display = 'none'; }, 350);
+
+  // Execute any pending navigation
+  if (pending[module]) {
+    pending[module]();
+    delete pending[module];
+  }
+}
+
+function toggleSection(header) {
+  header.classList.toggle('open');
+}
+
+function navigate(item) {
+  // Update active state
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  item.classList.add('active');
+
+  const module = item.dataset.module;
+  const tab    = item.dataset.tab;
+  const page   = item.dataset.page;
+
+  // Expand section if collapsed
+  const secHeader = item.closest('.section').querySelector('.sec-header');
+  if (!secHeader.classList.contains('open')) secHeader.classList.add('open');
+
+  // Switch visible frame
+  if (module !== currentModule) {
+    document.getElementById('fw-' + currentModule).classList.remove('active');
+    document.getElementById('fw-' + module).classList.add('active');
+    currentModule = module;
+  }
+
+  const action = () => switchContent(module, tab, page);
+  if (loaded[module]) {
+    action();
+  } else {
+    pending[module] = action;
+  }
+}
+
+function switchContent(module, tab, page) {
+  try {
+    const win = document.getElementById('ifr-' + module).contentWindow;
+    if (tab && typeof win.switchTab === 'function') {
+      win.switchTab(tab);
+    } else if (page) {
+      const el = win.document.getElementById(PAGE_ID[page]);
+      if (el) el.click();
+    }
+  } catch(e) {}
+}
+
+function toggleTheme() {
+  isDark = !isDark;
+  document.body.classList.toggle('light', !isDark);
+
+  document.getElementById('theme-ico').textContent = isDark ? '🌙' : '☀️';
+  document.getElementById('theme-lbl').textContent  = isDark ? 'Modo oscuro' : 'Modo claro';
+
+  // Sync productividad iframe (soporta body.dark nativamente)
+  try {
+    const doc = document.getElementById('ifr-productividad').contentDocument;
+    doc.body.classList.toggle('dark', isDark);
+  } catch(e) {}
+}
+</script>
+</body>
+</html>
