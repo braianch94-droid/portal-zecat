@@ -1,0 +1,1393 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Zecat — Gestión de Transporte</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --coral:#F97171;--coral-d:#E05555;--coral-l:#FFF5F5;--coral-ll:#FFEAEA;
+  --green:#16A35A;--green-l:#EDFBF3;
+  --red:#E03A3A;--red-l:#FEF0F0;
+  --amber:#D4860A;--amber-l:#FEF5E4;
+  --blue:#2563EB;--blue-l:#EEF4FF;
+  --teal:#0891B2;--teal-l:#ECFBFF;
+  --purple:#7C3AED;--purple-l:#F5F0FF;
+  --bg:#F0F2F7;--card:#FFF;--border:#E2E6F0;
+  --text:#0D1B2A;--text2:#4A5568;--text3:#94A3B8;
+  --sidebar:#1A2235;--sidebar-hover:#242E45;--sidebar-active:#2D3A55;--sidebar-accent:#F97171;
+  --font:'DM Sans',system-ui,sans-serif;--mono:'DM Mono','JetBrains Mono',monospace;
+}
+html,body{height:100%;overflow:hidden}
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:13px;-webkit-font-smoothing:antialiased;display:flex}
+
+/* ─── SIDEBAR ─── */
+.sidebar{width:220px;min-width:220px;background:var(--sidebar);display:flex;flex-direction:column;height:100vh;overflow:hidden;flex-shrink:0}
+.sidebar-brand{padding:20px 18px 16px;border-bottom:1px solid rgba(255,255,255,.07)}
+.sidebar-brand svg{display:block}
+.sidebar-nav{flex:1;overflow-y:auto;padding:10px 0;scrollbar-width:none}
+.sidebar-nav::-webkit-scrollbar{display:none}
+.nav-section{padding:6px 16px 3px;font-size:9.5px;font-weight:700;color:rgba(255,255,255,.25);text-transform:uppercase;letter-spacing:.08em;margin-top:8px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:9px 16px;font-size:12.5px;font-weight:500;color:rgba(255,255,255,.55);cursor:pointer;transition:all .15s;border-left:2.5px solid transparent;user-select:none}
+.nav-item:hover{background:var(--sidebar-hover);color:rgba(255,255,255,.85)}
+.nav-item.active{background:var(--sidebar-active);color:white;border-left-color:var(--sidebar-accent)}
+.nav-item svg{width:15px;height:15px;fill:currentColor;opacity:.7;flex-shrink:0}
+.nav-item.active svg{opacity:1}
+.nav-badge{margin-left:auto;background:rgba(255,255,255,.12);color:rgba(255,255,255,.7);font-size:10px;font-weight:600;padding:1px 6px;border-radius:8px}
+.nav-item.active .nav-badge{background:var(--sidebar-accent);color:white}
+.sidebar-footer{padding:14px 16px;border-top:1px solid rgba(255,255,255,.07);font-size:10.5px;color:rgba(255,255,255,.3)}
+.status-pill{display:flex;align-items:center;gap:6px;font-size:10.5px;color:rgba(255,255,255,.4);margin-top:6px}
+.status-dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.2)}
+.status-dot.live{background:#22C55E;box-shadow:0 0 0 2px rgba(34,197,94,.25)}
+
+/* ─── MAIN ─── */
+.main{flex:1;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+.topbar{height:50px;background:var(--card);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px;flex-shrink:0}
+.topbar-title{font-size:13.5px;font-weight:600;color:var(--text)}
+.topbar-sub{font-size:11px;color:var(--text3);margin-top:1px}
+.topbar-right{display:flex;align-items:center;gap:8px}
+.content{flex:1;overflow-y:auto;padding:18px 20px}
+
+/* ─── PAGES ─── */
+.page{display:none}.page.active{display:block}
+
+/* ─── UPLOAD PAGE ─── */
+.upload-hero{text-align:center;padding:28px 0 20px}
+.upload-hero h1{font-size:22px;font-weight:700;color:var(--text);margin-bottom:6px}
+.upload-hero p{font-size:13px;color:var(--text2);max-width:520px;margin:0 auto;line-height:1.6}
+.upload-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.ucard{background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:18px;transition:border-color .15s}
+.ucard:hover{border-color:var(--coral)}
+.ucard-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.ucard-icon{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ucard h3{font-size:13px;font-weight:600;color:var(--text)}
+.ucard p{font-size:11.5px;color:var(--text2);line-height:1.55;margin-bottom:12px}
+.drop{border:1.5px dashed var(--border);border-radius:9px;padding:24px;text-align:center;cursor:pointer;transition:all .15s;background:var(--bg)}
+.drop:hover,.drop.over{border-color:var(--coral);background:var(--coral-ll)}
+.drop.done{border-color:var(--green);border-style:solid;background:var(--green-l)}
+.drop-ico{font-size:22px;margin-bottom:5px}
+.drop-txt{font-size:12px;color:var(--text2);font-weight:500}
+.drop-hint{font-size:10.5px;color:var(--text3);margin-top:2px}
+.finfo{display:none;align-items:center;gap:7px;margin-top:8px;padding:7px 10px;background:var(--green-l);border-radius:7px;border:1px solid #B4DFC8}
+.finfo.show{display:flex}
+.fname{font-size:11.5px;font-weight:600;color:#0D6E3A;flex:1}
+.fsize{font-size:10px;color:#2E9E5A}
+.fbtn{background:none;border:none;cursor:pointer;color:var(--text3);font-size:13px;padding:2px 5px}
+.fbtn:hover{color:var(--red)}
+.ctags{display:flex;flex-wrap:wrap;gap:3px;margin-top:6px}
+.ctag{font-size:9.5px;padding:1.5px 6px;background:var(--coral-l);border:1px solid #FBBCBC;border-radius:5px;color:var(--coral-d);font-family:var(--mono)}
+.clabel{font-size:10px;color:var(--text3);display:block;margin-top:6px;text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+.cond-table-ref{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px}
+.cond-ref-title{font-size:11.5px;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:5px}
+.cond-ref-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:4px}
+.cref-item{display:flex;align-items:center;gap:6px;padding:4px 8px;background:var(--bg);border-radius:5px}
+.cref-name{font-size:10.5px;color:var(--text2);flex:1;font-family:var(--mono)}
+.tip-box{background:var(--blue-l);border:1px solid #BFCFFF;border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:11.5px;color:#1E3FA8;line-height:1.6}
+.go-btn{width:100%;padding:12px;background:var(--coral);color:white;border:none;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer;transition:all .15s;font-family:var(--font);letter-spacing:.01em}
+.go-btn:hover{background:var(--coral-d)}
+.go-btn:disabled{background:#D0D5E0;color:#94A3B8;cursor:not-allowed}
+.demo-btn{width:100%;padding:9px;background:var(--card);color:var(--coral);border:1.5px solid var(--coral);border-radius:8px;font-size:12px;cursor:pointer;font-family:var(--font);font-weight:500;transition:all .15s;margin-top:7px}
+.demo-btn:hover{background:var(--coral-l)}
+.sbar{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:9px 14px;margin-top:10px;display:none;align-items:center;gap:9px}
+.sbar.show{display:flex}
+.sdot{width:7px;height:7px;border-radius:50%;background:var(--green);animation:pulse 1.2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.stxt{font-size:12px;color:var(--text2)}
+
+/* ─── METRICS ─── */
+.mg{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:7px;margin-bottom:13px}
+.mc{background:var(--card);border:1px solid var(--border);border-radius:9px;padding:12px 14px;position:relative;overflow:hidden}
+.mc::before{content:'';position:absolute;top:0;left:0;right:0;height:2.5px}
+.mc.co::before{background:var(--coral)}.mc.gr::before{background:var(--green)}.mc.bl::before{background:var(--blue)}
+.mc.te::before{background:var(--teal)}.mc.am::before{background:var(--amber)}.mc.rd::before{background:var(--red)}.mc.pu::before{background:var(--purple)}
+.ml{font-size:9.5px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px}
+.mv{font-size:20px;font-weight:700;color:var(--text);line-height:1}.ms{font-size:10px;color:var(--text3);margin-top:2px}
+.c-co{color:var(--coral)}.c-gr{color:var(--green)}.c-bl{color:var(--blue)}.c-te{color:var(--teal)}.c-am{color:var(--amber)}.c-rd{color:var(--red)}
+
+/* ─── FILTERS ─── */
+.fb{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 13px;margin-bottom:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.fg{display:flex;align-items:center;gap:5px}
+.fg label{font-size:10px;font-weight:700;color:var(--text2);white-space:nowrap;text-transform:uppercase;letter-spacing:.05em}
+.fb select{font-size:12px;border:1px solid var(--border);border-radius:6px;padding:5px 9px;background:var(--bg);color:var(--text);cursor:pointer;outline:none;font-family:var(--font)}
+.fb select:focus{border-color:var(--coral)}.fsep{width:1px;height:14px;background:var(--border)}
+
+/* ─── CHARTS ─── */
+.cg{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.cg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px}
+.cc{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:13px}
+.cc.f2{grid-column:span 2}.cc.f3{grid-column:span 3}
+.ct{font-size:11px;font-weight:600;color:var(--text);margin-bottom:9px}
+
+/* ─── TABLE ─── */
+.tc{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:12px}
+.th{padding:9px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:var(--bg)}
+.tt{font-size:12px;font-weight:600}.tn{font-size:10.5px;color:var(--text3)}
+.tw{overflow-x:auto;max-height:480px;overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-size:11.5px}
+th{padding:6px 11px;text-align:left;font-size:9.5px;font-weight:700;color:var(--text2);border-bottom:1px solid var(--border);white-space:nowrap;background:var(--bg);text-transform:uppercase;letter-spacing:.05em;position:sticky;top:0;z-index:2}
+td{padding:6px 11px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle}
+tr:last-child td{border-bottom:none}tr:hover td{background:#F8FAFD}
+.mono{font-family:var(--mono);font-size:11px}
+
+/* ─── BADGES ─── */
+.bx{display:inline-flex;align-items:center;padding:1px 7px;border-radius:20px;font-size:10.5px;font-weight:500;white-space:nowrap}
+.bg{background:var(--green-l);color:#0D6E3A}.br{background:var(--red-l);color:#922828}
+.ba{background:var(--amber-l);color:var(--amber)}.bb{background:var(--blue-l);color:var(--blue)}
+.bco{background:var(--coral-l);color:var(--coral-d)}.bte{background:var(--teal-l);color:var(--teal)}
+.et{display:inline-flex;align-items:center;padding:2px 8px;border-radius:4px;font-size:10.5px;font-weight:600;white-space:nowrap}
+.pb{width:54px;height:4px;background:var(--border);border-radius:2px;overflow:hidden;display:inline-block;vertical-align:middle}
+.pbf{height:100%;border-radius:2px}
+.tar-c{background:#D1FAE5;color:#065F46;padding:2px 9px;border-radius:20px;font-size:10.5px;font-weight:600}
+.tar-m{background:#FEF3C7;color:#92400E;padding:2px 9px;border-radius:20px;font-size:10.5px;font-weight:600}
+.tar-s{background:var(--bg);color:var(--text3);padding:2px 9px;border-radius:20px;font-size:10.5px}
+.row-c td{background:#F0FDF4!important}.row-m td{background:#FFFBEB!important}
+.hcell{width:14px;height:14px;border-radius:2px;display:inline-block;vertical-align:middle;cursor:default;position:relative}
+.hcell:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100%+4px);left:50%;transform:translateX(-50%);background:#0D1B2A;color:white;font-size:9px;padding:3px 7px;border-radius:4px;white-space:nowrap;pointer-events:none;z-index:20}
+.ph{margin-bottom:14px}.ph h2{font-size:15px;font-weight:700;margin-bottom:1px}.ph p{font-size:11px;color:var(--text2)}
+.btn-sm{padding:5px 12px;border-radius:6px;font-size:11.5px;font-weight:500;cursor:pointer;font-family:var(--font);transition:all .15s;border:1px solid var(--border);background:white;color:var(--text)}
+.btn-sm:hover{background:var(--bg)}.btn-co{border:none;background:var(--coral);color:white}.btn-co:hover{background:var(--coral-d)}
+.btn-co:disabled{background:#D0D5E0;color:#94A3B8;cursor:not-allowed}
+@media(max-width:900px){.sidebar{width:52px}.nav-item span,.nav-section,.nav-badge{display:none}.sidebar-brand{padding:14px 10px}.nav-item{padding:12px;justify-content:center}}
+@media(max-width:600px){.upload-grid,.cg,.cg3{grid-template-columns:1fr}.cc.f2,.cc.f3{grid-column:span 1}}
+@media print{.sidebar,.fb{display:none!important}.main{height:auto;overflow:visible}.content{overflow:visible;padding:0}.page{display:block!important}.page:not(#p-resumen){display:none!important}}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sidebar-brand">
+    <svg width="32" height="32" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg"><circle cx="18" cy="18" r="18" fill="#F97171"/><text x="18" y="24" text-anchor="middle" font-family="Arial Black,sans-serif" font-weight="900" font-size="20" fill="white">Z</text></svg>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">Principal</div>
+    <div class="nav-item active" onclick="go('upload',this)" id="ni-upload">
+      <svg viewBox="0 0 24 24"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg>
+      <span>Cargar archivos</span>
+    </div>
+    <div class="nav-item" onclick="go('resumen',this)" id="ni-resumen">
+      <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+      <span>Resumen</span>
+    </div>
+    <div class="nav-section">Análisis</div>
+    <div class="nav-item" onclick="go('empresas',this)" id="ni-emp">
+      <svg viewBox="0 0 24 24"><path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z"/></svg>
+      <span>Empresas</span>
+      <span class="nav-badge" id="nb-emp">—</span>
+    </div>
+    <div class="nav-item" onclick="go('conductores',this)" id="ni-cond">
+      <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+      <span>Conductores</span>
+      <span class="nav-badge" id="nb-cond">—</span>
+    </div>
+    <div class="nav-item" onclick="go('viajes',this)" id="ni-vj">
+      <svg viewBox="0 0 24 24"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg>
+      <span>Viajes / Rutas</span>
+      <span class="nav-badge" id="nb-vj">—</span>
+    </div>
+    <div class="nav-item" onclick="go('visitas',this)" id="ni-vis">
+      <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 010-5 2.5 2.5 0 010 5z"/></svg>
+      <span>Visitas / Entregas</span>
+      <span class="nav-badge" id="nb-vis">—</span>
+    </div>
+    <div class="nav-section">Liquidación</div>
+    <div class="nav-item" onclick="go('tarifas',this)" id="ni-tar">
+      <svg viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>
+      <span>Tarifas</span>
+    </div><div class="nav-section">Inteligencia</div>
+<div class="nav-item" onclick="go('zonas',this)" id="ni-zonas">
+        <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 010-5 2.5 2.5 0 010 5z"/></svg>
+        <span>Zonas</span>
+      </div>
+<div class="nav-item" onclick="go('mejoras',this)" id="ni-mej">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+      <span>Mejoras</span>
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <div>Zecat · Transporte</div>
+    <div class="status-pill"><div class="status-dot" id="sdot"></div><span id="sfoot">Sin datos cargados</span></div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title" id="topbar-title">Cargar archivos</div>
+      <div id="topbar-sub" style="font-size:10.5px;color:var(--text3)">Subí los archivos Excel para comenzar el análisis</div>
+    </div>
+    <div class="topbar-right">
+      <button class="btn-sm btn-co" id="btn-grd" disabled onclick="descargarExcel()" style="display:none">⬇ Descargar Excel</button>
+      <button class="btn-sm" onclick="window.print()">Imprimir</button>
+    </div>
+  </div>
+  <div class="content">
+
+    <!-- ═══ UPLOAD ═══ -->
+    <div class="page active" id="p-upload">
+      <div class="upload-hero">
+        <h1>Gestión de transporte Zecat</h1>
+        <p>Subí el archivo de <b>rutas</b> y el de <b>visitas</b> exportados desde el sistema. El análisis se genera automáticamente con el cruce correcto por conductor → empresa.</p>
+      </div>
+      <div class="cond-table-ref">
+        <div class="cond-ref-title">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="var(--coral)"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+          Conductor → Empresa (mapeado automáticamente)
+        </div>
+        <div class="cond-ref-grid" id="ref-grid"></div>
+      </div>
+      <div class="tip-box"><b>Columnas del archivo de Rutas:</b> Conductor, Nombre de vehículo, Fecha, ID de ruta, Km planificados, Kilómetros reales, Visitas totales/completadas/fallidas, Hora de inicio/fin de ruta, Hora de inicio programada, Duración.<br><b>Columnas del archivo de Visitas:</b> ID de ruta, Conductor, Vehículo, Título (cliente), Dirección, Estado, Carga, Fecha planificada.</div>
+      <div class="upload-grid">
+        <div class="ucard">
+          <div class="ucard-head">
+            <div class="ucard-icon" style="background:var(--coral-l)"><svg viewBox="0 0 24 24" width="17" height="17" fill="var(--coral)"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg></div>
+            <h3>Archivo de Rutas / Viajes</h3>
+          </div>
+          <p>Cada fila = 1 viaje. Incluye conductor, vehículo, fecha, KMs planificados, horarios y resultados de visitas por ruta.</p>
+          <div class="drop" id="drop-r" onclick="document.getElementById('fr').click()" ondragover="dov(event,'drop-r')" ondragleave="dlv('drop-r')" ondrop="hdp(event,'rutas')">
+            <div class="drop-ico">📋</div><div class="drop-txt">Click o arrastrá el archivo aquí</div><div class="drop-hint">Excel (.xlsx) o CSV — exportado del sistema</div>
+          </div>
+          <input type="file" id="fr" accept=".xlsx,.xls,.csv" style="display:none" onchange="hfl(event,'rutas')">
+          <div class="finfo" id="fi-r"><span class="fname" id="fn-r"></span><span class="fsize" id="fs-r"></span><button class="fbtn" onclick="rmF('rutas')">✕</button></div>
+          <div id="fc-r" style="display:none"><span class="clabel">Columnas detectadas</span><div class="ctags" id="ct-r"></div></div>
+        </div>
+        <div class="ucard">
+          <div class="ucard-head">
+            <div class="ucard-icon" style="background:var(--blue-l)"><svg viewBox="0 0 24 24" width="17" height="17" fill="var(--blue)"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 010-5 2.5 2.5 0 010 5z"/></svg></div>
+            <h3>Archivo de Visitas / Entregas</h3>
+          </div>
+          <p>Cada fila = 1 visita. Incluye conductor, vehículo, cliente, dirección, estado (completed/failed/pending), carga y ID de ruta para el cruce.</p>
+          <div class="drop" id="drop-v" onclick="document.getElementById('fv').click()" ondragover="dov(event,'drop-v')" ondragleave="dlv('drop-v')" ondrop="hdp(event,'visitas')">
+            <div class="drop-ico">📍</div><div class="drop-txt">Click o arrastrá el archivo aquí</div><div class="drop-hint">Excel (.xlsx) o CSV — exportado del sistema</div>
+          </div>
+          <input type="file" id="fv" accept=".xlsx,.xls,.csv" style="display:none" onchange="hfl(event,'visitas')">
+          <div class="finfo" id="fi-v"><span class="fname" id="fn-v"></span><span class="fsize" id="fs-v"></span><button class="fbtn" onclick="rmF('visitas')">✕</button></div>
+          <div id="fc-v" style="display:none"><span class="clabel">Columnas detectadas</span><div class="ctags" id="ct-v"></div></div>
+        </div>
+      </div>
+      <button class="go-btn" id="btn-go" disabled onclick="procesar()">Analizar y generar dashboard →</button>
+      <button class="demo-btn" onclick="cargarDemo()">Cargar datos de ejemplo para explorar</button>
+      <div class="sbar" id="sbar"><div class="sdot"></div><span class="stxt" id="stxt"></span></div>
+    </div>
+
+    <!-- ═══ RESUMEN ═══ -->
+    <div class="page" id="p-resumen">
+      <div class="ph"><h2 id="res-title">Resumen ejecutivo</h2><p id="res-sub">—</p></div>
+      <div class="mg" id="mg-res"></div>
+      <div class="cg3">
+        <div class="cc"><div class="ct">Viajes por empresa</div><div style="position:relative;height:210px"><canvas id="c-res-vj"></canvas></div></div>
+        <div class="cc"><div class="ct">Viajes Q1 vs Q2 por empresa</div><div style="position:relative;height:210px"><canvas id="c-res-q"></canvas></div></div>
+        <div class="cc"><div class="ct">Estado de entregas</div><div style="position:relative;height:210px"><canvas id="c-res-est"></canvas></div></div>
+      </div>
+      <div class="cg">
+        <div class="cc"><div class="ct">Viajes por día (apilado por empresa)</div><div style="position:relative;height:185px"><canvas id="c-res-dia"></canvas></div></div>
+        <div class="cc"><div class="ct">KMs planificados vs reales</div><div style="position:relative;height:185px"><canvas id="c-res-km"></canvas></div></div>
+      </div>
+      <div id="res-hmap"></div>
+    </div>
+
+    <!-- ═══ EMPRESAS ═══ -->
+    <div class="page" id="p-empresas">
+      <div class="ph"><h2>Análisis por empresa</h2><p>Conductores, vehículos, viajes, KMs y efectividad por empresa de transporte.</p></div>
+      <div class="fb">
+        <div class="fg"><label>Quincena</label><select id="fe-q" onchange="rEmp()"><option value="all">Todo el período</option></select></div>
+      </div>
+      <div class="mg" id="mg-emp"></div>
+      <div class="cg"><div class="cc"><div class="ct">Viajes por empresa</div><div style="position:relative;height:210px"><canvas id="c-emp-vj"></canvas></div></div><div class="cc"><div class="ct">KMs plan. vs reales</div><div style="position:relative;height:210px"><canvas id="c-emp-km"></canvas></div></div></div>
+      <div class="cg3"><div class="cc"><div class="ct">Vehículos únicos</div><div style="position:relative;height:175px"><canvas id="c-emp-veh"></canvas></div></div><div class="cc"><div class="ct">Puntos/paradas</div><div style="position:relative;height:175px"><canvas id="c-emp-pts"></canvas></div></div><div class="cc"><div class="ct">Efectividad entregas</div><div style="position:relative;height:175px"><canvas id="c-emp-ef"></canvas></div></div></div>
+      <div class="tc"><div class="th"><span class="tt">Detalle por empresa</span><span class="tn" id="n-emp"></span></div>
+        <div class="tw"><table><thead><tr><th>Empresa</th><th>Conductores</th><th>Veh. únicos</th><th>Viajes</th><th>KMs plan.</th><th>KMs reales</th><th>KM/viaje</th><th>Puntos</th><th>Pts/viaje</th><th>Dur. prom.</th><th>OK</th><th>Fallidas</th><th>Efect.</th><th>T.Completa</th><th>T.Media</th></tr></thead><tbody id="tb-emp"></tbody></table></div>
+      </div>
+      <div class="tc"><div class="th"><span class="tt">Por empresa · por quincena</span></div>
+        <div class="tw"><table><thead><tr><th>Empresa</th><th>Quincena</th><th>Conductores</th><th>Viajes</th><th>Veh. únicos</th><th>KMs plan.</th><th>Puntos</th><th>OK</th><th>Fallidas</th><th>Efect.</th><th>T.Completa</th><th>T.Media</th></tr></thead><tbody id="tb-q"></tbody></table></div>
+      </div>
+      <div class="tc"><div class="th"><span class="tt">Vehículos activos por empresa · por día</span><span class="tn">Intensidad = nro unidades · Hover = detalle</span></div><div style="padding:12px 14px;overflow-x:auto" id="emp-hmap"></div></div>
+    </div>
+
+    <!-- ═══ CONDUCTORES ═══ -->
+    <div class="page" id="p-conductores">
+      <div class="ph"><h2>Análisis por conductor</h2><p>LM Logistica, LM Logistica 2 y LM Logistica 3 son unidades separadas. Transporte NEF y NEF 2 ídem.</p></div>
+      <div class="fb">
+        <div class="fg"><label>Empresa</label><select id="fc-emp" onchange="rCond()"><option value="all">Todas</option></select></div>
+        <div class="fsep"></div>
+        <div class="fg"><label>Quincena</label><select id="fc-q" onchange="rCond()"><option value="all">Todo el período</option></select></div>
+      </div>
+      <div class="mg" id="mg-cond"></div>
+      <div class="cg"><div class="cc"><div class="ct">Viajes por conductor</div><div style="position:relative;height:215px"><canvas id="c-cond-vj"></canvas></div></div><div class="cc"><div class="ct">Duración prom. viaje (horas)</div><div style="position:relative;height:215px"><canvas id="c-cond-dur"></canvas></div></div></div>
+      <div class="cg"><div class="cc"><div class="ct">KMs reales por conductor</div><div style="position:relative;height:185px"><canvas id="c-cond-km"></canvas></div></div><div class="cc"><div class="ct">Tarifa completa vs media</div><div style="position:relative;height:185px"><canvas id="c-cond-tar"></canvas></div></div></div>
+      <div class="tc"><div class="th"><span class="tt">Detalle por conductor</span><span class="tn" id="n-cond"></span></div>
+        <div class="tw"><table><thead><tr><th>Conductor</th><th>Empresa</th><th>Vehículos usados</th><th>Viajes</th><th>KMs plan.</th><th>KMs reales</th><th>KM/viaje</th><th>Puntos</th><th>Pts/viaje</th><th>Dur. prom.</th><th>Dur. mín.</th><th>Dur. máx.</th><th>OK</th><th>Fallidas</th><th>Efect.</th><th>T.Completa</th><th>T.Media</th></tr></thead><tbody id="tb-cond"></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- ═══ VIAJES ═══ -->
+    <div class="page" id="p-viajes">
+      <div class="ph"><h2>Detalle de viajes</h2><p>Cada fila = 1 viaje con empresa, conductor, horarios, KMs y tarifa calculada.</p></div>
+      <div class="fb">
+        <div class="fg"><label>Empresa</label><select id="fj-emp" onchange="rVj()"><option value="all">Todas</option></select></div>
+        <div class="fsep"></div>
+        <div class="fg"><label>Conductor</label><select id="fj-cond" onchange="rVj()"><option value="all">Todos</option></select></div>
+        <div class="fsep"></div>
+        <div class="fg"><label>Quincena</label><select id="fj-q" onchange="rVj()"><option value="all">Todo</option></select></div>
+        <div class="fsep"></div>
+        <div class="fg"><label>Tarifa</label><select id="fj-tar" onchange="rVj()"><option value="all">Todas</option><option value="Completa">Completa</option><option value="Media">Media</option></select></div>
+      </div>
+      <div class="mg" id="mg-vj"></div>
+      <div class="cg"><div class="cc f2"><div class="ct">Viajes por día</div><div style="position:relative;height:180px"><canvas id="c-vj-dia"></canvas></div></div></div>
+      <div class="tc"><div class="th"><span class="tt">Listado de viajes</span><span class="tn" id="n-vj"></span></div>
+        <div class="tw"><table><thead><tr><th>#</th><th>Fecha</th><th>Empresa</th><th>Conductor</th><th>Vehículo</th><th>Ini prog.</th><th>Ini real</th><th>Fin real</th><th>Duración</th><th>Δ inicio</th><th>KMs plan.</th><th>Puntos</th><th>OK</th><th>Fallidas</th><th>Efect.</th><th>Tarifa</th></tr></thead><tbody id="tb-vj"></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- ═══ VISITAS ═══ -->
+    <div class="page" id="p-visitas">
+      <div class="ph"><h2>Visitas / Entregas</h2><p>Entregas a clientes reales. Las visitas a depósitos propios (Oficina Zecat, Planta Zecat, Artículos Promocionales) están en <b>Autoabastecimiento</b>.</p></div>
+      <div class="fb">
+        <div class="fg"><label>Estado</label><select id="fvis-est" onchange="rVis()"><option value="all">Todos</option><option value="completed">Completadas</option><option value="failed">Fallidas</option><option value="pending">Pendientes</option></select></div>
+        <div class="fsep"></div>
+        <div class="fg"><label>Empresa</label><select id="fvis-emp" onchange="rVis()"><option value="all">Todas</option></select></div>
+        <div class="fsep"></div>
+        <div class="fg"><label>Vehículo</label><select id="fvis-veh" onchange="rVis()"><option value="all">Todos</option></select></div>
+      </div>
+      <div class="mg" id="mg-vis"></div>
+      <div class="cg3"><div class="cc"><div class="ct">Estado global</div><div style="position:relative;height:185px"><canvas id="c-vis-pie"></canvas></div></div><div class="cc"><div class="ct">Fallidas por empresa</div><div style="position:relative;height:185px"><canvas id="c-vis-fail"></canvas></div></div><div class="cc"><div class="ct">Carga entregada por empresa</div><div style="position:relative;height:185px"><canvas id="c-vis-carga"></canvas></div></div></div>
+      <div class="tc"><div class="th"><span class="tt">Listado de visitas</span><span class="tn" id="n-vis"></span></div>
+        <div class="tw"><table><thead><tr><th>Cliente</th><th>Dirección</th><th>Conductor</th><th>Vehículo</th><th>Empresa</th><th>Carga</th><th>Estado</th></tr></thead><tbody id="tb-vis"></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- ═══ TARIFAS ═══ -->
+    <div class="page" id="p-tarifas">
+      <div class="ph"><h2>Liquidación de tarifas</h2><p><b>Completa</b>: inicio 06:00–12:59 (cualquier duración), o inicio ≥ 13:00 con duración ≥ 5hs. &nbsp;<b>Media</b>: inicio ≥ 13:00 con duración &lt; 5hs.</p></div>
+      <div class="mg" id="mg-tar"></div>
+      <div class="cg"><div class="cc"><div class="ct">Tarifa por empresa</div><div style="position:relative;height:230px"><canvas id="c-tar-emp"></canvas></div></div><div class="cc"><div class="ct">Tarifa por conductor</div><div style="position:relative;height:230px"><canvas id="c-tar-cond"></canvas></div></div></div>
+      <div class="tc"><div class="th"><span class="tt">Resumen por empresa · por quincena</span></div>
+        <div class="tw"><table><thead><tr><th>Empresa</th><th>Quincena</th><th>Conductores</th><th>Viajes</th><th>Tarifa Completa</th><th>Tarifa Media</th><th>Sin datos</th></tr></thead><tbody id="tb-tar-res"></tbody></table></div>
+      </div>
+      <div class="fb">
+        <div class="fg"><label>Empresa</label><select id="ft-emp" onchange="rTarDet()"><option value="all">Todas</option></select></div>
+        <div class="fsep"></div>
+        <div class="fg"><label>Quincena</label><select id="ft-q" onchange="rTarDet()"><option value="all">Todo</option></select></div>
+        <div class="fsep"></div>
+        <div class="fg"><label>Tarifa</label><select id="ft-tar" onchange="rTarDet()"><option value="all">Todas</option><option value="Completa">Completa</option><option value="Media">Media</option></select></div>
+      </div>
+      <div class="tc"><div class="th"><span class="tt">Detalle por conductor</span><span class="tn" id="n-tar"></span></div>
+        <div class="tw"><table><thead><tr><th>Fecha</th><th>Empresa</th><th>Conductor</th><th>Vehículo</th><th>Ini prog.</th><th>Ini real</th><th>Fin real</th><th>Duración</th><th>KMs plan.</th><th>Puntos</th><th>OK</th><th>Fallidas</th><th>Tarifa</th></tr></thead><tbody id="tb-tar-det"></tbody></table></div>
+      </div>
+      <div class="tc"><div class="th"><span class="tt">Calendario: unidades por empresa por día</span><span class="tn">💚 C = Completa · 🟡 M = Media · Hover para conductores</span></div><div style="padding:12px 14px;overflow-x:auto" id="tar-cal"></div></div>
+    </div>
+
+    <!-- ═══ MEJORAS ═══ -->
+    <div class="page" id="p-mejoras">
+      <div class="ph"><h2>⚡ Oportunidades de mejora</h2><p>Análisis por dirección y cliente real. Las visitas internas de Zecat están en <b>Autoabastecimiento</b> (Oficina Zecat, Planta Zecat, Artículos Promocionales, Planta Pacheco).</p></div>
+      <div class="mg" id="mg-mej"></div>
+      <div class="cg3"><div class="cc"><div class="ct">Atraso prom. por empresa (min)</div><div style="position:relative;height:195px"><canvas id="c-mej-ae"></canvas></div></div><div class="cc"><div class="ct">Atraso prom. por vehículo (min)</div><div style="position:relative;height:195px"><canvas id="c-mej-av"></canvas></div></div><div class="cc"><div class="ct">Tiempo servicio en cliente (min)</div><div style="position:relative;height:195px"><canvas id="c-mej-ts"></canvas></div></div></div>
+      <div class="tc"><div class="th"><span class="tt">🔁 Clientes visitados 2+ veces el mismo día</span><span class="tn" id="n-multi"></span></div>
+        <div class="tw"><table><thead><tr><th>Cliente</th><th>Fecha</th><th>Veces</th><th>Vehículos distintos</th><th>Conductores</th><th>Carga</th><th>Estados</th><th>Impacto</th></tr></thead><tbody id="tb-multi"></tbody></table></div>
+      </div>
+      <div class="cg"><div class="cc"><div class="ct">Top clientes más frecuentes</div><div style="position:relative;height:270px"><canvas id="c-mej-top"></canvas></div></div><div class="cc"><div class="ct">Visitas/día promedio</div><div style="position:relative;height:270px"><canvas id="c-mej-vxd"></canvas></div></div></div>
+      <div class="tc"><div class="th"><span class="tt">🏆 Ranking clientes frecuentes</span><span class="tn" id="n-crank"></span></div>
+        <div class="tw"><table><thead><tr><th>Pos.</th><th>Cliente</th><th>Visitas</th><th>Días</th><th>V/día</th><th>Vehículos</th><th>Carga</th><th>OK</th><th>Fallidas</th><th>Efect.</th></tr></thead><tbody id="tb-crank"></tbody></table></div>
+      </div>
+      <div class="cg"><div class="cc"><div class="ct">Clientes con más fallidas</div><div style="position:relative;height:230px"><canvas id="c-mej-fail"></canvas></div></div><div class="cc"><div class="ct">Tasa de falla (%)</div><div style="position:relative;height:230px"><canvas id="c-mej-tasa"></canvas></div></div></div>
+      <div class="tc"><div class="th"><span class="tt">❌ Clientes con entregas fallidas</span><span class="tn" id="n-cfail"></span></div>
+        <div class="tw"><table><thead><tr><th>Cliente</th><th>Fallidas</th><th>Visitas</th><th>OK</th><th>Pendientes</th><th>Carga</th><th>Días</th><th>Efect.</th></tr></thead><tbody id="tb-cfail"></tbody></table></div>
+      </div>
+    </div>
+
+
+    <!-- ZONAS -->
+    <div class="page" id="p-zonas">
+      <div class="ph"><h2>Análisis por zona geográfica</h2><p>Distribución de entregas, carga, atrasos y efectividad por zona, barrio y dirección. Solo clientes reales (excluye autoabastecimiento).</p></div>
+
+      <!-- KPI CARDS EJECUTIVOS -->
+      <div class="mg" id="mg-zonas-kpi"></div>
+
+      <!-- ALERTAS RÁPIDAS -->
+      <div id="zonas-alertas" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;margin-bottom:13px"></div>
+
+      <!-- GRAFICOS PRINCIPALES -->
+      <div class="cg3">
+        <div class="cc"><div class="ct">Visitas por zona</div><div style="position:relative;height:210px"><canvas id="c-z-vis"></canvas></div></div>
+        <div class="cc"><div class="ct">Carga entregada por zona (unidades)</div><div style="position:relative;height:210px"><canvas id="c-z-carga"></canvas></div></div>
+        <div class="cc"><div class="ct">Efectividad por zona (%)</div><div style="position:relative;height:210px"><canvas id="c-z-efect"></canvas></div></div>
+      </div>
+      <div class="cg">
+        <div class="cc"><div class="ct">Atraso promedio por zona (minutos)</div><div style="position:relative;height:185px"><canvas id="c-z-atr"></canvas></div></div>
+        <div class="cc"><div class="ct">Visitas/día por zona</div><div style="position:relative;height:185px"><canvas id="c-z-vxd"></canvas></div></div>
+      </div>
+
+      <!-- TABLA ZONA -->
+      <div class="tc">
+        <div class="th"><span class="tt">KPIs por zona</span><span class="tn" id="n-z-zona"></span></div>
+        <div class="tw"><table><thead><tr>
+          <th>Zona</th><th>Visitas</th><th>Barrios</th><th>Dirs. únicas</th><th>Clientes únicos</th>
+          <th>Carga total</th><th>Carga/visita</th><th>OK</th><th>Fallidas</th><th>Pendientes</th>
+          <th>Efect.</th><th>V/día</th><th>Atraso prom.</th><th>T.Serv. prom.</th>
+        </tr></thead><tbody id="tb-z-zona"></tbody></table></div>
+      </div>
+
+      <!-- HEATMAP EMPRESA x ZONA -->
+      <div class="tc">
+        <div class="th"><span class="tt">Empresa × zona — distribución de visitas</span><span class="tn">Quién va más a cada zona</span></div>
+        <div style="padding:12px 14px;overflow-x:auto" id="z-heatmap-emp"></div>
+      </div>
+
+      <!-- TOP CLIENTES POR ZONA -->
+      <div class="tc">
+        <div class="th"><span class="tt">Top clientes por zona</span><span class="tn">Los 5 más frecuentes en cada zona</span></div>
+        <div class="tw"><table><thead><tr>
+          <th>Zona</th><th>Pos.</th><th>Cliente</th><th>Visitas</th><th>Dirs. únicas</th><th>Carga</th><th>OK</th><th>Fallidas</th><th>Efect.</th>
+        </tr></thead><tbody id="tb-z-cz"></tbody></table></div>
+      </div>
+
+      <!-- RANKING BARRIOS -->
+      <div class="fb" style="margin-top:4px">
+        <div class="fg"><label>Filtrar por zona</label>
+          <select id="fz-zona" onchange="rZonaBarrios()">
+            <option value="all">Todas las zonas</option>
+          </select>
+        </div>
+      </div>
+      <div class="tc">
+        <div class="th"><span class="tt">🏆 Ranking de barrios</span><span class="tn" id="n-z-barrio"></span></div>
+        <div class="tw"><table><thead><tr>
+          <th>Pos.</th><th>Barrio</th><th>Zona</th><th>Visitas</th><th>Dirs. únicas</th><th>Clientes</th>
+          <th>Carga</th><th>OK</th><th>Fallidas</th><th>Efect.</th><th>Atraso prom.</th>
+        </tr></thead><tbody id="tb-z-barrio"></tbody></table></div>
+      </div>
+
+      <!-- RANKING DIRECCIONES -->
+      <div class="fb" style="margin-top:4px">
+        <div class="fg"><label>Filtrar por zona</label>
+          <select id="fz-zona-dir" onchange="rZonaDirs()">
+            <option value="all">Todas las zonas</option>
+          </select>
+        </div>
+        <div class="fsep"></div>
+        <div class="fg"><label>Estado</label>
+          <select id="fz-est" onchange="rZonaDirs()">
+            <option value="all">Todas</option>
+            <option value="fail">Con fallidas</option>
+            <option value="ok">100% efectivas</option>
+          </select>
+        </div>
+      </div>
+      <div class="tc">
+        <div class="th"><span class="tt">📍 Ranking de direcciones</span><span class="tn" id="n-z-dir"></span></div>
+        <div class="tw"><table><thead><tr>
+          <th>Pos.</th><th>Dirección</th><th>Barrio</th><th>Zona</th><th>Visitas</th>
+          <th>Días</th><th>V/día</th><th>Clientes</th><th>Carga</th>
+          <th>OK</th><th>Fallidas</th><th>Efect.</th><th>Atraso prom.</th>
+        </tr></thead><tbody id="tb-z-dir"></tbody></table></div>
+      </div>
+    </div>
+</div><!-- /content -->
+</div><!-- /main -->
+
+<script>
+// ════════════ CONDUCTOR → EMPRESA ════════════
+const CE={'cit logistica':'CIT Logistica','lm logistica 2':'LM Logistica','cristian gomez passut':'Gomez Passut','fernando cacaviello':'Cacavielo Fernando','flavio malagrino':'Propio','lm logistica':'LM Logistica','lm logistica 3':'LM Logistica','transporte gomez pasut':'Gomez Passut','transporte nef':'Transporte NEF','transporte nef 2':'Transporte NEF','utilitario benitez':'Rivas'};
+function getEmp(c){if(!c)return'Sin asignar';const k=String(c).toLowerCase().trim();if(CE[k])return CE[k];for(const[key,val]of Object.entries(CE)){if(k.includes(key)||key.includes(k))return val;}return'Sin asignar';}
+
+const EMPS_ORDER=['CIT Logistica','Cacavielo Fernando','Gomez Passut','LM Logistica','Propio','Rivas','Transporte NEF'];
+const ECB=['#DBEAFE','#EDE9FE','#D1FAE5','#FEF3C7','#FCE7F3','#E0F2FE','#FEF9C3'];
+const ECF=['#1D4ED8','#6D28D9','#065F46','#92400E','#9D174D','#0C4A6E','#78350F'];
+const EC=['#60A5FA','#A78BFA','#34D399','#FBBF24','#F472B6','#38BDB8','#FCD34D'];
+function ei(n){const i=EMPS_ORDER.indexOf(n);return i>=0?i:0;}
+function etag(n){const i=ei(n)%7;return`<span class="et" style="background:${ECB[i]};color:${ECF[i]}">${n}</span>`;}
+function ecol(n){return EC[ei(n)%7];}
+
+// Render ref grid
+(function(){document.getElementById('ref-grid').innerHTML=Object.entries(CE).map(([c,e])=>`<div class="cref-item"><span class="cref-name">${c}</span><span style="color:var(--text3);font-size:10px">→</span>${etag(e)}</div>`).join('');})();
+
+// ════════════ STATE ════════════
+let S={rutas:[],visitas:[],viajes:[],vis_mini:[],cli_rank:[],cli_fail:[],cli_multi:[],quincenas:[],emps:[],conds:[],ready:false};
+let CH={};let pendDel=null;
+
+// ════════════ HELPERS ════════════
+function minToH(m){if(!m||m<=0)return'—';const h=Math.floor(m/60),mn=m%60;return h>0?`${h}h ${mn}m`:`${mn}m`;}
+function ef(a,t){return t>0?Math.round(a/t*100):0;}
+function avg(arr){return arr.length?arr.reduce((a,b)=>a+b,0)/arr.length:0;}
+function sum(arr,k){return arr.reduce((a,v)=>a+(v[k]||0),0);}
+function dc(id){if(CH[id]){CH[id].destroy();CH[id]=null;}}
+function mkC(id,type,data,opts){dc(id);const el=document.getElementById(id);if(!el)return;CH[id]=new Chart(el,{type,data,options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},...opts}});}
+function sortFechas(arr){return arr.sort((a,b)=>{const pa=a.split('/'),pb=b.split('/');return new Date(pa[2],pa[1]-1,pa[0])-new Date(pb[2],pb[1]-1,pb[0]);});}
+function tarBx(t){if(t==='Completa')return'<span class="tar-c">Completa</span>';if(t==='Media')return'<span class="tar-m">Media</span>';return'<span class="tar-s">Sin datos</span>';}
+
+// ════════════ NAV ════════════
+const TITLES={upload:'Cargar archivos',zonas:'Análisis por zona',zonas:'Análisis por zona',resumen:'Resumen ejecutivo',empresas:'Empresas de transporte',conductores:'Conductores',viajes:'Viajes / Rutas',visitas:'Visitas / Entregas',tarifas:'Liquidación de tarifas',mejoras:'Oportunidades de mejora'};
+const SUBS={upload:'Subí los archivos Excel para comenzar',zonas:'Distribución de entregas, carga, atrasos y efectividad por zona, barrio y dirección',operadores:'Entregas vía operadores logísticos — destinos al interior del país por provincia y frecuencia',zonas:'Dónde entregamos, qué zonas cubrimos y dónde están los problemas',resumen:'Vista consolidada del período',empresas:'Rendimiento por empresa de transporte',conductores:'Detalle por conductor individual',viajes:'Cada viaje con horarios, KMs y tarifas',visitas:'Calidad de entrega dentro de cada viaje',tarifas:'Tarifa completa vs media por conductor',mejoras:'Análisis de clientes y eficiencia operativa'};
+
+function go(p,el){
+  document.querySelectorAll('.page').forEach(e=>e.classList.remove('active'));
+  document.getElementById('p-'+p).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(e=>e.classList.remove('active'));
+  if(el)el.classList.add('active');
+  document.getElementById('topbar-title').textContent=TITLES[p]||p;
+  document.getElementById('topbar-sub').textContent=SUBS[p]||'';
+  if(!S.ready)return;
+  const fn={resumen:rRes,empresas:rEmp,conductores:rCond,viajes:rVj,visitas:rVis,tarifas:rTarFull,mejoras:rMejoras,zonas:rZonas};
+  if(fn[p])fn[p]();
+}
+
+// ════════════ FILE UPLOAD ════════════
+function dov(e,id){e.preventDefault();document.getElementById(id).classList.add('over');}
+function dlv(id){document.getElementById(id).classList.remove('over');}
+function hdp(e,t){e.preventDefault();dlv(t==='rutas'?'drop-r':'drop-v');const f=e.dataTransfer.files[0];if(f)parseF(f,t);}
+function hfl(e,t){if(e.target.files[0])parseF(e.target.files[0],t);}
+
+function parseF(file,t){
+  const s=t==='rutas'?'r':'v';
+  document.getElementById('fn-'+s).textContent=file.name;
+  document.getElementById('fs-'+s).textContent=(file.size/1024).toFixed(1)+'KB';
+  document.getElementById('fi-'+s).classList.add('show');
+  document.getElementById('drop-'+s).classList.add('done');
+  const rd=new FileReader();
+  rd.onload=function(e){
+    try{
+      let data;
+      if(file.name.toLowerCase().endsWith('.csv'))data=pCSV(e.target.result);
+      else{const wb=XLSX.read(e.target.result,{type:'array',cellDates:true});data=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:'',UTC:true});}
+      S[t]=data;
+      const cols=data.length>0?Object.keys(data[0]):[];
+      document.getElementById('ct-'+s).innerHTML=cols.map(c=>`<span class="ctag">${c}</span>`).join('');
+      document.getElementById('fc-'+s).style.display='block';
+      checkGo();
+    }catch(err){alert('Error leyendo archivo: '+err.message);}
+  };
+  if(file.name.toLowerCase().endsWith('.csv'))rd.readAsText(file,'UTF-8');
+  else rd.readAsArrayBuffer(file);
+}
+
+function pCSV(txt){
+  const lines=txt.split('\n').filter(l=>l.trim());if(!lines.length)return[];
+  const sep=lines[0].includes(';')?';':',';
+  const hdr=lines[0].split(sep).map(h=>h.trim().replace(/^"|"$/g,''));
+  return lines.slice(1).map(line=>{const vals=line.split(sep).map(v=>v.trim().replace(/^"|"$/g,''));return Object.fromEntries(hdr.map((h,i)=>[h,vals[i]||'']));}).filter(r=>Object.values(r).some(v=>v));
+}
+
+function rmF(t){S[t]=[];const s=t==='rutas'?'r':'v';document.getElementById('fi-'+s).classList.remove('show');document.getElementById('fc-'+s).style.display='none';document.getElementById('drop-'+s).classList.remove('done','over');document.getElementById(s==='r'?'fr':'fv').value='';checkGo();}
+function checkGo(){document.getElementById('btn-go').disabled=!S.rutas.length;}
+
+// ════════════ PROCESAR ════════════
+function showSt(msg){document.getElementById('stxt').textContent=msg;document.getElementById('sbar').classList.add('show');}
+
+function procesar(){
+  showSt('Procesando datos...');
+  setTimeout(()=>{
+    try{build();updateUI();}
+    catch(err){showSt('Error: '+err.message);console.error(err);}
+  },200);
+}
+
+function findC(obj,cands){
+  if(!obj)return null;
+  // Normalización correcta: reemplaza acentos por base (no los elimina)
+  const norm=function(s){return s.toLowerCase().replace(/\s|_|-/g,'').replace(/á/g,'a').replace(/é/g,'e').replace(/í/g,'i').replace(/ó/g,'o').replace(/ú/g,'u').replace(/ü/g,'u').replace(/ñ/g,'n');};
+  const keys=Object.keys(obj);
+  for(const c of cands){const f=keys.find(function(k){return norm(k).includes(norm(c));});if(f)return f;}
+  return null;
+}
+
+function parseMin(s){
+  if(!s||s===''||s==='nan')return null;
+  if(s instanceof Date)return s.getUTCHours()*60+s.getUTCMinutes();
+  s=String(s).trim();const p=s.split(':');
+  if(p.length>=2){try{const v=parseInt(p[0])*60+parseInt(p[1]);return isNaN(v)?null:v;}catch(e){return null;}}
+  const n=parseFloat(s);if(!isNaN(n)&&n>=0&&n<1)return Math.round(n*24*60);
+  return null;
+}
+
+function fmtFecha(v){
+  if(!v&&v!==0)return'';
+  if(v instanceof Date&&!isNaN(v)){const dd=String(v.getUTCDate()).padStart(2,'0'),mm=String(v.getUTCMonth()+1).padStart(2,'0'),yy=v.getUTCFullYear();return dd+'/'+mm+'/'+yy;}
+  const s=String(v).trim();if(!s||s==='0')return'';
+  const m1=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+  if(m1){const y=m1[3].length===2?'20'+m1[3]:m1[3];const d=new Date(y,m1[2]-1,m1[1]);if(!isNaN(d))return d.toLocaleDateString('es-AR');}
+  const m2=s.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+  if(m2){const d=new Date(m2[1],m2[2]-1,m2[3]);if(!isNaN(d))return d.toLocaleDateString('es-AR');}
+  const n=parseFloat(s);if(!isNaN(n)&&n>40000&&n<60000){const d=new Date(Math.round((n-25569)*86400*1000));if(!isNaN(d))return d.toLocaleDateString('es-AR');}
+  return s;
+}
+
+function fmtHHMM(m){if(m===null||m===undefined||m<0)return'—';return`${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;}
+
+function calcTarifa(ini,dur){
+  // 06:00-12:59 → siempre Completa
+  // 13:00+ → Media, salvo dur real >= 5hs → Completa
+  if(ini===null)return'Sin datos';
+  if(ini<780)return'Completa';
+  return(dur!==null&&dur>=300)?'Completa':'Media';
+}
+
+function isOk(val){const e=String(val||'').toLowerCase().trim();return e.includes('acept')||e.includes('ok')||e==='completed'||e.includes('entregado')||e.includes('completado')||e.includes('success')||e==='1'||e==='si'||e==='sí'||e==='true';}
+
+function build(){
+  const rS=S.rutas[0]||{};const vS=S.visitas[0]||{};
+
+  // Mapeo directo por nombre exacto del sistema Zecat + fallback normalizado
+  function col(obj,exactos,cands){
+    const keys=Object.keys(obj);
+    for(const e of exactos){const f=keys.find(k=>k===e);if(f)return f;}
+    return findC(obj,cands||[]);
+  }
+
+  // Columnas RUTAS (el archivo de rutas NO tiene Conductor — viene de visitas)
+  const rVeh= col(rS,['Nombre de vehículo'],['nombrevehiculo','vehiculo','unidad']);
+  const rFec= col(rS,['Fecha'],['fecha','date']);
+  const rId=  col(rS,['ID de ruta'],['idruta','id']);
+  const rKmP= col(rS,['Km planificados'],['kmplanificados','planificados']);
+  const rKmR= col(rS,['Kilómetros reales'],['kilometrosreales','reales']);
+  const rVT=  col(rS,['Visitas totales'],['visitastotales']);
+  const rVOK= col(rS,['Visitas completadas'],['visitascompletadas']);
+  const rVF=  col(rS,['Visitas fallidas'],['visitasfallidas']);
+  const rVP=  col(rS,['Visitas pendientes'],['visitaspendientes']);
+  const rIni= col(rS,['Hora de inicio de ruta'],['horainiciodeRuta','horainicio']);
+  const rFin= col(rS,['Hora de fin de ruta'],['horafinderta','horafin']);
+  const rIniP=col(rS,['Hora de inicio programada'],['horainicioprogramada']);
+  const rDur= col(rS,['Duración'],['duracion','duration']);
+
+  // Columnas VISITAS
+  const vId=   col(vS,['ID de ruta'],['idruta','id']);
+  const vCond= col(vS,['Conductor'],['conductor','chofer']);
+  const vVeh=  col(vS,['Vehículo'],['vehiculo','unidad']);
+  const vCli=  col(vS,['Título','Titulo'],['titulo','titul','title']);
+  const vDir=  col(vS,['Dirección'],['direccion','address']);
+  const vEst=  col(vS,['Estado'],['estado','status']);
+  const vCarga=col(vS,['Carga'],['carga','load']);
+  const vFec=  col(vS,['Fecha planificada'],['fechaplanificada','fecha']);
+  const vAtr=  col(vS,['Atraso'],['atraso','delay']);
+
+  console.log('[BUILD] rId:'+rId+' rVeh:'+rVeh+' rFec:'+rFec+' rKmP:'+rKmP);
+  console.log('[BUILD] vId:'+vId+' vCond:'+vCond+' vCli:'+vCli+' vDir:'+vDir);
+
+  // Build conductor→ruta from visitas
+  const condByRuta={};
+  S.visitas.forEach(v=>{
+    const rid=vId?String(v[vId]||'').trim():'';
+    const cond=vCond?String(v[vCond]||'').trim():'';
+    if(rid&&cond)condByRuta[rid]=cond;
+  });
+
+  console.log('[BUILD] condByRuta entries:'+Object.keys(condByRuta).length);
+
+  // Build viajes
+  S.viajes=S.rutas.map(r=>{
+    const rid=rId?String(r[rId]||'').trim():'';
+    const conductor=condByRuta[rid]||'';
+    const vehiculo=rVeh?String(r[rVeh]||'').trim():'';
+    const fecha=fmtFecha(rFec?r[rFec]:'');
+    const empresa=getEmp(conductor);
+    const kmP=parseFloat(String(r[rKmP]||'0').replace(',','.'))||0;
+    const kmR=parseFloat(String(r[rKmR]||'0').replace(',','.'))||0;
+    const vt=parseInt(r[rVT]||0)||0;
+    const vok=parseInt(r[rVOK]||0)||0;
+    const vf=parseInt(r[rVF]||0)||0;
+    const vp=parseInt(r[rVP]||0)||0;
+    const iniMin=rIni?parseMin(r[rIni]):null;
+    const finMin=rFin?parseMin(r[rFin]):null;
+    const iniPMin=rIniP?parseMin(r[rIniP]):null;
+    let durMin=null;
+    if(iniMin!==null&&finMin!==null){let d=finMin-iniMin;if(d<0)d+=1440;durMin=d>0?d:null;}
+    if(durMin===null&&rDur)durMin=parseMin(r[rDur]);
+    const tarifa=calcTarifa(iniMin,durMin);
+    let quincena='';
+    if(fecha){const p=fecha.split('/');if(p.length===3){const d=new Date(p[2],p[1]-1,p[0]);if(!isNaN(d))quincena=(d.getDate()<=15?'Q1 ':'Q2 ')+d.toLocaleDateString('es-AR',{month:'short',year:'numeric'});}}
+    return{id:rid,fecha,quincena,conductor,vehiculo,empresa,km_plan:kmP,km_real:kmR,vis_total:vt,vis_ok:vok,vis_fail:vf,vis_pend:vp,ini:fmtHHMM(iniMin),fin:fmtHHMM(finMin),ini_prog:fmtHHMM(iniPMin),ini_min:iniMin,fin_min:finMin,dur_min:durMin||0,tarifa};
+  });
+
+  console.log('[BUILD] viajes:'+S.viajes.length+' muestra empresa:'+S.viajes[0]?.empresa);
+
+  // Build vis_mini from visitas
+  const id2v={};S.viajes.forEach(v=>{if(v.id)id2v[v.id]=v;});
+  S.vis_mini=S.visitas.map(v=>{
+    const rid=vId?String(v[vId]||'').trim():'';
+    const rv=id2v[rid];
+    const conductor=vCond?String(v[vCond]||'').trim():'';
+    const empresa=rv?rv.empresa:getEmp(conductor);
+    const estado=vEst?String(v[vEst]||'').toLowerCase().trim():'';
+    const estadoN=estado==='completed'?'completed':estado==='failed'?'failed':estado==='pending'?'pending':isOk(estado)?'completed':'failed';
+    return{r:rid,c:conductor,v:vVeh?String(v[vVeh]||'').trim():'',cl:(vCli?String(v[vCli]||''):'').substring(0,50),d:(vDir?String(v[vDir]||''):'').substring(0,60).replace(/\s*-\s*Piso:\s*\d+/,''),e:estadoN,k:parseInt(v[vCarga]||0)||0,emp:empresa,atr:vAtr?parseMin(v[vAtr]):null};
+  });
+
+  // Quincenas y emps
+  S.quincenas=[...new Set(S.viajes.map(v=>v.quincena).filter(Boolean))].sort();
+  S.emps=[...new Set(S.viajes.map(v=>v.empresa).filter(Boolean))].sort();
+  S.conds=[...new Set(S.viajes.map(v=>v.conductor).filter(Boolean))].sort();
+
+  console.log('[BUILD] OK emps:'+JSON.stringify(S.emps)+' conds:'+S.conds.length);
+
+  // Clientes análisis
+  buildClientesAnalysis();
+}
+
+function buildClientesAnalysis(){
+  // Excluir títulos propios de Zecat
+  const ZECAT_NAMES=new Set(['oficina zecat','planta zecat','planta pacheco','articulos promocionales','articulos promocionales s.a.','articulos promocionales sa']);
+  const byC={};
+  S.vis_mini.forEach(v=>{
+    if(ZECAT_NAMES.has((v.cl||'').toLowerCase().trim()))return; // ← excluir Zecat
+    const k=v.cl.trim().toUpperCase();if(!k)return;
+    if(!byC[k])byC[k]={nombre:v.cl,visitas:0,ok:0,fail:0,pend:0,carga:0,dias:new Set(),vehs:new Set()};
+    byC[k].visitas++;if(v.e==='completed')byC[k].ok++;else if(v.e==='failed')byC[k].fail++;else byC[k].pend++;
+    byC[k].carga+=v.k||0;byC[k].dias.add(v.r);byC[k].vehs.add(v.v);
+  });
+  S.cli_rank=Object.values(byC).map(c=>({...c,dias:c.dias.size,vehs:c.vehs.size,efect:ef(c.ok,c.visitas),vxd:c.dias.size>0?parseFloat((c.visitas/c.dias.size).toFixed(2)):0})).sort((a,b)=>b.visitas-a.visitas).slice(0,60);
+  S.cli_fail=Object.values(byC).filter(c=>c.fail>0).map(c=>({...c,dias:c.dias.size,vehs:c.vehs.size,efect:ef(c.ok,c.visitas)})).sort((a,b)=>b.fail-a.fail).slice(0,40);
+  // Multi mismo día — por DIRECCIÓN (no por cliente, excluye Zecat)
+  const byDirDia={};
+  S.vis_mini.forEach(v=>{
+    if(ZECAT_NAMES.has((v.cl||'').toLowerCase().trim()))return; // excluir Zecat
+    const dir=(v.d||'').trim().toUpperCase().substring(0,80);if(!dir||dir.length<5)return;
+    const rv=S.viajes.find(j=>j.id===v.r);const fecha=rv?rv.fecha:'';if(!fecha)return;
+    const k=dir+'|'+fecha;
+    if(!byDirDia[k])byDirDia[k]={nombre:v.d||'',fecha,n:0,estados:[],vehs:[],conds:[],carga:0};
+    byDirDia[k].n++;byDirDia[k].estados.push(v.e);byDirDia[k].vehs.push(v.v);byDirDia[k].conds.push(v.c);byDirDia[k].carga+=v.k||0;
+  });
+  S.cli_multi=Object.values(byDirDia).filter(r=>r.n>1).sort((a,b)=>b.n-a.n).slice(0,60);
+}
+
+function updateUI(){
+  S.ready=true;
+  // Badges
+  const empsU=[...new Set(S.viajes.map(v=>v.empresa))];
+  const condsU=[...new Set(S.viajes.map(v=>v.conductor))];
+  const visTotal=S.vis_mini.length;
+  document.getElementById('nb-emp').textContent=empsU.length;
+  document.getElementById('nb-cond').textContent=condsU.length;
+  document.getElementById('nb-vj').textContent=S.viajes.length;
+  document.getElementById('nb-vis').textContent=visTotal;
+  // Status
+  const fechas=S.viajes.map(v=>v.fecha).filter(Boolean).sort();
+  const desde=fechas[0]||'',hasta=fechas[fechas.length-1]||'';
+  showSt(`✓ ${S.viajes.length} viajes · ${visTotal} visitas · ${empsU.length} empresas · ${condsU.length} conductores`);
+  setTimeout(()=>document.getElementById('sbar').classList.remove('show'),4000);
+  document.getElementById('sdot').classList.add('live');
+  document.getElementById('sfoot').textContent=`${S.viajes.length} viajes · ${desde.substring(0,5)}–${hasta.substring(0,5)}`;
+  document.getElementById('btn-grd').style.display='flex';
+  // Fill filters
+  fillFilters();
+  // Go to resumen
+  go('resumen',document.getElementById('ni-resumen'));
+}
+
+function fillFilters(){
+  const qs=S.quincenas;
+  const emps=S.emps;
+  const conds=S.conds;
+  const vehs=[...new Set(S.viajes.map(v=>v.vehiculo))].filter(Boolean).sort();
+  const qOpts='<option value="all">Todo el período</option>'+qs.map(q=>`<option value="${q}">${q}</option>`).join('');
+  ['fe-q','fc-q','fj-q','ft-q'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=qOpts;});
+  const eOpts='<option value="all">Todas</option>'+emps.map(e=>`<option value="${e}">${e}</option>`).join('');
+  ['fc-emp','fj-emp','fvis-emp','ft-emp'].forEach(id=>{const el=document.getElementById(id);if(el)el.innerHTML=eOpts;});
+  const cEl=document.getElementById('fj-cond');if(cEl)cEl.innerHTML='<option value="all">Todos</option>'+conds.map(c=>`<option value="${c}">${c}</option>`).join('');
+  const vEl=document.getElementById('fvis-veh');if(vEl)vEl.innerHTML='<option value="all">Todos</option>'+vehs.map(v=>`<option value="${v}">${v}</option>`).join('');
+}
+
+function getQ(id){return document.getElementById(id)?.value||'all';}
+function getE(id){return document.getElementById(id)?.value||'all';}
+
+function filtVJ(empId,condId,qId,tarId){
+  let d=S.viajes;
+  const e=getE(empId),c=getE(condId),q=getQ(qId),t=getE(tarId);
+  if(e&&e!=='all')d=d.filter(v=>v.empresa===e);
+  if(c&&c!=='all')d=d.filter(v=>v.conductor===c);
+  if(q&&q!=='all')d=d.filter(v=>v.quincena===q);
+  if(t&&t!=='all')d=d.filter(v=>v.tarifa===t);
+  return d;
+}
+
+// ════════════ RENDER RESUMEN ════════════
+function rRes(){
+  const d=S.viajes;
+  const TVJ=d.length,TKP=sum(d,'km_plan'),TKR=sum(d,'km_real');
+  const TOK=sum(d,'vis_ok'),TF=sum(d,'vis_fail'),TP=sum(d,'vis_pend'),TVIT=sum(d,'vis_total');
+  const CARGA=S.vis_mini.reduce((a,v)=>a+(v.k||0),0);
+  const durs=d.filter(v=>v.dur_min>0).map(v=>v.dur_min);
+  const EF=ef(TOK,TVIT);
+  const TC=d.filter(v=>v.tarifa==='Completa').length;
+  const TM=d.filter(v=>v.tarifa==='Media').length;
+  const fechas=d.map(v=>v.fecha).filter(Boolean).sort();
+  const desde=fechas[0]||'',hasta=fechas[fechas.length-1]||'';
+  document.getElementById('res-title').textContent=`Resumen ejecutivo`;
+  document.getElementById('res-sub').textContent=`Período: ${desde} → ${hasta} · ${[...new Set(d.map(v=>v.empresa))].length} empresas · ${[...new Set(d.map(v=>v.conductor))].length} conductores`;
+  document.getElementById('mg-res').innerHTML=`
+    <div class="mc co"><div class="ml">Total viajes</div><div class="mv c-co">${TVJ}</div><div class="ms">${[...new Set(d.map(v=>v.empresa))].length} emp · ${[...new Set(d.map(v=>v.conductor))].length} cond.</div></div>
+    <div class="mc bl"><div class="ml">KMs planificados</div><div class="mv">${TKP.toLocaleString('es-AR',{maximumFractionDigits:0})}</div><div class="ms">Reales: ${TKR.toLocaleString('es-AR',{maximumFractionDigits:0})} km</div></div>
+    <div class="mc te"><div class="ml">Duración prom.</div><div class="mv c-te">${minToH(Math.round(avg(durs)))}</div><div class="ms">por viaje</div></div>
+    <div class="mc gr"><div class="ml">Entregas OK</div><div class="mv c-gr">${TOK}</div><div class="ms">de ${TVIT} · ${EF}% efect.</div></div>
+    <div class="mc rd"><div class="ml">Fallidas</div><div class="mv c-rd">${TF}</div><div class="ms">${TP} pendientes</div></div>
+    <div class="mc gr"><div class="ml">T. Completa</div><div class="mv">${TC}</div><div class="ms">viajes</div></div>
+    <div class="mc am"><div class="ml">T. Media</div><div class="mv c-am">${TM}</div><div class="ms">viajes</div></div>
+    <div class="mc"><div class="ml">Carga total</div><div class="mv">${CARGA.toLocaleString('es-AR')}</div><div class="ms">unidades</div></div>`;
+  const byEmp={};d.forEach(v=>{byEmp[v.empresa]=(byEmp[v.empresa]||0)+1;});
+  const emps=EMPS_ORDER.filter(e=>byEmp[e]);
+  mkC('c-res-vj','bar',{labels:emps,datasets:[{label:'Viajes',data:emps.map(e=>byEmp[e]||0),backgroundColor:emps.map(e=>ecol(e)),borderRadius:4}]},{scales:{x:{ticks:{autoSkip:false,maxRotation:30}},y:{beginAtZero:true,ticks:{stepSize:1}}}});
+  const q1={},q2={};d.forEach(v=>{const q=v.quincena;if(q&&q.startsWith('Q1'))q1[v.empresa]=(q1[v.empresa]||0)+1;else if(q)q2[v.empresa]=(q2[v.empresa]||0)+1;});
+  mkC('c-res-q','bar',{labels:emps,datasets:[{label:'Q1',data:emps.map(e=>q1[e]||0),backgroundColor:emps.map(e=>ecol(e)),borderRadius:3,stack:'s'},{label:'Q2',data:emps.map(e=>q2[e]||0),backgroundColor:emps.map(e=>ecol(e)+'99'),borderRadius:3,stack:'s'}]},{plugins:{legend:{display:true,labels:{boxWidth:10,font:{size:10}}}},scales:{x:{stacked:true,ticks:{autoSkip:false,maxRotation:30}},y:{stacked:true,beginAtZero:true}}});
+  mkC('c-res-est','doughnut',{labels:['OK','Fallidas','Pendientes'],datasets:[{data:[TOK,TF,TP],backgroundColor:['#22C55E','#F87171','#FBBF24'],borderWidth:0}]},{plugins:{legend:{display:true,position:'bottom',labels:{boxWidth:10,font:{size:10}}}},cutout:'60%'});
+  const byDia={};d.forEach(v=>{if(!byDia[v.fecha])byDia[v.fecha]={};byDia[v.fecha][v.empresa]=(byDia[v.fecha][v.empresa]||0)+1;});
+  const dias=sortFechas(Object.keys(byDia));
+  mkC('c-res-dia','bar',{labels:dias,datasets:emps.map(e=>({label:e,data:dias.map(d2=>byDia[d2]?.[e]||0),backgroundColor:ecol(e),borderRadius:2,stack:'s'}))},{plugins:{legend:{display:false}},scales:{x:{stacked:true,ticks:{autoSkip:true,maxTicksLimit:18,maxRotation:40}},y:{stacked:true,beginAtZero:true,ticks:{stepSize:1}}}});
+  const byEmpKM={};d.forEach(v=>{if(!byEmpKM[v.empresa])byEmpKM[v.empresa]={p:0,r:0};byEmpKM[v.empresa].p+=v.km_plan;byEmpKM[v.empresa].r+=v.km_real;});
+  mkC('c-res-km','bar',{labels:emps,datasets:[{label:'Plan.',data:emps.map(e=>Math.round(byEmpKM[e]?.p||0)),backgroundColor:'#60A5FA',borderRadius:3,stack:'n'},{label:'Real',data:emps.map(e=>Math.round(byEmpKM[e]?.r||0)),backgroundColor:'#F97171',borderRadius:3,stack:'n2'}]},{plugins:{legend:{display:true,labels:{boxWidth:10,font:{size:10}}}},scales:{x:{ticks:{autoSkip:false,maxRotation:30}},y:{beginAtZero:true}}});
+  buildHeatmap('res-hmap',d);
+}
+
+// ════════════ RENDER EMPRESAS ════════════
+function rEmp(){
+  const q=getQ('fe-q');
+  let d=S.viajes;if(q!=='all')d=d.filter(v=>v.quincena===q);
+  const emps=EMPS_ORDER.filter(e=>d.some(v=>v.empresa===e));
+  const be={};
+  d.forEach(v=>{if(!be[v.empresa])be[v.empresa]={viajes:0,km_plan:0,km_real:0,vis_ok:0,vis_fail:0,vis_total:0,durs:[],vehs:new Set(),conds:new Set(),c:0,m:0};
+    const b=be[v.empresa];b.viajes++;b.km_plan+=v.km_plan;b.km_real+=v.km_real;b.vis_ok+=v.vis_ok;b.vis_fail+=v.vis_fail;b.vis_total+=v.vis_total;
+    if(v.dur_min>0)b.durs.push(v.dur_min);b.vehs.add(v.vehiculo);b.conds.add(v.conductor);
+    if(v.tarifa==='Completa')b.c++;else if(v.tarifa==='Media')b.m++;});
+  const TOK=sum(d,'vis_ok'),TVIT=sum(d,'vis_total'),TK=sum(d,'km_plan');
+  document.getElementById('mg-emp').innerHTML=`<div class="mc co"><div class="ml">Empresas</div><div class="mv c-co">${emps.length}</div></div><div class="mc bl"><div class="ml">Viajes</div><div class="mv c-bl">${d.length}</div></div><div class="mc"><div class="ml">Veh. únicos</div><div class="mv">${new Set(d.map(v=>v.vehiculo)).size}</div></div><div class="mc"><div class="ml">KMs planificados</div><div class="mv">${TK.toLocaleString('es-AR',{maximumFractionDigits:0})}</div></div><div class="mc gr"><div class="ml">Entregas OK</div><div class="mv c-gr">${TOK}</div></div><div class="mc am"><div class="ml">Efectividad</div><div class="mv">${ef(TOK,TVIT)}%</div></div>`;
+  document.getElementById('n-emp').textContent=emps.length+' empresas · '+d.length+' viajes';
+  document.getElementById('tb-emp').innerHTML=emps.map(e=>{const b=be[e];if(!b)return'';const E=ef(b.vis_ok,b.vis_total);const dur=b.durs.length?Math.round(avg(b.durs)):0;const kmv=b.viajes>0?(b.km_plan/b.viajes).toFixed(0):'—';const ptsv=b.viajes>0?(b.vis_total/b.viajes).toFixed(1):'—';
+    return`<tr><td>${etag(e)}</td><td style="font-size:10px;max-width:160px">${[...b.conds].join(', ')}</td><td><span class="bx bb">${b.vehs.size}</span></td><td><b>${b.viajes}</b></td><td class="mono">${b.km_plan.toLocaleString('es-AR',{maximumFractionDigits:0})}</td><td class="mono">${b.km_real.toLocaleString('es-AR',{maximumFractionDigits:0})}</td><td class="mono">${kmv}</td><td>${b.vis_total}</td><td class="mono">${ptsv}</td><td class="mono c-te">${minToH(dur)}</td><td><span class="bx bg">${b.vis_ok}</span></td><td><span class="bx ${b.vis_fail>0?'br':''}">  ${b.vis_fail||'—'}</span></td><td><div style="display:flex;align-items:center;gap:5px"><div class="pb"><div class="pbf" style="width:${E}%;background:${E>=95?'#22C55E':E>=80?'#FBBF24':'#F87171'}"></div></div><b style="font-size:10px;color:${E>=95?'var(--green)':E>=80?'var(--amber)':'var(--red)'}">${E}%</b></div></td><td><span class="tar-c">${b.c}</span></td><td><span class="tar-m">${b.m}</span></td></tr>`;}).join('');
+  // Quincenas
+  const qmap={};S.viajes.forEach(v=>{const k=v.empresa+'|'+v.quincena;if(!qmap[k])qmap[k]={emp:v.empresa,q:v.quincena,conds:new Set(),viajes:0,vehs:new Set(),km:0,pts:0,ok:0,fail:0,tot:0,c:0,m:0};const r=qmap[k];r.conds.add(v.conductor);r.viajes++;r.vehs.add(v.vehiculo);r.km+=v.km_plan;r.pts+=v.vis_total;r.ok+=v.vis_ok;r.fail+=v.vis_fail;r.tot+=v.vis_total;if(v.tarifa==='Completa')r.c++;else if(v.tarifa==='Media')r.m++;});
+  document.getElementById('tb-q').innerHTML=Object.values(qmap).sort((a,b)=>a.emp.localeCompare(b.emp)||a.q.localeCompare(b.q)).map(r=>{const E=ef(r.ok,r.tot);return`<tr><td>${etag(r.emp)}</td><td class="mono" style="font-size:11px">${r.q}</td><td style="font-size:10px">${[...r.conds].join(', ')}</td><td><b>${r.viajes}</b></td><td><span class="bx bb">${r.vehs.size}</span></td><td class="mono">${r.km.toLocaleString('es-AR',{maximumFractionDigits:0})}</td><td>${r.pts}</td><td><span class="bx bg">${r.ok}</span></td><td><span class="bx ${r.fail>0?'br':''}">  ${r.fail||'—'}</span></td><td><span class="bx ${E>=95?'bg':E>=80?'ba':'br'}">${E}%</span></td><td><span class="tar-c">${r.c}</span></td><td><span class="tar-m">${r.m}</span></td></tr>`;}).join('');
+  dc('c-emp-vj');dc('c-emp-km');dc('c-emp-veh');dc('c-emp-pts');dc('c-emp-ef');
+  mkC('c-emp-vj','bar',{labels:emps,datasets:[{label:'Viajes',data:emps.map(e=>be[e]?.viajes||0),backgroundColor:emps.map(e=>ecol(e)),borderRadius:4}]},{scales:{x:{ticks:{autoSkip:false,maxRotation:30}},y:{beginAtZero:true,ticks:{stepSize:1}}}});
+  mkC('c-emp-km','bar',{labels:emps,datasets:[{label:'Plan.',data:emps.map(e=>Math.round(be[e]?.km_plan||0)),backgroundColor:'#60A5FA',borderRadius:3,stack:'n'},{label:'Real',data:emps.map(e=>Math.round(be[e]?.km_real||0)),backgroundColor:'#F97171',borderRadius:3,stack:'n2'}]},{plugins:{legend:{display:true,labels:{boxWidth:10,font:{size:10}}}},scales:{x:{ticks:{autoSkip:false,maxRotation:30}},y:{beginAtZero:true}}});
+  mkC('c-emp-veh','bar',{labels:emps,datasets:[{label:'Vehículos',data:emps.map(e=>be[e]?.vehs.size||0),backgroundColor:emps.map(e=>ecol(e)),borderRadius:4}]},{scales:{x:{ticks:{autoSkip:false,maxRotation:30}},y:{beginAtZero:true,ticks:{stepSize:1}}}});
+  mkC('c-emp-pts','bar',{labels:emps,datasets:[{label:'Puntos',data:emps.map(e=>be[e]?.vis_total||0),backgroundColor:emps.map(e=>ecol(e)),borderRadius:4}]},{scales:{x:{ticks:{autoSkip:false,maxRotation:30}},y:{beginAtZero:true}}});
+  mkC('c-emp-ef','bar',{labels:emps,datasets:[{label:'%',data:emps.map(e=>be[e]?ef(be[e].vis_ok,be[e].vis_total):0),backgroundColor:emps.map(e=>{const v=be[e]?ef(be[e].vis_ok,be[e].vis_total):0;return v>=95?'#22C55E':v>=80?'#FBBF24':'#F87171';}),borderRadius:4}]},{scales:{y:{beginAtZero:true,max:100}}});
+  buildHeatmap('emp-hmap',d);
+}
+
+// ════════════ RENDER CONDUCTORES ════════════
+function rCond(){
+  const emp=getE('fc-emp'),q=getQ('fc-q');
+  let d=S.viajes;
+  if(emp!=='all')d=d.filter(v=>v.empresa===emp);
+  if(q!=='all')d=d.filter(v=>v.quincena===q);
+  const bc={};
+  d.forEach(v=>{if(!bc[v.conductor])bc[v.conductor]={conductor:v.conductor,empresa:v.empresa,viajes:0,km_plan:0,km_real:0,vis_ok:0,vis_fail:0,vis_pend:0,vis_total:0,durs:[],vehs:new Set(),c:0,m:0};
+    const b=bc[v.conductor];b.viajes++;b.km_plan+=v.km_plan;b.km_real+=v.km_real;b.vis_ok+=v.vis_ok;b.vis_fail+=v.vis_fail;b.vis_pend+=v.vis_pend;b.vis_total+=v.vis_total;
+    if(v.dur_min>0)b.durs.push(v.dur_min);b.vehs.add(v.vehiculo);if(v.tarifa==='Completa')b.c++;else if(v.tarifa==='Media')b.m++;});
+  const conds=Object.keys(bc).sort();
+  document.getElementById('mg-cond').innerHTML=`<div class="mc co"><div class="ml">Conductores</div><div class="mv c-co">${conds.length}</div></div><div class="mc bl"><div class="ml">Viajes</div><div class="mv c-bl">${d.length}</div></div><div class="mc te"><div class="ml">Dur. prom.</div><div class="mv c-te">${minToH(Math.round(avg(d.filter(v=>v.dur_min>0).map(v=>v.dur_min))))}</div></div><div class="mc"><div class="ml">KMs plan.</div><div class="mv">${sum(d,'km_plan').toLocaleString('es-AR',{maximumFractionDigits:0})}</div></div><div class="mc gr"><div class="ml">Entregas OK</div><div class="mv c-gr">${sum(d,'vis_ok')}</div></div>`;
+  document.getElementById('n-cond').textContent=conds.length+' conductores';
+  document.getElementById('tb-cond').innerHTML=conds.map(c=>{const b=bc[c];const E=ef(b.vis_ok,b.vis_total);const kmv=b.viajes>0?(b.km_plan/b.viajes).toFixed(0):'—';const ptsv=b.viajes>0?(b.vis_total/b.viajes).toFixed(1):'—';const dmin=b.durs.length?Math.min(...b.durs):0;const dmax=b.durs.length?Math.max(...b.durs):0;const dprom=b.durs.length?Math.round(avg(b.durs)):0;
+    return`<tr><td><b>${c}</b></td><td>${etag(b.empresa)}</td><td style="font-size:10px">${[...b.vehs].join(', ')}</td><td><b>${b.viajes}</b></td><td class="mono">${b.km_plan.toLocaleString('es-AR',{maximumFractionDigits:0})}</td><td class="mono">${b.km_real.toLocaleString('es-AR',{maximumFractionDigits:0})}</td><td class="mono">${kmv}</td><td>${b.vis_total}</td><td class="mono">${ptsv}</td><td class="mono c-te">${minToH(dprom)}</td><td class="mono">${minToH(dmin)}</td><td class="mono">${minToH(dmax)}</td><td><span class="bx bg">${b.vis_ok}</span></td><td><span class="bx ${b.vis_fail>0?'br':''}">${b.vis_fail||'—'}</span></td><td><span class="bx ${E>=95?'bg':E>=80?'ba':'br'}">${E}%</span></td><td><span class="tar-c">${b.c}</span></td><td><span class="tar-m">${b.m}</span></td></tr>`;}).join('');
+  dc('c-cond-vj');dc('c-cond-dur');dc('c-cond-km');dc('c-cond-tar');
+  mkC('c-cond-vj','bar',{labels:conds,datasets:[{label:'Viajes',data:conds.map(c=>bc[c].viajes),backgroundColor:conds.map(c=>ecol(bc[c].empresa)),borderRadius:4}]},{scales:{x:{ticks:{autoSkip:false,maxRotation:45,font:{size:9}}},y:{beginAtZero:true,ticks:{stepSize:1}}}});
+  mkC('c-cond-dur','bar',{labels:conds,datasets:[{label:'h',data:conds.map(c=>bc[c].durs.length?parseFloat((avg(bc[c].durs)/60).toFixed(2)):0),backgroundColor:conds.map(c=>ecol(bc[c].empresa)),borderRadius:4}]},{scales:{x:{ticks:{autoSkip:false,maxRotation:45,font:{size:9}}},y:{beginAtZero:true,title:{display:true,text:'horas'}}}});
+  mkC('c-cond-km','bar',{labels:conds,datasets:[{label:'KMs',data:conds.map(c=>Math.round(bc[c].km_real)),backgroundColor:conds.map(c=>ecol(bc[c].empresa)),borderRadius:4}]},{scales:{x:{ticks:{autoSkip:false,maxRotation:45,font:{size:9}}},y:{beginAtZero:true}}});
+  mkC('c-cond-tar','bar',{labels:conds,datasets:[{label:'Completa',data:conds.map(c=>bc[c].c),backgroundColor:'#34D399',borderRadius:3,stack:'s'},{label:'Media',data:conds.map(c=>bc[c].m),backgroundColor:'#FBBF24',borderRadius:3,stack:'s'}]},{plugins:{legend:{display:true,labels:{boxWidth:10,font:{size:10}}}},scales:{x:{stacked:true,ticks:{autoSkip:false,maxRotation:45,font:{size:9}}},y:{stacked:true,beginAtZero:true,ticks:{stepSize:1}}}});
+}
+
+// ════════════ RENDER VIAJES ════════════
+function rVj(){
+  const d=filtVJ('fj-emp','fj-cond','fj-q','fj-tar');
+  const durs=d.filter(v=>v.dur_min>0).map(v=>v.dur_min);
+  const TOK=sum(d,'vis_ok'),TVIT=sum(d,'vis_total'),TC=d.filter(v=>v.tarifa==='Completa').length,TM=d.filter(v=>v.tarifa==='Media').length;
+  document.getElementById('mg-vj').innerHTML=`<div class="mc co"><div class="ml">Viajes</div><div class="mv c-co">${d.length}</div></div><div class="mc bl"><div class="ml">KMs plan.</div><div class="mv">${sum(d,'km_plan').toLocaleString('es-AR',{maximumFractionDigits:0})}</div></div><div class="mc te"><div class="ml">Dur. prom.</div><div class="mv c-te">${minToH(Math.round(avg(durs)))}</div></div><div class="mc gr"><div class="ml">OK</div><div class="mv c-gr">${TOK}</div></div><div class="mc gr"><div class="ml">T.Completa</div><div class="mv">${TC}</div></div><div class="mc am"><div class="ml">T.Media</div><div class="mv c-am">${TM}</div></div>`;
+  document.getElementById('n-vj').textContent=d.length+' viajes';
+  document.getElementById('tb-vj').innerHTML=d.map((v,i)=>{
+    const E=ef(v.vis_ok,v.vis_total);let delta='—';
+    if(v.ini_prog&&v.ini&&v.ini_prog!=='—'&&v.ini!=='—'){const pp=v.ini_prog.split(':'),rp=v.ini.split(':');if(pp.length>=2&&rp.length>=2){const diff=parseInt(rp[0])*60+parseInt(rp[1])-(parseInt(pp[0])*60+parseInt(pp[1]));if(diff>0)delta=`<span style="color:var(--red)">+${diff}m</span>`;else if(diff<0)delta=`<span style="color:var(--green)">${diff}m</span>`;else delta=`<span style="color:var(--text3)">En hora</span>`;}}
+    const rc=v.tarifa==='Completa'?'row-c':v.tarifa==='Media'?'row-m':'';
+    return`<tr class="${rc}"><td class="mono" style="color:var(--text3)">${i+1}</td><td style="white-space:nowrap;font-size:11px">${v.fecha}</td><td>${etag(v.empresa)}</td><td style="font-size:10.5px;max-width:110px;overflow:hidden;text-overflow:ellipsis"><b>${v.conductor}</b></td><td class="mono" style="font-size:10.5px">${v.vehiculo}</td><td class="mono">${v.ini_prog||'—'}</td><td class="mono">${v.ini||'—'}</td><td class="mono">${v.fin||'—'}</td><td class="mono c-te">${minToH(v.dur_min)}</td><td>${delta}</td><td class="mono">${v.km_plan>0?v.km_plan+' km':'—'}</td><td><span class="bx bb">${v.vis_total||'—'}</span></td><td><span class="bx bg">${v.vis_ok}</span></td><td><span class="bx ${v.vis_fail>0?'br':''}">${v.vis_fail||'—'}</span></td><td><span class="bx ${E>=95?'bg':E>=80?'ba':v.vis_total===0?'':'br'}">${v.vis_total>0?E+'%':'—'}</span></td><td>${tarBx(v.tarifa)}</td></tr>`;}).join('');
+  const byDia={};d.forEach(v=>{if(!byDia[v.fecha])byDia[v.fecha]={};byDia[v.fecha][v.empresa]=(byDia[v.fecha][v.empresa]||0)+1;});
+  const dias=sortFechas(Object.keys(byDia));const emps=EMPS_ORDER.filter(e=>d.some(v=>v.empresa===e));
+  dc('c-vj-dia');mkC('c-vj-dia','bar',{labels:dias,datasets:emps.map(e=>({label:e,data:dias.map(d2=>byDia[d2]?.[e]||0),backgroundColor:ecol(e),borderRadius:2,stack:'s'}))},{plugins:{legend:{display:true,labels:{boxWidth:8,font:{size:10}}}},scales:{x:{stacked:true,ticks:{autoSkip:false,maxRotation:45,font:{size:9}}},y:{stacked:true,beginAtZero:true,ticks:{stepSize:1}}}});
+}
+
+// ════════════ RENDER VISITAS ════════════
+function rVis(){
+  const est=getE('fvis-est'),emp=getE('fvis-emp'),veh=getE('fvis-veh');
+  let vis=S.vis_mini;
+  if(emp!=='all')vis=vis.filter(v=>v.emp===emp);
+  if(veh!=='all')vis=vis.filter(v=>v.v===veh);
+  if(est!=='all')vis=vis.filter(v=>v.e===est);
+  const tot=vis.length,ok=vis.filter(v=>v.e==='completed').length,fail=vis.filter(v=>v.e==='failed').length,pend=vis.filter(v=>v.e==='pending').length;
+  const carga=vis.reduce((a,v)=>a+(v.k||0),0);const EF=ef(ok,tot);
+  document.getElementById('mg-vis').innerHTML=`<div class="mc co"><div class="ml">Visitas</div><div class="mv c-co">${tot}</div></div><div class="mc gr"><div class="ml">Completadas</div><div class="mv c-gr">${ok}</div></div><div class="mc rd"><div class="ml">Fallidas</div><div class="mv c-rd">${fail}</div></div><div class="mc am"><div class="ml">Pendientes</div><div class="mv c-am">${pend}</div></div><div class="mc"><div class="ml">Carga</div><div class="mv">${carga.toLocaleString('es-AR')}</div></div><div class="mc bl"><div class="ml">Efectividad</div><div class="mv ${EF>=95?'c-gr':EF>=80?'c-am':'c-rd'}">${EF}%</div></div>`;
+  document.getElementById('n-vis').textContent=tot+' visitas'+(tot>500?' (mostrando 500)':'');
+  document.getElementById('tb-vis').innerHTML=vis.slice(0,500).map(v=>{const m={completed:'Completada',failed:'Fallida',pending:'Pendiente',partial:'Parcial'};const cls={completed:'bg',failed:'br',pending:'ba',partial:'bco'};return`<tr><td style="max-width:145px;overflow:hidden;text-overflow:ellipsis;font-size:11px">${v.cl||'—'}</td><td style="max-width:175px;overflow:hidden;text-overflow:ellipsis;font-size:10.5px;color:var(--text2)">${v.d||'—'}</td><td style="font-size:10.5px">${v.c||'—'}</td><td class="mono" style="font-size:10.5px">${v.v||'—'}</td><td>${etag(v.emp||'')}</td><td class="mono">${v.k||0}</td><td><span class="bx ${cls[v.e]||''}">${m[v.e]||v.e}</span></td></tr>`;}).join('');
+  dc('c-vis-pie');dc('c-vis-fail');dc('c-vis-carga');
+  mkC('c-vis-pie','doughnut',{labels:['OK','Fallidas','Pendientes'],datasets:[{data:[ok,fail,pend],backgroundColor:['#22C55E','#F87171','#FBBF24'],borderWidth:0}]},{plugins:{legend:{display:true,position:'bottom',labels:{boxWidth:10,font:{size:10}}}},cutout:'60%'});
+  const fbE={};vis.filter(v=>v.e==='failed').forEach(v=>{fbE[v.emp||'?']=(fbE[v.emp||'?']||0)+1;});
+  mkC('c-vis-fail','bar',{labels:Object.keys(fbE),datasets:[{label:'F',data:Object.values(fbE),backgroundColor:Object.keys(fbE).map(e=>ecol(e)),borderRadius:3}]},{scales:{x:{ticks:{autoSkip:false,maxRotation:30}},y:{beginAtZero:true}}});
+  const cbE={};vis.filter(v=>v.e==='completed').forEach(v=>{cbE[v.emp||'?']=(cbE[v.emp||'?']||0)+(v.k||0);});
+  const cbK=EMPS_ORDER.filter(e=>cbE[e]);
+  mkC('c-vis-carga','bar',{labels:cbK,datasets:[{label:'U',data:cbK.map(e=>cbE[e]||0),backgroundColor:cbK.map(e=>ecol(e)),borderRadius:3}]},{scales:{x:{ticks:{autoSkip:false,maxRotation:30}},y:{beginAtZero:true}}});
+}
+
+// ════════════ RENDER TARIFAS ════════════
+function rTarFull(){rTarRes();rTarDet();buildTarCal();}
+
+function rTarRes(){
+  const d=S.viajes.filter(v=>v.empresa!=='Propio');
+  const TC=d.filter(v=>v.tarifa==='Completa').length,TM=d.filter(v=>v.tarifa==='Media').length,TS=d.filter(v=>v.tarifa==='Sin datos').length;
+  document.getElementById('mg-tar').innerHTML=`<div class="mc co"><div class="ml">Total viajes</div><div class="mv c-co">${d.length}</div></div><div class="mc gr"><div class="ml">T. Completa</div><div class="mv">${TC}</div><div class="ms">06–12hs · ≥4hs</div></div><div class="mc am"><div class="ml">T. Media</div><div class="mv c-am">${TM}</div><div class="ms">+13hs o &lt;4hs</div></div><div class="mc"><div class="ml">Sin datos</div><div class="mv">${TS}</div></div><div class="mc bl"><div class="ml">% Completa</div><div class="mv c-bl">${Math.round(TC/d.length*100)}%</div></div><div class="mc"><div class="ml">% Media</div><div class="mv">${Math.round(TM/d.length*100)}%</div></div>`;
+  const byEC={},byEM={};d.forEach(v=>{if(v.tarifa==='Completa')byEC[v.empresa]=(byEC[v.empresa]||0)+1;else if(v.tarifa==='Media')byEM[v.empresa]=(byEM[v.empresa]||0)+1;});
+  const emps=EMPS_ORDER.filter(e=>d.some(v=>v.empresa===e));
+  dc('c-tar-emp');mkC('c-tar-emp','bar',{labels:emps,datasets:[{label:'Completa',data:emps.map(e=>byEC[e]||0),backgroundColor:'#34D399',borderRadius:3,stack:'s'},{label:'Media',data:emps.map(e=>byEM[e]||0),backgroundColor:'#FBBF24',borderRadius:3,stack:'s'}]},{plugins:{legend:{display:true,labels:{boxWidth:10,font:{size:10}}}},scales:{x:{stacked:true,ticks:{autoSkip:false,maxRotation:30}},y:{stacked:true,beginAtZero:true,ticks:{stepSize:1}}}});
+  const byCC={},byCM={};d.forEach(v=>{if(v.tarifa==='Completa')byCC[v.conductor]=(byCC[v.conductor]||0)+1;else if(v.tarifa==='Media')byCM[v.conductor]=(byCM[v.conductor]||0)+1;});
+  const conds=[...new Set(d.map(v=>v.conductor))].sort();
+  dc('c-tar-cond');mkC('c-tar-cond','bar',{labels:conds,datasets:[{label:'Completa',data:conds.map(c=>byCC[c]||0),backgroundColor:'#34D399',borderRadius:3,stack:'s'},{label:'Media',data:conds.map(c=>byCM[c]||0),backgroundColor:'#FBBF24',borderRadius:3,stack:'s'}]},{plugins:{legend:{display:true,labels:{boxWidth:10,font:{size:10}}}},scales:{x:{stacked:true,ticks:{autoSkip:false,maxRotation:45,font:{size:9}}},y:{stacked:true,beginAtZero:true,ticks:{stepSize:1}}}});
+  const qmap={};d.forEach(v=>{const k=v.empresa+'|'+v.quincena;if(!qmap[k])qmap[k]={emp:v.empresa,q:v.quincena,conds:new Set(),viajes:0,c:0,m:0,s:0};qmap[k].conds.add(v.conductor);qmap[k].viajes++;if(v.tarifa==='Completa')qmap[k].c++;else if(v.tarifa==='Media')qmap[k].m++;else qmap[k].s++;});
+  document.getElementById('tb-tar-res').innerHTML=Object.values(qmap).sort((a,b)=>a.emp.localeCompare(b.emp)||a.q.localeCompare(b.q)).map(r=>`<tr><td>${etag(r.emp)}</td><td class="mono" style="font-size:11px">${r.q}</td><td style="font-size:10px">${[...r.conds].join(', ')}</td><td><b>${r.viajes}</b></td><td><span class="tar-c">${r.c}</span></td><td><span class="tar-m">${r.m}</span></td><td><span class="tar-s">${r.s||'—'}</span></td></tr>`).join('');
+}
+
+function rTarDet(){
+  const emp=getE('ft-emp'),q=getQ('ft-q'),tar=getE('ft-tar');
+  let d=S.viajes.filter(v=>v.empresa!=='Propio');
+  if(emp!=='all')d=d.filter(v=>v.empresa===emp);
+  if(q!=='all')d=d.filter(v=>v.quincena===q);
+  if(tar!=='all')d=d.filter(v=>v.tarifa===tar);
+  document.getElementById('n-tar').textContent=d.length+' viajes';
+  document.getElementById('tb-tar-det').innerHTML=d.map(v=>{const E=ef(v.vis_ok,v.vis_total);const rc=v.tarifa==='Completa'?'row-c':v.tarifa==='Media'?'row-m':'';return`<tr class="${rc}"><td style="white-space:nowrap;font-size:11px"><b>${v.fecha}</b></td><td>${etag(v.empresa)}</td><td style="font-size:10.5px"><b>${v.conductor}</b></td><td class="mono" style="font-size:10.5px">${v.vehiculo}</td><td class="mono">${v.ini_prog||'—'}</td><td class="mono"><b>${v.ini||'—'}</b></td><td class="mono">${v.fin||'—'}</td><td class="mono c-te"><b>${minToH(v.dur_min)}</b></td><td class="mono">${v.km_plan>0?v.km_plan+' km':'—'}</td><td><span class="bx bb">${v.vis_total||'—'}</span></td><td><span class="bx bg">${v.vis_ok}</span></td><td><span class="bx ${v.vis_fail>0?'br':''}">${v.vis_fail||'—'}</span></td><td>${tarBx(v.tarifa)}</td></tr>`;}).join('');
+}
+
+function buildTarCal(){
+  const dias={};S.viajes.filter(v=>v.empresa!=='Propio').forEach(v=>{if(!dias[v.fecha])dias[v.fecha]={};if(!dias[v.fecha][v.empresa])dias[v.fecha][v.empresa]={c:[],m:[]};if(v.tarifa==='Completa')dias[v.fecha][v.empresa].c.push(v.conductor);else if(v.tarifa==='Media')dias[v.fecha][v.empresa].m.push(v.conductor);});
+  const fechas=sortFechas(Object.keys(dias));
+  const emps=EMPS_ORDER.filter(e=>Object.values(dias).some(d=>d[e]));
+  let html=`<table style="border-collapse:separate;border-spacing:2px;font-size:10.5px"><tr><td style="width:140px;padding-right:8px"></td>`;
+  fechas.forEach(f=>html+=`<td style="text-align:center;font-size:8px;color:var(--text3);writing-mode:vertical-rl;transform:rotate(180deg);height:44px;vertical-align:bottom">${f.substring(0,5)}</td>`);
+  html+='</tr>';
+  emps.forEach(e=>{
+    html+=`<tr><td style="padding-right:8px;padding-bottom:3px;white-space:nowrap">${etag(e)}</td>`;
+    fechas.forEach(f=>{
+      const d=dias[f]?.[e];
+      if(!d){html+=`<td><div style="width:15px;height:15px;border-radius:2px;background:var(--border);opacity:.3"></div></td>`;return;}
+      const tip=`${f}: ${d.c.length}C [${d.c.join(',')}] / ${d.m.length}M [${d.m.join(',')}]`;
+      let cell='';
+      if(d.c.length)cell+=`<span style="background:#D1FAE5;color:#065F46;font-size:8.5px;padding:1px 3px;border-radius:2px;font-weight:700;display:inline-block">${d.c.length}C</span>`;
+      if(d.m.length)cell+=`<span style="background:#FEF3C7;color:#92400E;font-size:8.5px;padding:1px 3px;border-radius:2px;font-weight:700;display:inline-block">${d.m.length}M</span>`;
+      html+=`<td title="${tip.replace(/"/g,"'")}" style="cursor:default;vertical-align:middle;white-space:nowrap">${cell}</td>`;
+    });
+    html+='</tr>';
+  });
+  html+=`</table><div style="margin-top:8px;font-size:10px;color:var(--text3)"><b>C</b> = Tarifa Completa (06–12hs, ≥4hs) · <b>M</b> = Tarifa Media (+13hs o &lt;4hs) · Hover para ver conductores</div>`;
+  document.getElementById('tar-cal').innerHTML=html;
+}
+
+// ════════════ RENDER MEJORAS ════════════
+function rMejoras(){
+  const multi=S.cli_multi;const rank=S.cli_rank;const fail=S.cli_fail;
+  const viExtra=multi.reduce((a,r)=>a+r.n-1,0);
+  const casosMulti=multi.filter(r=>{const vehs=[...new Set(r.vehs)];return vehs.length>1;}).length;
+  const cli0=rank.filter(r=>r.efect===0).length;
+  const cli100=rank.filter(r=>r.efect===100).length;
+  document.getElementById('mg-mej').innerHTML=`<div class="mc am"><div class="ml">Clientes 2+/día</div><div class="mv c-am">${multi.length}</div><div class="ms">casos en el período</div></div><div class="mc rd"><div class="ml">Visitas extra</div><div class="mv c-rd">${viExtra}</div><div class="ms">a potencialmente consolidar</div></div><div class="mc"><div class="ml">Multi-vehículo mismo día</div><div class="mv">${casosMulti}</div></div><div class="mc gr"><div class="ml">Clientes 100%</div><div class="mv c-gr">${cli100}</div></div><div class="mc rd"><div class="ml">Clientes 0%</div><div class="mv c-rd">${cli0}</div></div><div class="mc co"><div class="ml">Total clientes únicos</div><div class="mv c-co">${rank.length}</div></div>`;
+
+  // Atrasos desde vis_mini
+  const atrEmp={};S.vis_mini.filter(v=>v.atr>0).forEach(v=>{if(!atrEmp[v.emp])atrEmp[v.emp]={s:0,n:0};atrEmp[v.emp].s+=v.atr;atrEmp[v.emp].n++;});
+  const atrVeh={};S.vis_mini.filter(v=>v.atr>0).forEach(v=>{if(!atrVeh[v.v])atrVeh[v.v]={s:0,n:0};atrVeh[v.v].s+=v.atr;atrVeh[v.v].n++;});
+  const empK=Object.keys(atrEmp);const vehK=Object.keys(atrVeh);
+  dc('c-mej-ae');dc('c-mej-av');dc('c-mej-ts');
+  if(empK.length){mkC('c-mej-ae','bar',{labels:empK,datasets:[{label:'Min',data:empK.map(e=>Math.round(atrEmp[e].s/atrEmp[e].n)),backgroundColor:empK.map(e=>{const v=Math.round(atrEmp[e].s/atrEmp[e].n);return v>250?'#F87171':v>150?'#FBBF24':'#34D399';}),borderRadius:4}]},{scales:{x:{ticks:{autoSkip:false,maxRotation:35}},y:{beginAtZero:true,title:{display:true,text:'minutos'}}}});}
+  if(vehK.length){mkC('c-mej-av','bar',{labels:vehK,datasets:[{label:'Min',data:vehK.map(v=>Math.round(atrVeh[v].s/atrVeh[v].n)),backgroundColor:vehK.map(v=>{const val=Math.round(atrVeh[v].s/atrVeh[v].n);return val>350?'#F87171':val>200?'#FBBF24':'#34D399';}),borderRadius:4}]},{scales:{x:{ticks:{autoSkip:false,maxRotation:35}},y:{beginAtZero:true,title:{display:true,text:'minutos'}}}});}
+
+  // Multi día
+  document.getElementById('n-multi').textContent=multi.length+' casos · '+viExtra+' visitas extra';
+  document.getElementById('tb-multi').innerHTML=multi.map(r=>{const vu=[...new Set(r.vehs)];const mVeh=vu.length>1;const hFail=r.estados.some(e=>e==='failed');let imp='';if(mVeh)imp+=`<span class="bx br" style="margin-right:2px">Multi-vehículo</span>`;if(hFail)imp+=`<span class="bx ba">Con falla</span>`;if(!imp)imp='<span class="bx bg">Solo volumen</span>';const estStr=r.estados.map(e=>{const m={completed:'✓',failed:'✗',pending:'⏳'};const cl={completed:'c-gr',failed:'c-rd',pending:'c-am'};return`<span class="${cl[e]||''}">${m[e]||e}</span>`;}).join(' ');return`<tr style="${mVeh?'background:#FFFBF0':hFail?'background:#FEF8F8':''}"><td style="font-size:11px;max-width:155px;overflow:hidden;text-overflow:ellipsis"><b>${r.nombre}</b></td><td class="mono" style="font-size:11px">${r.fecha}</td><td><span class="bx ${r.n>=3?'br':'ba'}">${r.n}x</span></td><td style="font-size:10.5px">${vu.join(', ')}</td><td style="font-size:10.5px">${[...new Set(r.conds)].join(', ')}</td><td class="mono">${r.carga||'—'}</td><td>${estStr}</td><td>${imp}</td></tr>`;}).join('');
+
+  // Ranking
+  document.getElementById('n-crank').textContent='Top '+rank.length+' clientes';
+  document.getElementById('tb-crank').innerHTML=rank.map((r,i)=>{const E=r.efect;return`<tr><td style="color:var(--text3);font-size:11px">${i===0?'🥇':i===1?'🥈':i===2?'🥉':'#'+(i+1)}</td><td style="font-size:11px;max-width:155px;overflow:hidden;text-overflow:ellipsis"><b>${r.nombre}</b></td><td><b>${r.visitas}</b></td><td>${r.dias}</td><td class="mono"><b>${r.vxd}</b></td><td><span class="bx bb">${r.vehs}</span></td><td class="mono">${r.carga.toLocaleString('es-AR')}</td><td><span class="bx bg">${r.ok}</span></td><td><span class="bx ${r.fail>0?'br':''}">${r.fail||'—'}</span></td><td><span class="bx ${E>=95?'bg':E>=80?'ba':'br'}">${E}%</span></td></tr>`;}).join('');
+
+  dc('c-mej-top');dc('c-mej-vxd');
+  const t15=rank.slice(0,15);
+  mkC('c-mej-top','bar',{labels:t15.map(r=>r.nombre.substring(0,22)),datasets:[{label:'OK',data:t15.map(r=>r.ok),backgroundColor:'#34D399',borderRadius:3,stack:'s'},{label:'Fallidas',data:t15.map(r=>r.fail),backgroundColor:'#F87171',borderRadius:3,stack:'s'},{label:'Pend.',data:t15.map(r=>r.pend),backgroundColor:'#FBBF24',borderRadius:3,stack:'s'}]},{plugins:{legend:{display:true,labels:{boxWidth:10,font:{size:10}}}},scales:{x:{stacked:true,ticks:{autoSkip:false,maxRotation:55,font:{size:9}}},y:{stacked:true,beginAtZero:true}}});
+  const tvxd=rank.filter(r=>r.dias>=3).sort((a,b)=>b.vxd-a.vxd).slice(0,15);
+  mkC('c-mej-vxd','bar',{labels:tvxd.map(r=>r.nombre.substring(0,22)),datasets:[{label:'V/día',data:tvxd.map(r=>r.vxd),backgroundColor:tvxd.map(r=>r.vxd>=2?'#F87171':r.vxd>=1.5?'#FBBF24':'#60A5FA'),borderRadius:4}]},{scales:{x:{ticks:{autoSkip:false,maxRotation:55,font:{size:9}}},y:{beginAtZero:true,title:{display:true,text:'visitas/día visitado'}}}});
+
+  document.getElementById('n-cfail').textContent=fail.length+' clientes con fallidas';
+  document.getElementById('tb-cfail').innerHTML=fail.map(r=>{const E=r.efect;return`<tr style="${E===0?'background:#FEF0F0':''}"><td style="font-size:11px;max-width:160px;overflow:hidden;text-overflow:ellipsis"><b>${r.nombre}</b></td><td><b style="color:var(--red)">${r.fail}</b></td><td>${r.visitas}</td><td><span class="bx bg">${r.ok}</span></td><td><span class="bx ${r.pend>0?'ba':''}">${r.pend||'—'}</span></td><td class="mono">${r.carga.toLocaleString('es-AR')}</td><td>${r.dias}</td><td><span class="bx ${E===0?'br':E>=80?'ba':'br'}">${E}%</span></td></tr>`;}).join('');
+
+  dc('c-mej-fail');dc('c-mej-tasa');
+  const tf=fail.slice(0,12);
+  mkC('c-mej-fail','bar',{labels:tf.map(r=>r.nombre.substring(0,20)),datasets:[{label:'Fallidas',data:tf.map(r=>r.fail),backgroundColor:'#F87171',borderRadius:3,stack:'s'},{label:'OK',data:tf.map(r=>r.ok),backgroundColor:'#34D399',borderRadius:3,stack:'s'}]},{plugins:{legend:{display:true,labels:{boxWidth:10,font:{size:10}}}},scales:{x:{stacked:true,ticks:{autoSkip:false,maxRotation:50,font:{size:9}}},y:{stacked:true,beginAtZero:true}}});
+  const ttas=fail.filter(r=>r.visitas>=2).sort((a,b)=>a.efect-b.efect).slice(0,12);
+  mkC('c-mej-tasa','bar',{labels:ttas.map(r=>r.nombre.substring(0,20)),datasets:[{label:'%',data:ttas.map(r=>r.efect),backgroundColor:ttas.map(r=>r.efect===0?'#F87171':r.efect<60?'#F97171':r.efect<80?'#FBBF24':'#34D399'),borderRadius:4}]},{scales:{x:{ticks:{autoSkip:false,maxRotation:50,font:{size:9}}},y:{beginAtZero:true,max:100}}});
+}
+
+// ════════════ HEATMAP ════════════
+function buildHeatmap(id,data){
+  const dias={};data.forEach(v=>{if(!dias[v.fecha])dias[v.fecha]={};if(!dias[v.fecha][v.empresa])dias[v.fecha][v.empresa]=[];dias[v.fecha][v.empresa].push(v.vehiculo);});
+  const fechas=sortFechas(Object.keys(dias));
+  const emps=EMPS_ORDER.filter(e=>data.some(v=>v.empresa===e));
+  let html=`<div class="tc"><div class="th"><span class="tt">Actividad por empresa · por día</span><span class="tn">Intensidad = nro vehículos · Hover = patentes</span></div><div style="padding:12px 14px;overflow-x:auto"><table style="border-collapse:separate;border-spacing:2px;font-size:10px"><tr><td style="width:140px"></td>`;
+  fechas.forEach(f=>html+=`<td style="text-align:center;font-size:8px;color:var(--text3);writing-mode:vertical-rl;transform:rotate(180deg);height:40px;vertical-align:bottom">${f.substring(0,5)}</td>`);
+  html+='</tr>';
+  emps.forEach(e=>{
+    const i=ei(e)%7;html+=`<tr><td style="padding-right:8px;padding-bottom:2px;white-space:nowrap">${etag(e)}</td>`;
+    fechas.forEach(f=>{const vs=dias[f]?.[e]||[];const cnt=vs.length;const op=cnt===0?.06:Math.min(.15+cnt*.22,1);const tip=cnt>0?`${f}: ${cnt} veh. (${[...new Set(vs)].join(', ')})`:`${f}: sin actividad`;html+=`<td><div class="hcell" data-tip="${tip.replace(/"/g,"'")}" style="background:${ECF[i]};opacity:${op}"></div></td>`;});
+    html+='</tr>';});
+  html+=`</table></div></div>`;
+  document.getElementById(id).innerHTML=html;
+}
+
+// ════════════ DEMO DATA ════════════
+function cargarDemo(){
+  const conds=Object.keys(CE);
+  const vehs=['Sprinter ZECAT','Sprinter I','Sprinter II','Sprinter III','Sprinter IV','Sprinter V','Utilitario I','Utilitario II','Chasis'];
+  const rd=[],vd=[];
+  const fechas=[];for(let i=0;i<25;i++){const d=new Date(2025,3,2+i);if(d.getDay()!==0)fechas.push(d);}
+  conds.forEach((cond,ci)=>{
+    const veh=vehs[ci%vehs.length];
+    fechas.forEach((d,fi)=>{
+      if(Math.random()>.38){
+        const f=d.toLocaleDateString('es-AR');
+        const id='R-'+String(ci*40+fi+1).padStart(4,'0');
+        const kmP=Math.round(40+Math.random()*160);
+        const pts=Math.round(5+Math.random()*18);
+        const hIni=Math.round(360+Math.random()*420);
+        const dur=Math.round(90+Math.random()*360);
+        const hFin=hIni+dur;
+        rd.push({'Conductor':cond,'Nombre de vehículo':veh,'Fecha':f,'ID de ruta':id,'Km planificados':kmP,'Kilómetros reales':Math.round(kmP*0.9),'Visitas totales':pts,'Visitas completadas':Math.round(pts*(0.82+Math.random()*0.18)),'Visitas fallidas':Math.round(pts*Math.random()*0.12),'Visitas pendientes':0,'Hora de inicio de ruta':`${String(Math.floor(hIni/60)).padStart(2,'0')}:${String(hIni%60).padStart(2,'0')}:00`,'Hora de fin de ruta':`${String(Math.floor(hFin/60)).padStart(2,'0')}:${String(hFin%60).padStart(2,'0')}:00`,'Hora de inicio programada':`${String(Math.floor(hIni/60)).padStart(2,'0')}:00:00`,'Duración':`${String(Math.floor(dur/60)).padStart(2,'0')}:${String(dur%60).padStart(2,'0')}:00`,'Nombre de plan':'Plan demo'});
+        for(let v=0;v<pts;v++){const ok=Math.random()>.15;vd.push({'ID de ruta':id,'Conductor':cond,'Vehículo':veh,'Título':'Cliente '+String.fromCharCode(65+ci)+(v+1),'Dirección':'Av. '+['Corrientes','San Martín','Belgrano','Rivadavia'][fi%4]+' '+(100+v*11)+', Buenos Aires','Estado':ok?'completed':'failed','Carga':Math.round(Math.random()*500),'Fecha planificada':f,'Atraso':ok?`00:${String(Math.round(Math.random()*180)).padStart(2,'0')}:00`:'00:00:00'});}
+      }
+    });
+  });
+  S.rutas=rd;S.visitas=vd;
+  ['r','v'].forEach(s=>{const t=s==='r'?'rutas':'visitas';document.getElementById('fn-'+s).textContent='demo_'+t+'.xlsx';document.getElementById('fs-'+s).textContent=S[t].length+' registros';document.getElementById('fi-'+s).classList.add('show');document.getElementById('drop-'+s).classList.add('done');document.getElementById('fc-'+s).style.display='block';document.getElementById('ct-'+s).innerHTML=Object.keys(S[t][0]||{}).map(c=>`<span class="ctag">${c}</span>`).join('');});
+  document.getElementById('btn-go').disabled=false;
+  procesar();
+}
+
+
+// ════════════ DATOS ZONAS (estáticos de abril 2026) ════════════
+const Z_CZ=[{"zona":"CABA Centro","Título":"Branding Merchandising S.A.","visitas":7,"ok":7,"fail":0,"carga":116,"dirs_u":3,"efect":100},{"zona":"CABA Centro","Título":"Brindexa  S.R.L.","visitas":5,"ok":5,"fail":0,"carga":1594,"dirs_u":3,"efect":100},{"zona":"CABA Centro","Título":"GRUPO FARO S. A. S.","visitas":4,"ok":3,"fail":0,"carga":10,"dirs_u":4,"efect":75},{"zona":"CABA Centro","Título":"Net Print Solution SA","visitas":4,"ok":4,"fail":0,"carga":1870,"dirs_u":1,"efect":100},{"zona":"CABA Centro","Título":"De Lazzari Pablo Enrique","visitas":3,"ok":3,"fail":0,"carga":102,"dirs_u":3,"efect":100},{"zona":"CABA Norte","Título":"GRUPO FARO S. A. S.","visitas":10,"ok":10,"fail":0,"carga":207,"dirs_u":7,"efect":100},{"zona":"CABA Norte","Título":"Schijman Daniela Viviana","visitas":10,"ok":10,"fail":0,"carga":6006,"dirs_u":2,"efect":100},{"zona":"CABA Norte","Título":"MHGG SRL","visitas":8,"ok":8,"fail":0,"carga":402,"dirs_u":2,"efect":100},{"zona":"CABA Norte","Título":"Ortega Guemberena SA","visitas":8,"ok":7,"fail":0,"carga":1000,"dirs_u":4,"efect":88},{"zona":"CABA Norte","Título":"Farfalla Promocionales SRL","visitas":6,"ok":6,"fail":0,"carga":5847,"dirs_u":3,"efect":100},{"zona":"CABA Oeste","Título":"Logo Group S.A.","visitas":17,"ok":17,"fail":0,"carga":9745,"dirs_u":2,"efect":100},{"zona":"CABA Oeste","Título":"Grupo Adal SRL","visitas":13,"ok":13,"fail":0,"carga":5157,"dirs_u":2,"efect":100},{"zona":"CABA Oeste","Título":"Ortega Guemberena SA","visitas":12,"ok":12,"fail":0,"carga":1,"dirs_u":3,"efect":100},{"zona":"CABA Oeste","Título":"GM Promociones S.A.","visitas":11,"ok":11,"fail":0,"carga":1081,"dirs_u":2,"efect":100},{"zona":"CABA Oeste","Título":"La caja business SRL","visitas":11,"ok":11,"fail":0,"carga":1658,"dirs_u":2,"efect":100},{"zona":"CABA Otros","Título":"Sanchez Ruiz Martin Alejandro","visitas":8,"ok":8,"fail":0,"carga":0,"dirs_u":2,"efect":100},{"zona":"CABA Otros","Título":"Toma Retail S.R.L","visitas":6,"ok":6,"fail":0,"carga":0,"dirs_u":1,"efect":100},{"zona":"CABA Otros","Título":"ANDRE JUAN PABLO","visitas":5,"ok":5,"fail":0,"carga":0,"dirs_u":1,"efect":100},{"zona":"CABA Otros","Título":"Bordafax SRL","visitas":5,"ok":3,"fail":1,"carga":280,"dirs_u":2,"efect":60},{"zona":"CABA Otros","Título":"PIC INSUMOS S.A.S.","visitas":5,"ok":5,"fail":0,"carga":1,"dirs_u":3,"efect":100},{"zona":"CABA Sur","Título":"MHGG SRL","visitas":21,"ok":21,"fail":0,"carga":4194,"dirs_u":3,"efect":100},{"zona":"CABA Sur","Título":"Logo Group S.A.","visitas":13,"ok":13,"fail":0,"carga":0,"dirs_u":1,"efect":100},{"zona":"CABA Sur","Título":"Komuk  SRL","visitas":10,"ok":10,"fail":0,"carga":1849,"dirs_u":2,"efect":100},{"zona":"CABA Sur","Título":"Andina Soluciones SA","visitas":6,"ok":6,"fail":0,"carga":945,"dirs_u":2,"efect":100},{"zona":"CABA Sur","Título":"MHGG SRL_ 1","visitas":3,"ok":3,"fail":0,"carga":9,"dirs_u":1,"efect":100},{"zona":"GBA Norte","Título":"Soldavini Luciano Nicolas","visitas":15,"ok":14,"fail":1,"carga":2316,"dirs_u":3,"efect":93},{"zona":"GBA Norte","Título":"Creando Mil Ideas SA","visitas":8,"ok":7,"fail":1,"carga":542,"dirs_u":3,"efect":88},{"zona":"GBA Norte","Título":"Findall S.R.L.","visitas":8,"ok":8,"fail":0,"carga":200,"dirs_u":4,"efect":100},{"zona":"GBA Norte","Título":"Bastion Event Management SAS","visitas":7,"ok":7,"fail":0,"carga":550,"dirs_u":4,"efect":100},{"zona":"GBA Norte","Título":"INDUSTRIA GEO S A","visitas":7,"ok":7,"fail":0,"carga":1207,"dirs_u":2,"efect":100},{"zona":"GBA Norte Lejano","Título":"LA MAQUINOLA SRL","visitas":7,"ok":7,"fail":0,"carga":45,"dirs_u":3,"efect":100},{"zona":"GBA Norte Lejano","Título":"Atagande SRL","visitas":1,"ok":1,"fail":0,"carga":0,"dirs_u":1,"efect":100},{"zona":"GBA Norte Lejano","Título":"Goods Comunica SRL","visitas":1,"ok":1,"fail":0,"carga":0,"dirs_u":1,"efect":100},{"zona":"GBA Norte Lejano","Título":"Merchandising Casano S.R.L","visitas":1,"ok":1,"fail":0,"carga":0,"dirs_u":1,"efect":100},{"zona":"GBA Norte Lejano","Título":"Trevisan Roberto Omar","visitas":1,"ok":1,"fail":0,"carga":0,"dirs_u":1,"efect":100},{"zona":"GBA Oeste","Título":"Agencaissa SA","visitas":4,"ok":4,"fail":0,"carga":0,"dirs_u":2,"efect":100},{"zona":"GBA Oeste","Título":"BRANDGALLERY SRL","visitas":3,"ok":3,"fail":0,"carga":1750,"dirs_u":1,"efect":100},{"zona":"GBA Oeste","Título":"Marketpro SRL","visitas":3,"ok":2,"fail":1,"carga":200,"dirs_u":3,"efect":67},{"zona":"GBA Oeste","Título":"Ramirez Maria Marcela","visitas":2,"ok":1,"fail":0,"carga":3,"dirs_u":2,"efect":50},{"zona":"GBA Oeste","Título":"Agencaissa SA_ 1","visitas":1,"ok":1,"fail":0,"carga":1,"dirs_u":1,"efect":100},{"zona":"GBA Sur","Título":"ORTOLANI BUISAN CANDELA ROSARIO","visitas":4,"ok":4,"fail":0,"carga":163,"dirs_u":3,"efect":100},{"zona":"GBA Sur","Título":"Garcia Gabriel Alejandro","visitas":3,"ok":3,"fail":0,"carga":101,"dirs_u":2,"efect":100},{"zona":"GBA Sur","Título":"MHGG SRL","visitas":3,"ok":3,"fail":0,"carga":500,"dirs_u":3,"efect":100},{"zona":"GBA Sur","Título":"Blanco Acevedo Cristela Natali","visitas":2,"ok":2,"fail":0,"carga":400,"dirs_u":1,"efect":100},{"zona":"GBA Sur","Título":"Branding Merchandising S.A.","visitas":2,"ok":2,"fail":0,"carga":150,"dirs_u":2,"efect":100},{"zona":"Otros / Interior","Título":"Seize Market SA","visitas":18,"ok":18,"fail":0,"carga":5385,"dirs_u":2,"efect":100},{"zona":"Otros / Interior","Título":"SIMPLE STORE S.A.S","visitas":10,"ok":10,"fail":0,"carga":578,"dirs_u":6,"efect":100},{"zona":"Otros / Interior","Título":"Sanchez Ruiz Martin Alejandro","visitas":8,"ok":8,"fail":0,"carga":2288,"dirs_u":1,"efect":100},{"zona":"Otros / Interior","Título":"Consultora DYG SRL","visitas":7,"ok":7,"fail":0,"carga":0,"dirs_u":2,"efect":100},{"zona":"Otros / Interior","Título":"Onpromotion SRL","visitas":7,"ok":7,"fail":0,"carga":2870,"dirs_u":3,"efect":100}];
+const Z_KPIS={"total_vis":1137,"ok":1093,"fail":34,"pend":9,"carga":128275,"efect":96,"zonas_n":10,"barrios_n":170,"dirs_n":80,"zona_mas_vis":"CABA Otros","zona_mas_vis_n":269,"zona_mas_fallas":"Otros / Interior","zona_fallas_n":10,"zona_mas_carga":"CABA Oeste","zona_carga_n":35155,"zona_mejor_efect":"GBA Norte Lejano","zona_mejor_efect_pct":100,"zona_peor_efect":"GBA Oeste","zona_peor_efect_pct":94,"dir_top":"Pergamino 3751, Ciudad Autónoma de Buenos Aires, Argentina","dir_top_n":13};
+
+const Z_BARRIO=[{"barrio":"Ciudad Autónoma De Buenos Aires","zona":"CABA Otros","visitas":126,"ok":119,"fail":5,"carga":2010,"clientes_u":67,"dirs_u":80,"efect":94},{"barrio":"Munro","zona":"GBA Norte","visitas":61,"ok":60,"fail":1,"carga":6426,"clientes_u":22,"dirs_u":26,"efect":98},{"barrio":"Nueva Pompeya","zona":"CABA Oeste","visitas":55,"ok":54,"fail":1,"carga":12336,"clientes_u":13,"dirs_u":13,"efect":98},{"barrio":"Ciudad Autónoma De Buenos Aires","zona":"CABA Norte","visitas":41,"ok":41,"fail":0,"carga":151,"clientes_u":24,"dirs_u":29,"efect":100},{"barrio":"Villa Soldati","zona":"CABA Sur","visitas":34,"ok":34,"fail":0,"carga":8218,"clientes_u":17,"dirs_u":18,"efect":100},{"barrio":"Saavedra","zona":"CABA Norte","visitas":33,"ok":31,"fail":1,"carga":2087,"clientes_u":17,"dirs_u":13,"efect":94},{"barrio":"Ciudad Autónoma De Buenos Aires","zona":"CABA Oeste","visitas":32,"ok":32,"fail":0,"carga":136,"clientes_u":16,"dirs_u":8,"efect":100},{"barrio":"Ciudad Autónoma De Buenos Aires","zona":"CABA Sur","visitas":32,"ok":32,"fail":0,"carga":0,"clientes_u":11,"dirs_u":6,"efect":100},{"barrio":"Villa Urquiza","zona":"CABA Norte","visitas":31,"ok":31,"fail":0,"carga":785,"clientes_u":17,"dirs_u":8,"efect":100},{"barrio":"Ciudad Autónoma De Buenos Aires","zona":"CABA Centro","visitas":22,"ok":19,"fail":2,"carga":0,"clientes_u":20,"dirs_u":20,"efect":86},{"barrio":"Barracas","zona":"CABA Sur","visitas":22,"ok":22,"fail":0,"carga":5677,"clientes_u":7,"dirs_u":7,"efect":100},{"barrio":"Belgrano","zona":"CABA Norte","visitas":19,"ok":19,"fail":0,"carga":7266,"clientes_u":7,"dirs_u":8,"efect":100},{"barrio":"Parque Patricios","zona":"CABA Oeste","visitas":19,"ok":19,"fail":0,"carga":9745,"clientes_u":2,"dirs_u":3,"efect":100},{"barrio":"Villa Santa Rita","zona":"Otros / Interior","visitas":18,"ok":18,"fail":0,"carga":5385,"clientes_u":1,"dirs_u":2,"efect":100},{"barrio":"Olivos","zona":"GBA Norte","visitas":17,"ok":16,"fail":1,"carga":200,"clientes_u":10,"dirs_u":10,"efect":94},{"barrio":"San Isidro","zona":"GBA Norte","visitas":16,"ok":15,"fail":1,"carga":397,"clientes_u":8,"dirs_u":10,"efect":94},{"barrio":"Caballito","zona":"CABA Oeste","visitas":16,"ok":15,"fail":1,"carga":5518,"clientes_u":11,"dirs_u":12,"efect":94},{"barrio":"Palermo","zona":"CABA Norte","visitas":15,"ok":13,"fail":2,"carga":2129,"clientes_u":10,"dirs_u":12,"efect":87},{"barrio":"B1610 Ricardo Rojas","zona":"GBA Norte","visitas":14,"ok":13,"fail":1,"carga":784,"clientes_u":9,"dirs_u":4,"efect":93},{"barrio":"Florida","zona":"GBA Norte","visitas":13,"ok":11,"fail":2,"carga":803,"clientes_u":4,"dirs_u":6,"efect":85},{"barrio":"Boulogne Sur Mer","zona":"GBA Norte","visitas":13,"ok":13,"fail":0,"carga":2319,"clientes_u":7,"dirs_u":7,"efect":100},{"barrio":"Villa Crespo","zona":"CABA Norte","visitas":13,"ok":13,"fail":0,"carga":863,"clientes_u":9,"dirs_u":10,"efect":100},{"barrio":"Villa Del Parque","zona":"CABA Norte","visitas":13,"ok":12,"fail":1,"carga":3289,"clientes_u":3,"dirs_u":6,"efect":92},{"barrio":"Córdoba","zona":"Otros / Interior","visitas":12,"ok":12,"fail":0,"carga":3083,"clientes_u":2,"dirs_u":2,"efect":100},{"barrio":"San Nicolas","zona":"CABA Centro","visitas":10,"ok":10,"fail":0,"carga":4350,"clientes_u":5,"dirs_u":5,"efect":100},{"barrio":"Villa Ballester","zona":"Otros / Interior","visitas":10,"ok":10,"fail":0,"carga":529,"clientes_u":4,"dirs_u":4,"efect":100},{"barrio":"Tortuguitas","zona":"Otros / Interior","visitas":10,"ok":10,"fail":0,"carga":2871,"clientes_u":3,"dirs_u":6,"efect":100},{"barrio":"Martínez","zona":"GBA Norte","visitas":10,"ok":10,"fail":0,"carga":0,"clientes_u":10,"dirs_u":4,"efect":100},{"barrio":"Recoleta","zona":"CABA Norte","visitas":10,"ok":9,"fail":1,"carga":2344,"clientes_u":6,"dirs_u":7,"efect":90},{"barrio":"Abn","zona":"Otros / Interior","visitas":10,"ok":10,"fail":0,"carga":0,"clientes_u":3,"dirs_u":3,"efect":100},{"barrio":"Béccar","zona":"Otros / Interior","visitas":10,"ok":8,"fail":2,"carga":0,"clientes_u":6,"dirs_u":5,"efect":80},{"barrio":"Vicente López","zona":"Otros / Interior","visitas":9,"ok":7,"fail":2,"carga":0,"clientes_u":5,"dirs_u":6,"efect":78},{"barrio":"Martinez","zona":"GBA Norte","visitas":9,"ok":9,"fail":0,"carga":259,"clientes_u":5,"dirs_u":6,"efect":100},{"barrio":"Puerto Madero","zona":"CABA Centro","visitas":9,"ok":9,"fail":0,"carga":349,"clientes_u":4,"dirs_u":6,"efect":100},{"barrio":"Villa Devoto","zona":"CABA Norte","visitas":9,"ok":9,"fail":0,"carga":2234,"clientes_u":5,"dirs_u":4,"efect":100},{"barrio":"Pilar","zona":"GBA Norte Lejano","visitas":9,"ok":9,"fail":0,"carga":45,"clientes_u":3,"dirs_u":5,"efect":100},{"barrio":"La Paternal","zona":"Otros / Interior","visitas":8,"ok":8,"fail":0,"carga":1078,"clientes_u":4,"dirs_u":4,"efect":100},{"barrio":"Ricardo Rojas","zona":"GBA Norte","visitas":8,"ok":6,"fail":1,"carga":60,"clientes_u":7,"dirs_u":2,"efect":75},{"barrio":"Florida Oeste","zona":"GBA Norte","visitas":8,"ok":8,"fail":0,"carga":325,"clientes_u":3,"dirs_u":5,"efect":100},{"barrio":"Cdad. Autónoma De Buenos Aires","zona":"CABA Oeste","visitas":7,"ok":7,"fail":0,"carga":2059,"clientes_u":3,"dirs_u":3,"efect":100},{"barrio":"La Lonja","zona":"Otros / Interior","visitas":7,"ok":7,"fail":0,"carga":800,"clientes_u":3,"dirs_u":4,"efect":100},{"barrio":"Paternal","zona":"Otros / Interior","visitas":7,"ok":6,"fail":0,"carga":1403,"clientes_u":5,"dirs_u":6,"efect":86},{"barrio":"Bella Vista","zona":"Otros / Interior","visitas":6,"ok":5,"fail":1,"carga":368,"clientes_u":2,"dirs_u":3,"efect":83},{"barrio":"Hca","zona":"Otros / Interior","visitas":6,"ok":6,"fail":0,"carga":0,"clientes_u":1,"dirs_u":1,"efect":100},{"barrio":"Beccar","zona":"GBA Norte","visitas":6,"ok":6,"fail":0,"carga":112,"clientes_u":2,"dirs_u":3,"efect":100},{"barrio":"Lanus Oeste","zona":"GBA Sur","visitas":6,"ok":6,"fail":0,"carga":650,"clientes_u":4,"dirs_u":4,"efect":100},{"barrio":"Balvanera","zona":"CABA Centro","visitas":5,"ok":5,"fail":0,"carga":634,"clientes_u":2,"dirs_u":2,"efect":100},{"barrio":"El Palomar","zona":"GBA Oeste","visitas":5,"ok":5,"fail":0,"carga":1850,"clientes_u":3,"dirs_u":2,"efect":100},{"barrio":"Gonzalez Catan","zona":"Otros / Interior","visitas":5,"ok":5,"fail":0,"carga":548,"clientes_u":2,"dirs_u":2,"efect":100},{"barrio":"Rincon De Milberg","zona":"Otros / Interior","visitas":5,"ok":5,"fail":0,"carga":81,"clientes_u":2,"dirs_u":3,"efect":100},{"barrio":"Boulogne","zona":"GBA Norte","visitas":5,"ok":5,"fail":0,"carga":0,"clientes_u":2,"dirs_u":3,"efect":100},{"barrio":"Caba","zona":"CABA Otros","visitas":5,"ok":5,"fail":0,"carga":1,"clientes_u":2,"dirs_u":2,"efect":100},{"barrio":"Cdad. Autónoma De Buenos Aires","zona":"CABA Norte","visitas":5,"ok":4,"fail":0,"carga":799,"clientes_u":1,"dirs_u":1,"efect":80},{"barrio":"Chacarita","zona":"CABA Norte","visitas":5,"ok":5,"fail":0,"carga":210,"clientes_u":4,"dirs_u":2,"efect":100},{"barrio":"Castelar","zona":"GBA Oeste","visitas":5,"ok":5,"fail":0,"carga":1,"clientes_u":2,"dirs_u":3,"efect":100},{"barrio":"Villa Adelina","zona":"Otros / Interior","visitas":5,"ok":4,"fail":1,"carga":0,"clientes_u":2,"dirs_u":4,"efect":80},{"barrio":"Avellaneda","zona":"GBA Sur","visitas":4,"ok":3,"fail":0,"carga":245,"clientes_u":4,"dirs_u":4,"efect":75},{"barrio":"Banfield","zona":"GBA Sur","visitas":4,"ok":4,"fail":0,"carga":113,"clientes_u":2,"dirs_u":3,"efect":100},{"barrio":"Buenos Aires","zona":"Otros / Interior","visitas":4,"ok":4,"fail":0,"carga":845,"clientes_u":2,"dirs_u":2,"efect":100},{"barrio":"Villa De Mayo","zona":"Otros / Interior","visitas":4,"ok":2,"fail":2,"carga":5,"clientes_u":2,"dirs_u":2,"efect":50}];
+const Z_ZONA=[{"zona":"Otros / Interior","visitas":243,"ok":231,"fail":11,"pend":1,"carga":24652,"clientes_u":98,"barrios_u":83,"dirs_u":143,"efect":95,"carga_x_vis":101.4,"atraso_prom":221.0,"vis_x_dia":0.0,"tserv_prom":0.0},{"zona":"CABA Norte","visitas":216,"ok":208,"fail":6,"pend":2,"carga":28482,"clientes_u":100,"barrios_u":22,"dirs_u":121,"efect":96,"carga_x_vis":131.9,"atraso_prom":175.0,"vis_x_dia":0.0,"tserv_prom":0.0},{"zona":"GBA Norte","visitas":189,"ok":181,"fail":7,"pend":1,"carga":13112,"clientes_u":78,"barrios_u":16,"dirs_u":92,"efect":96,"carga_x_vis":69.4,"atraso_prom":193.0,"vis_x_dia":0.0,"tserv_prom":0.0},{"zona":"CABA Oeste","visitas":138,"ok":136,"fail":2,"pend":0,"carga":31965,"clientes_u":49,"barrios_u":11,"dirs_u":47,"efect":99,"carga_x_vis":231.6,"atraso_prom":202.0,"vis_x_dia":0.0,"tserv_prom":0.0},{"zona":"CABA Otros","visitas":131,"ok":124,"fail":5,"pend":2,"carga":2011,"clientes_u":67,"barrios_u":2,"dirs_u":82,"efect":95,"carga_x_vis":15.4,"atraso_prom":301.0,"vis_x_dia":0.0,"tserv_prom":0.0},{"zona":"CABA Sur","visitas":97,"ok":97,"fail":0,"pend":0,"carga":14281,"clientes_u":41,"barrios_u":9,"dirs_u":38,"efect":100,"carga_x_vis":147.2,"atraso_prom":222.0,"vis_x_dia":0.0,"tserv_prom":0.0},{"zona":"CABA Centro","visitas":55,"ok":51,"fail":2,"pend":1,"carga":5572,"clientes_u":28,"barrios_u":7,"dirs_u":42,"efect":93,"carga_x_vis":101.3,"atraso_prom":183.0,"vis_x_dia":0.0,"tserv_prom":0.0},{"zona":"GBA Sur","visitas":36,"ok":35,"fail":0,"pend":1,"carga":2431,"clientes_u":24,"barrios_u":14,"dirs_u":30,"efect":97,"carga_x_vis":67.5,"atraso_prom":152.0,"vis_x_dia":0.0,"tserv_prom":0.0},{"zona":"GBA Oeste","visitas":20,"ok":18,"fail":1,"pend":1,"carga":5724,"clientes_u":12,"barrios_u":7,"dirs_u":15,"efect":90,"carga_x_vis":286.2,"atraso_prom":248.0,"vis_x_dia":0.0,"tserv_prom":0.0},{"zona":"GBA Norte Lejano","visitas":12,"ok":12,"fail":0,"pend":0,"carga":45,"clientes_u":6,"barrios_u":4,"dirs_u":8,"efect":100,"carga_x_vis":3.8,"atraso_prom":247.0,"vis_x_dia":0.0,"tserv_prom":0.0}];
+const Z_ZONA_EMP=[{"zona":"CABA Centro","empresa":"CIT Logistica","visitas":15,"ok":14},{"zona":"CABA Centro","empresa":"Gomez Passut","visitas":10,"ok":10},{"zona":"CABA Centro","empresa":"LM Logistica","visitas":19,"ok":17},{"zona":"CABA Centro","empresa":"Rivas","visitas":5,"ok":5},{"zona":"CABA Centro","empresa":"Transporte NEF","visitas":6,"ok":5},{"zona":"CABA Norte","empresa":"CIT Logistica","visitas":2,"ok":2},{"zona":"CABA Norte","empresa":"Cacavielo Fernando","visitas":7,"ok":5},{"zona":"CABA Norte","empresa":"Gomez Passut","visitas":112,"ok":107},{"zona":"CABA Norte","empresa":"LM Logistica","visitas":42,"ok":41},{"zona":"CABA Norte","empresa":"Propio","visitas":13,"ok":13},{"zona":"CABA Norte","empresa":"Rivas","visitas":9,"ok":9},{"zona":"CABA Norte","empresa":"Transporte NEF","visitas":31,"ok":31},{"zona":"CABA Oeste","empresa":"CIT Logistica","visitas":1,"ok":1},{"zona":"CABA Oeste","empresa":"Cacavielo Fernando","visitas":71,"ok":70},{"zona":"CABA Oeste","empresa":"Gomez Passut","visitas":19,"ok":19},{"zona":"CABA Oeste","empresa":"LM Logistica","visitas":25,"ok":24},{"zona":"CABA Oeste","empresa":"Transporte NEF","visitas":22,"ok":22},{"zona":"CABA Otros","empresa":"Cacavielo Fernando","visitas":16,"ok":14},{"zona":"CABA Otros","empresa":"Gomez Passut","visitas":9,"ok":9},{"zona":"CABA Otros","empresa":"LM Logistica","visitas":37,"ok":36},{"zona":"CABA Otros","empresa":"Rivas","visitas":15,"ok":14},{"zona":"CABA Otros","empresa":"Transporte NEF","visitas":54,"ok":51},{"zona":"CABA Sur","empresa":"Cacavielo Fernando","visitas":46,"ok":46},{"zona":"CABA Sur","empresa":"LM Logistica","visitas":30,"ok":30},{"zona":"CABA Sur","empresa":"Propio","visitas":1,"ok":1},{"zona":"CABA Sur","empresa":"Transporte NEF","visitas":20,"ok":20},{"zona":"GBA Norte","empresa":"Gomez Passut","visitas":8,"ok":8},{"zona":"GBA Norte","empresa":"LM Logistica","visitas":12,"ok":11},{"zona":"GBA Norte","empresa":"Propio","visitas":116,"ok":113},{"zona":"GBA Norte","empresa":"Rivas","visitas":26,"ok":23},{"zona":"GBA Norte","empresa":"Transporte NEF","visitas":27,"ok":26},{"zona":"GBA Norte Lejano","empresa":"Propio","visitas":5,"ok":5},{"zona":"GBA Norte Lejano","empresa":"Rivas","visitas":6,"ok":6},{"zona":"GBA Norte Lejano","empresa":"Transporte NEF","visitas":1,"ok":1},{"zona":"GBA Oeste","empresa":"CIT Logistica","visitas":1,"ok":1},{"zona":"GBA Oeste","empresa":"Cacavielo Fernando","visitas":2,"ok":2},{"zona":"GBA Oeste","empresa":"LM Logistica","visitas":3,"ok":3},{"zona":"GBA Oeste","empresa":"Propio","visitas":9,"ok":8},{"zona":"GBA Oeste","empresa":"Rivas","visitas":3,"ok":2},{"zona":"GBA Oeste","empresa":"Transporte NEF","visitas":2,"ok":2},{"zona":"GBA Sur","empresa":"CIT Logistica","visitas":13,"ok":13},{"zona":"GBA Sur","empresa":"Cacavielo Fernando","visitas":7,"ok":7},{"zona":"GBA Sur","empresa":"Gomez Passut","visitas":1,"ok":1},{"zona":"GBA Sur","empresa":"LM Logistica","visitas":7,"ok":7},{"zona":"GBA Sur","empresa":"Propio","visitas":3,"ok":2},{"zona":"GBA Sur","empresa":"Rivas","visitas":4,"ok":4},{"zona":"GBA Sur","empresa":"Transporte NEF","visitas":1,"ok":1},{"zona":"Otros / Interior","empresa":"CIT Logistica","visitas":3,"ok":3},{"zona":"Otros / Interior","empresa":"Cacavielo Fernando","visitas":22,"ok":22},{"zona":"Otros / Interior","empresa":"Gomez Passut","visitas":33,"ok":30},{"zona":"Otros / Interior","empresa":"LM Logistica","visitas":29,"ok":28},{"zona":"Otros / Interior","empresa":"Propio","visitas":74,"ok":71},{"zona":"Otros / Interior","empresa":"Rivas","visitas":44,"ok":41},{"zona":"Otros / Interior","empresa":"Transporte NEF","visitas":38,"ok":36}];
+const Z_DUPS=[];
+const Z_DIR_FAIL=[{"dir_clean":"Pergamino 3751, Ciudad Autónoma de Buenos Aires, Argentina","barrio":"Ciudad Autónoma De Buenos Aires","zona":"CABA Oeste","visitas":13,"ok":13,"fail":0,"carga":0,"clientes_u":9,"dias_u":10,"efect":100,"atraso_prom":301.0,"vis_x_dia":1.3},{"dir_clean":"Patagones 2435, Ciudad Autónoma de Buenos Aires, Argentina","barrio":"Ciudad Autónoma De Buenos Aires","zona":"CABA Sur","visitas":13,"ok":13,"fail":0,"carga":0,"clientes_u":1,"dias_u":12,"efect":100,"atraso_prom":320.0,"vis_x_dia":1.08},{"dir_clean":"Av. Dr. Ricardo Balbín 4234, Saavedra, CABA , , Córdoba","barrio":"Saavedra","zona":"CABA Norte","visitas":11,"ok":10,"fail":0,"carga":1010,"clientes_u":3,"dias_u":9,"efect":91,"atraso_prom":166.0,"vis_x_dia":1.22},{"dir_clean":"Av. Amancio Alcorta 3208, Nueva Pompeya, CABA , , Tucumán","barrio":"Nueva Pompeya","zona":"CABA Oeste","visitas":11,"ok":11,"fail":0,"carga":7049,"clientes_u":2,"dias_u":10,"efect":100,"atraso_prom":195.0,"vis_x_dia":1.1},{"dir_clean":"Campana 1265, VILLA SANTA RITA, Ciudad Autónoma de Buenos Aires","barrio":"Villa Santa Rita","zona":"Otros / Interior","visitas":11,"ok":11,"fail":0,"carga":5382,"clientes_u":1,"dias_u":11,"efect":100,"atraso_prom":254.0,"vis_x_dia":1.0},{"dir_clean":"Patagones 2435, PARQUE PATRICIOS, Ciudad Autónoma de Buenos Aires","barrio":"Parque Patricios","zona":"CABA Oeste","visitas":11,"ok":11,"fail":0,"carga":9667,"clientes_u":1,"dias_u":11,"efect":100,"atraso_prom":187.0,"vis_x_dia":1.0},{"dir_clean":"Herrera 761, BARRACAS, Ciudad Autónoma de Buenos Aires","barrio":"Barracas","zona":"CABA Sur","visitas":10,"ok":10,"fail":0,"carga":4192,"clientes_u":1,"dias_u":10,"efect":100,"atraso_prom":215.0,"vis_x_dia":1.0},{"dir_clean":"Manuela Pedraza 6266, Villa Urquiza","barrio":"Villa Urquiza","zona":"CABA Norte","visitas":9,"ok":9,"fail":0,"carga":1,"clientes_u":6,"dias_u":5,"efect":100,"atraso_prom":123.0,"vis_x_dia":1.8},{"dir_clean":"Avenida Intendente Francisco Rabanal 1460, NUEVA POMPEYA, Ciudad Autónoma de Bue","barrio":"Nueva Pompeya","zona":"CABA Oeste","visitas":9,"ok":9,"fail":0,"carga":1732,"clientes_u":2,"dias_u":7,"efect":100,"atraso_prom":163.0,"vis_x_dia":1.29},{"dir_clean":"Manuela Pedraza 6266, VILLA URQUIZA, Ciudad Autónoma de Buenos Aires","barrio":"Villa Urquiza","zona":"CABA Norte","visitas":9,"ok":9,"fail":0,"carga":653,"clientes_u":4,"dias_u":7,"efect":100,"atraso_prom":147.0,"vis_x_dia":1.29},{"dir_clean":"Avenida Lacarra 1901, Ciudad Autónoma de Buenos Aires, Argentina","barrio":"Ciudad Autónoma De Buenos Aires","zona":"CABA Oeste","visitas":8,"ok":8,"fail":0,"carga":0,"clientes_u":1,"dias_u":8,"efect":100,"atraso_prom":341.0,"vis_x_dia":1.0},{"dir_clean":"Manuela Pedraza 6266, Villa Urquiza, Ciudad Autónoma de Buenos Aires, Argentina","barrio":"Villa Urquiza","zona":"CABA Norte","visitas":8,"ok":8,"fail":0,"carga":71,"clientes_u":7,"dias_u":7,"efect":100,"atraso_prom":296.0,"vis_x_dia":1.14},{"dir_clean":"Pepirí 1386, Nueva Pompeya, CABA , , Córdoba","barrio":"Nueva Pompeya","zona":"CABA Oeste","visitas":8,"ok":8,"fail":0,"carga":1083,"clientes_u":2,"dias_u":8,"efect":100,"atraso_prom":165.0,"vis_x_dia":1.0},{"dir_clean":"Herrera 761, Ciudad Autónoma de Buenos Aires, Argentina","barrio":"Ciudad Autónoma De Buenos Aires","zona":"CABA Sur","visitas":8,"ok":8,"fail":0,"carga":0,"clientes_u":1,"dias_u":8,"efect":100,"atraso_prom":293.0,"vis_x_dia":1.0},{"dir_clean":"Ferré 1523, CABA , , Córdoba","barrio":"Córdoba","zona":"Otros / Interior","visitas":8,"ok":8,"fail":0,"carga":2288,"clientes_u":1,"dias_u":8,"efect":100,"atraso_prom":176.0,"vis_x_dia":1.0},{"dir_clean":"Av. San Pedrito 3731, Ciudad Autónoma de Buenos Aires, Argentina","barrio":"Ciudad Autónoma De Buenos Aires","zona":"CABA Otros","visitas":7,"ok":5,"fail":1,"carga":381,"clientes_u":4,"dias_u":6,"efect":71,"atraso_prom":173.0,"vis_x_dia":1.17},{"dir_clean":"Sargento Baigorria 2399, Munro, Provincia de Buenos Aires, Argentina","barrio":"Munro","zona":"GBA Norte","visitas":7,"ok":7,"fail":0,"carga":0,"clientes_u":1,"dias_u":7,"efect":100,"atraso_prom":348.0,"vis_x_dia":1.0},{"dir_clean":"Colectora Panamericana 264, Martínez, Provincia de Buenos Aires, Argentina","barrio":"Martínez","zona":"GBA Norte","visitas":7,"ok":7,"fail":0,"carga":0,"clientes_u":7,"dias_u":7,"efect":100,"atraso_prom":249.0,"vis_x_dia":1.0},{"dir_clean":"Moldes 2522, BELGRANO, Ciudad Autónoma de Buenos Aires","barrio":"Belgrano","zona":"CABA Norte","visitas":7,"ok":7,"fail":0,"carga":6005,"clientes_u":1,"dias_u":7,"efect":100,"atraso_prom":164.0,"vis_x_dia":1.0},{"dir_clean":"Campana 1265, Villa Santa Rita","barrio":"Villa Santa Rita","zona":"Otros / Interior","visitas":7,"ok":7,"fail":0,"carga":3,"clientes_u":1,"dias_u":7,"efect":100,"atraso_prom":84.0,"vis_x_dia":1.0},{"dir_clean":"José Ingenieros 3190, Ricardo Rojas, Provincia de Buenos Aires, Argentina","barrio":"Ricardo Rojas","zona":"GBA Norte","visitas":6,"ok":5,"fail":0,"carga":0,"clientes_u":6,"dias_u":5,"efect":83,"atraso_prom":291.0,"vis_x_dia":1.2},{"dir_clean":"General Roca 4144, Villa Ballester, Provincia de Buenos Aires, Argentina","barrio":"Villa Ballester","zona":"Otros / Interior","visitas":6,"ok":6,"fail":0,"carga":450,"clientes_u":2,"dias_u":6,"efect":100,"atraso_prom":283.0,"vis_x_dia":1.0},{"dir_clean":"Pergamino 3751 Nave 3 Modulo 76, Villa Soldati, CABA , , Tucumán","barrio":"Villa Soldati","zona":"CABA Sur","visitas":6,"ok":6,"fail":0,"carga":1849,"clientes_u":1,"dias_u":6,"efect":100,"atraso_prom":223.0,"vis_x_dia":1.0},{"dir_clean":"General Juan Álvarez de Arenales 49, HCA, Provincia de Buenos Aires, Argentina","barrio":"Hca","zona":"Otros / Interior","visitas":6,"ok":6,"fail":0,"carga":0,"clientes_u":1,"dias_u":6,"efect":100,"atraso_prom":308.0,"vis_x_dia":1.0},{"dir_clean":"Herrera 761, Barracas","barrio":"Barracas","zona":"CABA Sur","visitas":6,"ok":6,"fail":0,"carga":11,"clientes_u":2,"dias_u":6,"efect":100,"atraso_prom":126.0,"vis_x_dia":1.0},{"dir_clean":"General José Gervasio Artigas 2332, Ciudad Autónoma de Buenos Aires, Argentina","barrio":"Ciudad Autónoma De Buenos Aires","zona":"CABA Otros","visitas":6,"ok":6,"fail":0,"carga":0,"clientes_u":1,"dias_u":5,"efect":100,"atraso_prom":361.0,"vis_x_dia":1.2},{"dir_clean":"Ferré 1523, Ciudad Autónoma de Buenos Aires, Argentina","barrio":"Ciudad Autónoma De Buenos Aires","zona":"CABA Otros","visitas":6,"ok":6,"fail":0,"carga":0,"clientes_u":1,"dias_u":6,"efect":100,"atraso_prom":321.0,"vis_x_dia":1.0},{"dir_clean":"Erezcano 3880, Nueva Pompeya, CABA , , San Juan","barrio":"Nueva Pompeya","zona":"CABA Oeste","visitas":6,"ok":5,"fail":1,"carga":262,"clientes_u":3,"dias_u":5,"efect":83,"atraso_prom":157.0,"vis_x_dia":1.2},{"dir_clean":"Patagones 2435 Pb, Parque Patricios","barrio":"Parque Patricios","zona":"CABA Oeste","visitas":6,"ok":6,"fail":0,"carga":78,"clientes_u":1,"dias_u":6,"efect":100,"atraso_prom":153.0,"vis_x_dia":1.0},{"dir_clean":"Monteagudo 827, Ciudad Autónoma de Buenos Aires, Argentina","barrio":"Ciudad Autónoma De Buenos Aires","zona":"CABA Sur","visitas":6,"ok":6,"fail":0,"carga":0,"clientes_u":5,"dias_u":5,"efect":100,"atraso_prom":274.0,"vis_x_dia":1.2},{"dir_clean":"Vélez Sársfield 4846, Munro, Provincia de Buenos Aires","barrio":"Munro","zona":"GBA Norte","visitas":6,"ok":6,"fail":0,"carga":1,"clientes_u":4,"dias_u":4,"efect":100,"atraso_prom":86.0,"vis_x_dia":1.5},{"dir_clean":"Vélez Sársfield 4846, Munro, Provincia de Buenos Aires , , Mendoza","barrio":"Munro","zona":"GBA Norte","visitas":6,"ok":6,"fail":0,"carga":1238,"clientes_u":2,"dias_u":5,"efect":100,"atraso_prom":182.0,"vis_x_dia":1.2},{"dir_clean":"Av. Amancio Alcorta 3208, Nueva Pompeya, CABA","barrio":"Nueva Pompeya","zona":"CABA Oeste","visitas":6,"ok":6,"fail":0,"carga":5,"clientes_u":1,"dias_u":6,"efect":100,"atraso_prom":130.0,"vis_x_dia":1.0},{"dir_clean":"Campana 1265, Ciudad Autónoma de Buenos Aires, Argentina","barrio":"Ciudad Autónoma De Buenos Aires","zona":"CABA Otros","visitas":5,"ok":4,"fail":1,"carga":0,"clientes_u":1,"dias_u":5,"efect":80,"atraso_prom":333.0,"vis_x_dia":1.0},{"dir_clean":"Carlos Berg 3591, Villa Soldati, CABA , , Mendoza","barrio":"Villa Soldati","zona":"CABA Sur","visitas":5,"ok":5,"fail":0,"carga":944,"clientes_u":1,"dias_u":5,"efect":100,"atraso_prom":164.0,"vis_x_dia":1.0},{"dir_clean":"Sargento Baigorria 2500, Munro, Provincia de Buenos Aires, Argentina","barrio":"Munro","zona":"GBA Norte","visitas":5,"ok":5,"fail":0,"carga":0,"clientes_u":5,"dias_u":5,"efect":100,"atraso_prom":333.0,"vis_x_dia":1.0},{"dir_clean":"Av. Lacarra 1901, Cdad. Autónoma de Buenos Aires , , Córdoba","barrio":"Cdad. Autónoma De Buenos Aires","zona":"CABA Norte","visitas":5,"ok":4,"fail":0,"carga":799,"clientes_u":1,"dias_u":5,"efect":80,"atraso_prom":114.0,"vis_x_dia":1.0},{"dir_clean":"José Ingenieros 3190, B1610 Ricardo Rojas, Provincia de Buenos Aires , , Santa F","barrio":"B1610 Ricardo Rojas","zona":"GBA Norte","visitas":5,"ok":5,"fail":0,"carga":582,"clientes_u":3,"dias_u":4,"efect":100,"atraso_prom":49.0,"vis_x_dia":1.25},{"dir_clean":"Suipacha 26, SAN NICOLAS, Ciudad Autónoma de Buenos Aires","barrio":"San Nicolas","zona":"CABA Centro","visitas":5,"ok":5,"fail":0,"carga":2870,"clientes_u":2,"dias_u":5,"efect":100,"atraso_prom":113.0,"vis_x_dia":1.0},{"dir_clean":"Guillermo Marconi 1451, Olivos, Provincia de Buenos Aires, Argentina","barrio":"Olivos","zona":"GBA Norte","visitas":5,"ok":5,"fail":0,"carga":0,"clientes_u":2,"dias_u":5,"efect":100,"atraso_prom":355.0,"vis_x_dia":1.0},{"dir_clean":"Jorge Newbery 2762, Béccar, Provincia de Buenos Aires, Argentina","barrio":"Béccar","zona":"Otros / Interior","visitas":5,"ok":5,"fail":0,"carga":0,"clientes_u":2,"dias_u":5,"efect":100,"atraso_prom":240.0,"vis_x_dia":1.0},{"dir_clean":"Av. Dr. Ricardo Balbín 4234, ABN, Ciudad Autónoma de Buenos Aires, Argentina","barrio":"Abn","zona":"Otros / Interior","visitas":5,"ok":5,"fail":0,"carga":0,"clientes_u":3,"dias_u":3,"efect":100,"atraso_prom":327.0,"vis_x_dia":1.67},{"dir_clean":"John W. Cooke 3225, Ciudad Autónoma de Buenos Aires, Argentina","barrio":"Ciudad Autónoma De Buenos Aires","zona":"CABA Otros","visitas":5,"ok":5,"fail":0,"carga":0,"clientes_u":1,"dias_u":5,"efect":100,"atraso_prom":278.0,"vis_x_dia":1.0},{"dir_clean":"Avenida Ricardo Balbin 4234, ABN, Ciudad Autónoma de Buenos Aires, Argentina","barrio":"Abn","zona":"Otros / Interior","visitas":4,"ok":4,"fail":0,"carga":0,"clientes_u":2,"dias_u":4,"efect":100,"atraso_prom":368.0,"vis_x_dia":1.0},{"dir_clean":"Méndez de Andes 544, CABALLITO, Ciudad Autónoma de Buenos Aires","barrio":"Caballito","zona":"CABA Oeste","visitas":4,"ok":4,"fail":0,"carga":3270,"clientes_u":2,"dias_u":3,"efect":100,"atraso_prom":249.0,"vis_x_dia":1.33},{"dir_clean":"Av. Congreso 1534, Ciudad Autónoma de Buenos Aires, Argentina","barrio":"Ciudad Autónoma De Buenos Aires","zona":"CABA Norte","visitas":4,"ok":4,"fail":0,"carga":0,"clientes_u":1,"dias_u":4,"efect":100,"atraso_prom":228.0,"vis_x_dia":1.0},{"dir_clean":"Avenida Intendente Francisco Rabanal 1460, Nueva Pompeya","barrio":"Nueva Pompeya","zona":"CABA Oeste","visitas":4,"ok":4,"fail":0,"carga":7,"clientes_u":1,"dias_u":4,"efect":100,"atraso_prom":119.0,"vis_x_dia":1.0},{"dir_clean":"Manuel Ricardo Trelles 2669, Ciudad Autónoma de Buenos Aires, Argentina","barrio":"Ciudad Autónoma De Buenos Aires","zona":"CABA Otros","visitas":4,"ok":4,"fail":0,"carga":0,"clientes_u":3,"dias_u":4,"efect":100,"atraso_prom":281.0,"vis_x_dia":1.0},{"dir_clean":"José Ingenieros 3190, B1610 Ricardo Rojas, Provincia de Buenos Aires , , Córdoba","barrio":"B1610 Ricardo Rojas","zona":"GBA Norte","visitas":4,"ok":3,"fail":1,"carga":127,"clientes_u":4,"dias_u":4,"efect":75,"atraso_prom":71.0,"vis_x_dia":1.0},{"dir_clean":"Moldes 2522, Belgrano","barrio":"Belgrano","zona":"CABA Norte","visitas":4,"ok":4,"fail":0,"carga":1,"clientes_u":2,"dias_u":3,"efect":100,"atraso_prom":21.0,"vis_x_dia":1.33},{"dir_clean":"Enrique Fermi 1471, EL PALOMAR, Buenos Aires","barrio":"El Palomar","zona":"GBA Oeste","visitas":4,"ok":4,"fail":0,"carga":1850,"clientes_u":2,"dias_u":4,"efect":100,"atraso_prom":215.0,"vis_x_dia":1.0},{"dir_clean":"Curupaytí 391, BOULOGNE SUR MER, Buenos Aires","barrio":"Boulogne Sur Mer","zona":"GBA Norte","visitas":4,"ok":4,"fail":0,"carga":681,"clientes_u":2,"dias_u":4,"efect":100,"atraso_prom":114.0,"vis_x_dia":1.0},{"dir_clean":"Avenida Crámer 3858, SAAVEDRA, Ciudad Autónoma de Buenos Aires","barrio":"Saavedra","zona":"CABA Norte","visitas":4,"ok":4,"fail":0,"carga":256,"clientes_u":2,"dias_u":4,"efect":100,"atraso_prom":138.0,"vis_x_dia":1.0},{"dir_clean":"Doctor Enrique Simón Pérez 6315, GONZALEZ CATAN, Buenos Aires","barrio":"Gonzalez Catan","zona":"Otros / Interior","visitas":4,"ok":4,"fail":0,"carga":548,"clientes_u":2,"dias_u":4,"efect":100,"atraso_prom":201.0,"vis_x_dia":1.0},{"dir_clean":"Sargento Baigorria 2399, MUNRO, Buenos Aires","barrio":"Munro","zona":"GBA Norte","visitas":4,"ok":4,"fail":0,"carga":2309,"clientes_u":1,"dias_u":4,"efect":100,"atraso_prom":143.0,"vis_x_dia":1.0},{"dir_clean":"Juan José Paso 1624, Florida, Provincia de Buenos Aires, Argentina","barrio":"Florida","zona":"GBA Norte","visitas":4,"ok":3,"fail":1,"carga":0,"clientes_u":1,"dias_u":4,"efect":75,"atraso_prom":339.0,"vis_x_dia":1.0},{"dir_clean":"Sargento Baigorria 2399, Munro","barrio":"Munro","zona":"GBA Norte","visitas":4,"ok":3,"fail":1,"carga":7,"clientes_u":1,"dias_u":4,"efect":75,"atraso_prom":87.0,"vis_x_dia":1.0},{"dir_clean":"Pepirí 1386, Nueva Pompeya, CABA","barrio":"Nueva Pompeya","zona":"CABA Oeste","visitas":4,"ok":4,"fail":0,"carga":0,"clientes_u":1,"dias_u":4,"efect":100,"atraso_prom":89.0,"vis_x_dia":1.0},{"dir_clean":"Pepirí 1386, Ciudad Autónoma de Buenos Aires, Argentina","barrio":"Ciudad Autónoma De Buenos Aires","zona":"CABA Otros","visitas":4,"ok":4,"fail":0,"carga":0,"clientes_u":1,"dias_u":4,"efect":100,"atraso_prom":270.0,"vis_x_dia":1.0},{"dir_clean":"Av. Intendente Francisco Rabanal 2354, Caba , , Córdoba","barrio":"Córdoba","zona":"Otros / Interior","visitas":4,"ok":4,"fail":0,"carga":795,"clientes_u":1,"dias_u":4,"efect":100,"atraso_prom":289.0,"vis_x_dia":1.0},{"dir_clean":"Av. Dr. Ricardo Balbín 4234, Saavedra, CABA","barrio":"Saavedra","zona":"CABA Norte","visitas":4,"ok":4,"fail":0,"carga":0,"clientes_u":4,"dias_u":3,"efect":100,"atraso_prom":86.0,"vis_x_dia":1.33},{"dir_clean":"José Pedro Varela 5065, VILLA DEVOTO, Ciudad Autónoma de Buenos Aires","barrio":"Villa Devoto","zona":"CABA Norte","visitas":4,"ok":4,"fail":0,"carga":641,"clientes_u":1,"dias_u":4,"efect":100,"atraso_prom":161.0,"vis_x_dia":1.0},{"dir_clean":"CHC, Chacabuco 337, San Isidro, Provincia de Buenos Aires, Argentina","barrio":"Chacabuco 337","zona":"Otros / Interior","visitas":4,"ok":4,"fail":0,"carga":0,"clientes_u":1,"dias_u":4,"efect":100,"atraso_prom":349.0,"vis_x_dia":1.0},{"dir_clean":"General José Gervasio Artigas 2332, VILLA DEL PARQUE, Ciudad Autónoma de Buenos ","barrio":"Villa Del Parque","zona":"CABA Norte","visitas":4,"ok":3,"fail":1,"carga":2352,"clientes_u":1,"dias_u":4,"efect":75,"atraso_prom":241.0,"vis_x_dia":1.0},{"dir_clean":"Pergamino 3751 Nave 3 Modulo 76, Villa Soldati, CABA","barrio":"Villa Soldati","zona":"CABA Sur","visitas":4,"ok":4,"fail":0,"carga":0,"clientes_u":1,"dias_u":4,"efect":100,"atraso_prom":151.0,"vis_x_dia":1.0},{"dir_clean":"José Ingenieros 3241 3, Beccar","barrio":"Beccar","zona":"GBA Norte","visitas":4,"ok":4,"fail":0,"carga":7,"clientes_u":1,"dias_u":4,"efect":100,"atraso_prom":52.0,"vis_x_dia":1.0},{"dir_clean":"Pinedo 1050 , , Buenos Aires","barrio":"Buenos Aires","zona":"Otros / Interior","visitas":3,"ok":3,"fail":0,"carga":290,"clientes_u":1,"dias_u":3,"efect":100,"atraso_prom":280.0,"vis_x_dia":1.0},{"dir_clean":"Mercedes 2708, VILLA DEVOTO, Ciudad Autónoma de Buenos Aires","barrio":"Villa Devoto","zona":"CABA Norte","visitas":3,"ok":3,"fail":0,"carga":1593,"clientes_u":3,"dias_u":3,"efect":100,"atraso_prom":177.0,"vis_x_dia":1.0},{"dir_clean":"Ministro Brin 3932, Remedios de Escalada, Provincia de Buenos Aires, Argentina","barrio":"Remedios De Escalada","zona":"Otros / Interior","visitas":3,"ok":3,"fail":0,"carga":0,"clientes_u":1,"dias_u":3,"efect":100,"atraso_prom":287.0,"vis_x_dia":1.0},{"dir_clean":"Mercedes 2708, Ciudad Autónoma de Buenos Aires, Argentina","barrio":"Ciudad Autónoma De Buenos Aires","zona":"CABA Oeste","visitas":3,"ok":3,"fail":0,"carga":136,"clientes_u":2,"dias_u":3,"efect":100,"atraso_prom":194.0,"vis_x_dia":1.0},{"dir_clean":"Vélez Sársfield 4846, Munro, Provincia de Buenos Aires , , Buenos Aires","barrio":"Munro","zona":"GBA Norte","visitas":3,"ok":3,"fail":0,"carga":530,"clientes_u":2,"dias_u":3,"efect":100,"atraso_prom":170.0,"vis_x_dia":1.0},{"dir_clean":"Santa Rosa 1731, Florida, Provincia de Buenos Aires, Argentina","barrio":"Florida","zona":"GBA Norte","visitas":3,"ok":2,"fail":1,"carga":40,"clientes_u":1,"dias_u":3,"efect":67,"atraso_prom":331.0,"vis_x_dia":1.0},{"dir_clean":"viamonte 2458, BALVANERA, Ciudad Autónoma de Buenos Aires","barrio":"Balvanera","zona":"CABA Centro","visitas":3,"ok":3,"fail":0,"carga":594,"clientes_u":1,"dias_u":3,"efect":100,"atraso_prom":137.0,"vis_x_dia":1.0},{"dir_clean":"Avenida Fondo de la Legua 253, Boulogne, Provincia de Buenos Aires, Argentina","barrio":"Boulogne","zona":"GBA Norte","visitas":3,"ok":3,"fail":0,"carga":0,"clientes_u":1,"dias_u":3,"efect":100,"atraso_prom":275.0,"vis_x_dia":1.0},{"dir_clean":"Pergamino 3751, Cdad. Autónoma de Buenos Aires , , Neuquén","barrio":"Cdad. Autónoma De Buenos Aires","zona":"CABA Oeste","visitas":3,"ok":3,"fail":0,"carga":2057,"clientes_u":1,"dias_u":3,"efect":100,"atraso_prom":123.0,"vis_x_dia":1.0},{"dir_clean":"Avenida Francisco Beiró 2519, VILLA DEL PARQUE, Ciudad Autónoma de Buenos Aires","barrio":"Villa Del Parque","zona":"CABA Norte","visitas":3,"ok":3,"fail":0,"carga":855,"clientes_u":1,"dias_u":3,"efect":100,"atraso_prom":226.0,"vis_x_dia":1.0},{"dir_clean":"Ramallo 4205, Ciudad Autónoma de Buenos Aires, Argentina","barrio":"Ciudad Autónoma De Buenos Aires","zona":"CABA Norte","visitas":3,"ok":3,"fail":0,"carga":50,"clientes_u":1,"dias_u":3,"efect":100,"atraso_prom":67.0,"vis_x_dia":1.0},{"dir_clean":"Avenida Francisco Beiró 2519, Villa Del Parque","barrio":"Villa Del Parque","zona":"CABA Norte","visitas":3,"ok":3,"fail":0,"carga":0,"clientes_u":1,"dias_u":3,"efect":100,"atraso_prom":105.0,"vis_x_dia":1.0},{"dir_clean":"Guayaquil 3100, TORTUGUITAS, Buenos Aires","barrio":"Tortuguitas","zona":"Otros / Interior","visitas":3,"ok":3,"fail":0,"carga":2870,"clientes_u":1,"dias_u":3,"efect":100,"atraso_prom":49.0,"vis_x_dia":1.0},{"dir_clean":"Montañeses 2764, BELGRANO, Ciudad Autónoma de Buenos Aires","barrio":"Belgrano","zona":"CABA Norte","visitas":3,"ok":3,"fail":0,"carga":156,"clientes_u":1,"dias_u":3,"efect":100,"atraso_prom":112.0,"vis_x_dia":1.0}];
+const Z_DIR_RANK=[{"dir_clean":"Pergamino 3751, Ciudad Autónoma de Buenos Aires, Argentina","barrio":"Ciudad Autónoma De Buenos Aires","zona":"CABA Oeste","visitas":13,"ok":13,"fail":0,"carga":0,"clientes_u":9,"dias_u":10,"efect":100,"atraso_prom":301.0,"vis_x_dia":1.3},{"dir_clean":"Patagones 2435, Ciudad Autónoma de Buenos Aires, Argentina","barrio":"Ciudad Autónoma De Buenos Aires","zona":"CABA Sur","visitas":13,"ok":13,"fail":0,"carga":0,"clientes_u":1,"dias_u":12,"efect":100,"atraso_prom":320.0,"vis_x_dia":1.08},{"dir_clean":"Av. Dr. Ricardo Balbín 4234, Saavedra, CABA , , Córdoba","barrio":"Saavedra","zona":"CABA Norte","visitas":11,"ok":10,"fail":0,"carga":1010,"clientes_u":3,"dias_u":9,"efect":91,"atraso_prom":166.0,"vis_x_dia":1.22},{"dir_clean":"Av. Amancio Alcorta 3208, Nueva Pompeya, CABA , , Tucumán","barrio":"Nueva Pompeya","zona":"CABA Oeste","visitas":11,"ok":11,"fail":0,"carga":7049,"clientes_u":2,"dias_u":10,"efect":100,"atraso_prom":195.0,"vis_x_dia":1.1},{"dir_clean":"Campana 1265, VILLA SANTA RITA, Ciudad Autónoma de Buenos Aires","barrio":"Villa Santa Rita","zona":"Otros / Interior","visitas":11,"ok":11,"fail":0,"carga":5382,"clientes_u":1,"dias_u":11,"efect":100,"atraso_prom":254.0,"vis_x_dia":1.0},{"dir_clean":"Patagones 2435, PARQUE PATRICIOS, Ciudad Autónoma de Buenos Aires","barrio":"Parque Patricios","zona":"CABA Oeste","visitas":11,"ok":11,"fail":0,"carga":9667,"clientes_u":1,"dias_u":11,"efect":100,"atraso_prom":187.0,"vis_x_dia":1.0},{"dir_clean":"Herrera 761, BARRACAS, Ciudad Autónoma de Buenos Aires","barrio":"Barracas","zona":"CABA Sur","visitas":10,"ok":10,"fail":0,"carga":4192,"clientes_u":1,"dias_u":10,"efect":100,"atraso_prom":215.0,"vis_x_dia":1.0},{"dir_clean":"Manuela Pedraza 6266, Villa Urquiza","barrio":"Villa Urquiza","zona":"CABA Norte","visitas":9,"ok":9,"fail":0,"carga":1,"clientes_u":6,"dias_u":5,"efect":100,"atraso_prom":123.0,"vis_x_dia":1.8},{"dir_clean":"Avenida Intendente Francisco Rabanal 1460, NUEVA POMPEYA, Ciudad Autónoma de Bue","barrio":"Nueva Pompeya","zona":"CABA Oeste","visitas":9,"ok":9,"fail":0,"carga":1732,"clientes_u":2,"dias_u":7,"efect":100,"atraso_prom":163.0,"vis_x_dia":1.29},{"dir_clean":"Manuela Pedraza 6266, VILLA URQUIZA, Ciudad Autónoma de Buenos Aires","barrio":"Villa Urquiza","zona":"CABA Norte","visitas":9,"ok":9,"fail":0,"carga":653,"clientes_u":4,"dias_u":7,"efect":100,"atraso_prom":147.0,"vis_x_dia":1.29},{"dir_clean":"Avenida Lacarra 1901, Ciudad Autónoma de Buenos Aires, Argentina","barrio":"Ciudad Autónoma De Buenos Aires","zona":"CABA Oeste","visitas":8,"ok":8,"fail":0,"carga":0,"clientes_u":1,"dias_u":8,"efect":100,"atraso_prom":341.0,"vis_x_dia":1.0},{"dir_clean":"Manuela Pedraza 6266, Villa Urquiza, Ciudad Autónoma de Buenos Aires, Argentina","barrio":"Villa Urquiza","zona":"CABA Norte","visitas":8,"ok":8,"fail":0,"carga":71,"clientes_u":7,"dias_u":7,"efect":100,"atraso_prom":296.0,"vis_x_dia":1.14},{"dir_clean":"Pepirí 1386, Nueva Pompeya, CABA , , Córdoba","barrio":"Nueva Pompeya","zona":"CABA Oeste","visitas":8,"ok":8,"fail":0,"carga":1083,"clientes_u":2,"dias_u":8,"efect":100,"atraso_prom":165.0,"vis_x_dia":1.0},{"dir_clean":"Herrera 761, Ciudad Autónoma de Buenos Aires, Argentina","barrio":"Ciudad Autónoma De Buenos Aires","zona":"CABA Sur","visitas":8,"ok":8,"fail":0,"carga":0,"clientes_u":1,"dias_u":8,"efect":100,"atraso_prom":293.0,"vis_x_dia":1.0},{"dir_clean":"Ferré 1523, CABA , , Córdoba","barrio":"Córdoba","zona":"Otros / Interior","visitas":8,"ok":8,"fail":0,"carga":2288,"clientes_u":1,"dias_u":8,"efect":100,"atraso_prom":176.0,"vis_x_dia":1.0},{"dir_clean":"Av. San Pedrito 3731, Ciudad Autónoma de Buenos Aires, Argentina","barrio":"Ciudad Autónoma De Buenos Aires","zona":"CABA Otros","visitas":7,"ok":5,"fail":1,"carga":381,"clientes_u":4,"dias_u":6,"efect":71,"atraso_prom":173.0,"vis_x_dia":1.17},{"dir_clean":"Sargento Baigorria 2399, Munro, Provincia de Buenos Aires, Argentina","barrio":"Munro","zona":"GBA Norte","visitas":7,"ok":7,"fail":0,"carga":0,"clientes_u":1,"dias_u":7,"efect":100,"atraso_prom":348.0,"vis_x_dia":1.0},{"dir_clean":"Colectora Panamericana 264, Martínez, Provincia de Buenos Aires, Argentina","barrio":"Martínez","zona":"GBA Norte","visitas":7,"ok":7,"fail":0,"carga":0,"clientes_u":7,"dias_u":7,"efect":100,"atraso_prom":249.0,"vis_x_dia":1.0},{"dir_clean":"Moldes 2522, BELGRANO, Ciudad Autónoma de Buenos Aires","barrio":"Belgrano","zona":"CABA Norte","visitas":7,"ok":7,"fail":0,"carga":6005,"clientes_u":1,"dias_u":7,"efect":100,"atraso_prom":164.0,"vis_x_dia":1.0},{"dir_clean":"Campana 1265, Villa Santa Rita","barrio":"Villa Santa Rita","zona":"Otros / Interior","visitas":7,"ok":7,"fail":0,"carga":3,"clientes_u":1,"dias_u":7,"efect":100,"atraso_prom":84.0,"vis_x_dia":1.0},{"dir_clean":"José Ingenieros 3190, Ricardo Rojas, Provincia de Buenos Aires, Argentina","barrio":"Ricardo Rojas","zona":"GBA Norte","visitas":6,"ok":5,"fail":0,"carga":0,"clientes_u":6,"dias_u":5,"efect":83,"atraso_prom":291.0,"vis_x_dia":1.2},{"dir_clean":"General Roca 4144, Villa Ballester, Provincia de Buenos Aires, Argentina","barrio":"Villa Ballester","zona":"Otros / Interior","visitas":6,"ok":6,"fail":0,"carga":450,"clientes_u":2,"dias_u":6,"efect":100,"atraso_prom":283.0,"vis_x_dia":1.0},{"dir_clean":"Pergamino 3751 Nave 3 Modulo 76, Villa Soldati, CABA , , Tucumán","barrio":"Villa Soldati","zona":"CABA Sur","visitas":6,"ok":6,"fail":0,"carga":1849,"clientes_u":1,"dias_u":6,"efect":100,"atraso_prom":223.0,"vis_x_dia":1.0},{"dir_clean":"General Juan Álvarez de Arenales 49, HCA, Provincia de Buenos Aires, Argentina","barrio":"Hca","zona":"Otros / Interior","visitas":6,"ok":6,"fail":0,"carga":0,"clientes_u":1,"dias_u":6,"efect":100,"atraso_prom":308.0,"vis_x_dia":1.0},{"dir_clean":"Herrera 761, Barracas","barrio":"Barracas","zona":"CABA Sur","visitas":6,"ok":6,"fail":0,"carga":11,"clientes_u":2,"dias_u":6,"efect":100,"atraso_prom":126.0,"vis_x_dia":1.0},{"dir_clean":"General José Gervasio Artigas 2332, Ciudad Autónoma de Buenos Aires, Argentina","barrio":"Ciudad Autónoma De Buenos Aires","zona":"CABA Otros","visitas":6,"ok":6,"fail":0,"carga":0,"clientes_u":1,"dias_u":5,"efect":100,"atraso_prom":361.0,"vis_x_dia":1.2},{"dir_clean":"Ferré 1523, Ciudad Autónoma de Buenos Aires, Argentina","barrio":"Ciudad Autónoma De Buenos Aires","zona":"CABA Otros","visitas":6,"ok":6,"fail":0,"carga":0,"clientes_u":1,"dias_u":6,"efect":100,"atraso_prom":321.0,"vis_x_dia":1.0},{"dir_clean":"Erezcano 3880, Nueva Pompeya, CABA , , San Juan","barrio":"Nueva Pompeya","zona":"CABA Oeste","visitas":6,"ok":5,"fail":1,"carga":262,"clientes_u":3,"dias_u":5,"efect":83,"atraso_prom":157.0,"vis_x_dia":1.2},{"dir_clean":"Patagones 2435 Pb, Parque Patricios","barrio":"Parque Patricios","zona":"CABA Oeste","visitas":6,"ok":6,"fail":0,"carga":78,"clientes_u":1,"dias_u":6,"efect":100,"atraso_prom":153.0,"vis_x_dia":1.0},{"dir_clean":"Monteagudo 827, Ciudad Autónoma de Buenos Aires, Argentina","barrio":"Ciudad Autónoma De Buenos Aires","zona":"CABA Sur","visitas":6,"ok":6,"fail":0,"carga":0,"clientes_u":5,"dias_u":5,"efect":100,"atraso_prom":274.0,"vis_x_dia":1.2},{"dir_clean":"Vélez Sársfield 4846, Munro, Provincia de Buenos Aires","barrio":"Munro","zona":"GBA Norte","visitas":6,"ok":6,"fail":0,"carga":1,"clientes_u":4,"dias_u":4,"efect":100,"atraso_prom":86.0,"vis_x_dia":1.5},{"dir_clean":"Vélez Sársfield 4846, Munro, Provincia de Buenos Aires , , Mendoza","barrio":"Munro","zona":"GBA Norte","visitas":6,"ok":6,"fail":0,"carga":1238,"clientes_u":2,"dias_u":5,"efect":100,"atraso_prom":182.0,"vis_x_dia":1.2},{"dir_clean":"Av. Amancio Alcorta 3208, Nueva Pompeya, CABA","barrio":"Nueva Pompeya","zona":"CABA Oeste","visitas":6,"ok":6,"fail":0,"carga":5,"clientes_u":1,"dias_u":6,"efect":100,"atraso_prom":130.0,"vis_x_dia":1.0},{"dir_clean":"Campana 1265, Ciudad Autónoma de Buenos Aires, Argentina","barrio":"Ciudad Autónoma De Buenos Aires","zona":"CABA Otros","visitas":5,"ok":4,"fail":1,"carga":0,"clientes_u":1,"dias_u":5,"efect":80,"atraso_prom":333.0,"vis_x_dia":1.0},{"dir_clean":"Carlos Berg 3591, Villa Soldati, CABA , , Mendoza","barrio":"Villa Soldati","zona":"CABA Sur","visitas":5,"ok":5,"fail":0,"carga":944,"clientes_u":1,"dias_u":5,"efect":100,"atraso_prom":164.0,"vis_x_dia":1.0},{"dir_clean":"Sargento Baigorria 2500, Munro, Provincia de Buenos Aires, Argentina","barrio":"Munro","zona":"GBA Norte","visitas":5,"ok":5,"fail":0,"carga":0,"clientes_u":5,"dias_u":5,"efect":100,"atraso_prom":333.0,"vis_x_dia":1.0},{"dir_clean":"Av. Lacarra 1901, Cdad. Autónoma de Buenos Aires , , Córdoba","barrio":"Cdad. Autónoma De Buenos Aires","zona":"CABA Norte","visitas":5,"ok":4,"fail":0,"carga":799,"clientes_u":1,"dias_u":5,"efect":80,"atraso_prom":114.0,"vis_x_dia":1.0},{"dir_clean":"José Ingenieros 3190, B1610 Ricardo Rojas, Provincia de Buenos Aires , , Santa F","barrio":"B1610 Ricardo Rojas","zona":"GBA Norte","visitas":5,"ok":5,"fail":0,"carga":582,"clientes_u":3,"dias_u":4,"efect":100,"atraso_prom":49.0,"vis_x_dia":1.25},{"dir_clean":"Suipacha 26, SAN NICOLAS, Ciudad Autónoma de Buenos Aires","barrio":"San Nicolas","zona":"CABA Centro","visitas":5,"ok":5,"fail":0,"carga":2870,"clientes_u":2,"dias_u":5,"efect":100,"atraso_prom":113.0,"vis_x_dia":1.0},{"dir_clean":"Guillermo Marconi 1451, Olivos, Provincia de Buenos Aires, Argentina","barrio":"Olivos","zona":"GBA Norte","visitas":5,"ok":5,"fail":0,"carga":0,"clientes_u":2,"dias_u":5,"efect":100,"atraso_prom":355.0,"vis_x_dia":1.0},{"dir_clean":"Jorge Newbery 2762, Béccar, Provincia de Buenos Aires, Argentina","barrio":"Béccar","zona":"Otros / Interior","visitas":5,"ok":5,"fail":0,"carga":0,"clientes_u":2,"dias_u":5,"efect":100,"atraso_prom":240.0,"vis_x_dia":1.0},{"dir_clean":"Av. Dr. Ricardo Balbín 4234, ABN, Ciudad Autónoma de Buenos Aires, Argentina","barrio":"Abn","zona":"Otros / Interior","visitas":5,"ok":5,"fail":0,"carga":0,"clientes_u":3,"dias_u":3,"efect":100,"atraso_prom":327.0,"vis_x_dia":1.67},{"dir_clean":"John W. Cooke 3225, Ciudad Autónoma de Buenos Aires, Argentina","barrio":"Ciudad Autónoma De Buenos Aires","zona":"CABA Otros","visitas":5,"ok":5,"fail":0,"carga":0,"clientes_u":1,"dias_u":5,"efect":100,"atraso_prom":278.0,"vis_x_dia":1.0},{"dir_clean":"Avenida Ricardo Balbin 4234, ABN, Ciudad Autónoma de Buenos Aires, Argentina","barrio":"Abn","zona":"Otros / Interior","visitas":4,"ok":4,"fail":0,"carga":0,"clientes_u":2,"dias_u":4,"efect":100,"atraso_prom":368.0,"vis_x_dia":1.0},{"dir_clean":"Méndez de Andes 544, CABALLITO, Ciudad Autónoma de Buenos Aires","barrio":"Caballito","zona":"CABA Oeste","visitas":4,"ok":4,"fail":0,"carga":3270,"clientes_u":2,"dias_u":3,"efect":100,"atraso_prom":249.0,"vis_x_dia":1.33},{"dir_clean":"Av. Congreso 1534, Ciudad Autónoma de Buenos Aires, Argentina","barrio":"Ciudad Autónoma De Buenos Aires","zona":"CABA Norte","visitas":4,"ok":4,"fail":0,"carga":0,"clientes_u":1,"dias_u":4,"efect":100,"atraso_prom":228.0,"vis_x_dia":1.0},{"dir_clean":"Avenida Intendente Francisco Rabanal 1460, Nueva Pompeya","barrio":"Nueva Pompeya","zona":"CABA Oeste","visitas":4,"ok":4,"fail":0,"carga":7,"clientes_u":1,"dias_u":4,"efect":100,"atraso_prom":119.0,"vis_x_dia":1.0},{"dir_clean":"Manuel Ricardo Trelles 2669, Ciudad Autónoma de Buenos Aires, Argentina","barrio":"Ciudad Autónoma De Buenos Aires","zona":"CABA Otros","visitas":4,"ok":4,"fail":0,"carga":0,"clientes_u":3,"dias_u":4,"efect":100,"atraso_prom":281.0,"vis_x_dia":1.0},{"dir_clean":"José Ingenieros 3190, B1610 Ricardo Rojas, Provincia de Buenos Aires , , Córdoba","barrio":"B1610 Ricardo Rojas","zona":"GBA Norte","visitas":4,"ok":3,"fail":1,"carga":127,"clientes_u":4,"dias_u":4,"efect":75,"atraso_prom":71.0,"vis_x_dia":1.0},{"dir_clean":"Moldes 2522, Belgrano","barrio":"Belgrano","zona":"CABA Norte","visitas":4,"ok":4,"fail":0,"carga":1,"clientes_u":2,"dias_u":3,"efect":100,"atraso_prom":21.0,"vis_x_dia":1.33},{"dir_clean":"Enrique Fermi 1471, EL PALOMAR, Buenos Aires","barrio":"El Palomar","zona":"GBA Oeste","visitas":4,"ok":4,"fail":0,"carga":1850,"clientes_u":2,"dias_u":4,"efect":100,"atraso_prom":215.0,"vis_x_dia":1.0},{"dir_clean":"Curupaytí 391, BOULOGNE SUR MER, Buenos Aires","barrio":"Boulogne Sur Mer","zona":"GBA Norte","visitas":4,"ok":4,"fail":0,"carga":681,"clientes_u":2,"dias_u":4,"efect":100,"atraso_prom":114.0,"vis_x_dia":1.0},{"dir_clean":"Avenida Crámer 3858, SAAVEDRA, Ciudad Autónoma de Buenos Aires","barrio":"Saavedra","zona":"CABA Norte","visitas":4,"ok":4,"fail":0,"carga":256,"clientes_u":2,"dias_u":4,"efect":100,"atraso_prom":138.0,"vis_x_dia":1.0},{"dir_clean":"Doctor Enrique Simón Pérez 6315, GONZALEZ CATAN, Buenos Aires","barrio":"Gonzalez Catan","zona":"Otros / Interior","visitas":4,"ok":4,"fail":0,"carga":548,"clientes_u":2,"dias_u":4,"efect":100,"atraso_prom":201.0,"vis_x_dia":1.0},{"dir_clean":"Sargento Baigorria 2399, MUNRO, Buenos Aires","barrio":"Munro","zona":"GBA Norte","visitas":4,"ok":4,"fail":0,"carga":2309,"clientes_u":1,"dias_u":4,"efect":100,"atraso_prom":143.0,"vis_x_dia":1.0},{"dir_clean":"Juan José Paso 1624, Florida, Provincia de Buenos Aires, Argentina","barrio":"Florida","zona":"GBA Norte","visitas":4,"ok":3,"fail":1,"carga":0,"clientes_u":1,"dias_u":4,"efect":75,"atraso_prom":339.0,"vis_x_dia":1.0},{"dir_clean":"Sargento Baigorria 2399, Munro","barrio":"Munro","zona":"GBA Norte","visitas":4,"ok":3,"fail":1,"carga":7,"clientes_u":1,"dias_u":4,"efect":75,"atraso_prom":87.0,"vis_x_dia":1.0},{"dir_clean":"Pepirí 1386, Nueva Pompeya, CABA","barrio":"Nueva Pompeya","zona":"CABA Oeste","visitas":4,"ok":4,"fail":0,"carga":0,"clientes_u":1,"dias_u":4,"efect":100,"atraso_prom":89.0,"vis_x_dia":1.0},{"dir_clean":"Pepirí 1386, Ciudad Autónoma de Buenos Aires, Argentina","barrio":"Ciudad Autónoma De Buenos Aires","zona":"CABA Otros","visitas":4,"ok":4,"fail":0,"carga":0,"clientes_u":1,"dias_u":4,"efect":100,"atraso_prom":270.0,"vis_x_dia":1.0},{"dir_clean":"Av. Intendente Francisco Rabanal 2354, Caba , , Córdoba","barrio":"Córdoba","zona":"Otros / Interior","visitas":4,"ok":4,"fail":0,"carga":795,"clientes_u":1,"dias_u":4,"efect":100,"atraso_prom":289.0,"vis_x_dia":1.0},{"dir_clean":"Av. Dr. Ricardo Balbín 4234, Saavedra, CABA","barrio":"Saavedra","zona":"CABA Norte","visitas":4,"ok":4,"fail":0,"carga":0,"clientes_u":4,"dias_u":3,"efect":100,"atraso_prom":86.0,"vis_x_dia":1.33},{"dir_clean":"José Pedro Varela 5065, VILLA DEVOTO, Ciudad Autónoma de Buenos Aires","barrio":"Villa Devoto","zona":"CABA Norte","visitas":4,"ok":4,"fail":0,"carga":641,"clientes_u":1,"dias_u":4,"efect":100,"atraso_prom":161.0,"vis_x_dia":1.0},{"dir_clean":"CHC, Chacabuco 337, San Isidro, Provincia de Buenos Aires, Argentina","barrio":"Chacabuco 337","zona":"Otros / Interior","visitas":4,"ok":4,"fail":0,"carga":0,"clientes_u":1,"dias_u":4,"efect":100,"atraso_prom":349.0,"vis_x_dia":1.0},{"dir_clean":"General José Gervasio Artigas 2332, VILLA DEL PARQUE, Ciudad Autónoma de Buenos ","barrio":"Villa Del Parque","zona":"CABA Norte","visitas":4,"ok":3,"fail":1,"carga":2352,"clientes_u":1,"dias_u":4,"efect":75,"atraso_prom":241.0,"vis_x_dia":1.0},{"dir_clean":"Pergamino 3751 Nave 3 Modulo 76, Villa Soldati, CABA","barrio":"Villa Soldati","zona":"CABA Sur","visitas":4,"ok":4,"fail":0,"carga":0,"clientes_u":1,"dias_u":4,"efect":100,"atraso_prom":151.0,"vis_x_dia":1.0},{"dir_clean":"José Ingenieros 3241 3, Beccar","barrio":"Beccar","zona":"GBA Norte","visitas":4,"ok":4,"fail":0,"carga":7,"clientes_u":1,"dias_u":4,"efect":100,"atraso_prom":52.0,"vis_x_dia":1.0},{"dir_clean":"Pinedo 1050 , , Buenos Aires","barrio":"Buenos Aires","zona":"Otros / Interior","visitas":3,"ok":3,"fail":0,"carga":290,"clientes_u":1,"dias_u":3,"efect":100,"atraso_prom":280.0,"vis_x_dia":1.0},{"dir_clean":"Mercedes 2708, VILLA DEVOTO, Ciudad Autónoma de Buenos Aires","barrio":"Villa Devoto","zona":"CABA Norte","visitas":3,"ok":3,"fail":0,"carga":1593,"clientes_u":3,"dias_u":3,"efect":100,"atraso_prom":177.0,"vis_x_dia":1.0},{"dir_clean":"Ministro Brin 3932, Remedios de Escalada, Provincia de Buenos Aires, Argentina","barrio":"Remedios De Escalada","zona":"Otros / Interior","visitas":3,"ok":3,"fail":0,"carga":0,"clientes_u":1,"dias_u":3,"efect":100,"atraso_prom":287.0,"vis_x_dia":1.0},{"dir_clean":"Mercedes 2708, Ciudad Autónoma de Buenos Aires, Argentina","barrio":"Ciudad Autónoma De Buenos Aires","zona":"CABA Oeste","visitas":3,"ok":3,"fail":0,"carga":136,"clientes_u":2,"dias_u":3,"efect":100,"atraso_prom":194.0,"vis_x_dia":1.0},{"dir_clean":"Vélez Sársfield 4846, Munro, Provincia de Buenos Aires , , Buenos Aires","barrio":"Munro","zona":"GBA Norte","visitas":3,"ok":3,"fail":0,"carga":530,"clientes_u":2,"dias_u":3,"efect":100,"atraso_prom":170.0,"vis_x_dia":1.0},{"dir_clean":"Santa Rosa 1731, Florida, Provincia de Buenos Aires, Argentina","barrio":"Florida","zona":"GBA Norte","visitas":3,"ok":2,"fail":1,"carga":40,"clientes_u":1,"dias_u":3,"efect":67,"atraso_prom":331.0,"vis_x_dia":1.0},{"dir_clean":"viamonte 2458, BALVANERA, Ciudad Autónoma de Buenos Aires","barrio":"Balvanera","zona":"CABA Centro","visitas":3,"ok":3,"fail":0,"carga":594,"clientes_u":1,"dias_u":3,"efect":100,"atraso_prom":137.0,"vis_x_dia":1.0},{"dir_clean":"Avenida Fondo de la Legua 253, Boulogne, Provincia de Buenos Aires, Argentina","barrio":"Boulogne","zona":"GBA Norte","visitas":3,"ok":3,"fail":0,"carga":0,"clientes_u":1,"dias_u":3,"efect":100,"atraso_prom":275.0,"vis_x_dia":1.0},{"dir_clean":"Pergamino 3751, Cdad. Autónoma de Buenos Aires , , Neuquén","barrio":"Cdad. Autónoma De Buenos Aires","zona":"CABA Oeste","visitas":3,"ok":3,"fail":0,"carga":2057,"clientes_u":1,"dias_u":3,"efect":100,"atraso_prom":123.0,"vis_x_dia":1.0},{"dir_clean":"Avenida Francisco Beiró 2519, VILLA DEL PARQUE, Ciudad Autónoma de Buenos Aires","barrio":"Villa Del Parque","zona":"CABA Norte","visitas":3,"ok":3,"fail":0,"carga":855,"clientes_u":1,"dias_u":3,"efect":100,"atraso_prom":226.0,"vis_x_dia":1.0},{"dir_clean":"Ramallo 4205, Ciudad Autónoma de Buenos Aires, Argentina","barrio":"Ciudad Autónoma De Buenos Aires","zona":"CABA Norte","visitas":3,"ok":3,"fail":0,"carga":50,"clientes_u":1,"dias_u":3,"efect":100,"atraso_prom":67.0,"vis_x_dia":1.0},{"dir_clean":"Avenida Francisco Beiró 2519, Villa Del Parque","barrio":"Villa Del Parque","zona":"CABA Norte","visitas":3,"ok":3,"fail":0,"carga":0,"clientes_u":1,"dias_u":3,"efect":100,"atraso_prom":105.0,"vis_x_dia":1.0},{"dir_clean":"Guayaquil 3100, TORTUGUITAS, Buenos Aires","barrio":"Tortuguitas","zona":"Otros / Interior","visitas":3,"ok":3,"fail":0,"carga":2870,"clientes_u":1,"dias_u":3,"efect":100,"atraso_prom":49.0,"vis_x_dia":1.0},{"dir_clean":"Montañeses 2764, BELGRANO, Ciudad Autónoma de Buenos Aires","barrio":"Belgrano","zona":"CABA Norte","visitas":3,"ok":3,"fail":0,"carga":156,"clientes_u":1,"dias_u":3,"efect":100,"atraso_prom":112.0,"vis_x_dia":1.0}];
+
+// ════════════ RENDER ZONAS ════════════
+function rZonas(){
+  var ZONA_COLOR={"CABA Centro": "#3B82F6", "CABA Norte": "#60A5FA", "CABA Oeste": "#93C5FD", "CABA Sur": "#BFDBFE", "CABA Otros": "#1D4ED8", "GBA Norte": "#F97316", "GBA Norte Lejano": "#FDBA74", "GBA Oeste": "#EF4444", "GBA Sur": "#FCA5A5", "Otros / Interior": "#94A3B8"};
+  var ZONA_ORDER=['CABA Centro','CABA Norte','CABA Oeste','CABA Sur','CABA Otros','GBA Norte','GBA Norte Lejano','GBA Oeste','GBA Sur','Otros / Interior'];
+  function zcol(z){return ZONA_COLOR[z]||'#94A3B8';}
+  function zord(a,b){return ZONA_ORDER.indexOf(a.zona)-ZONA_ORDER.indexOf(b.zona);}
+
+  var KP=Z_KPIS;
+  // ── KPI CARDS
+  document.getElementById('mg-zonas-kpi').innerHTML=
+    '<div class="mc co"><div class="ml">Zonas cubiertas</div><div class="mv c-co">'+KP.zonas_n+'</div><div class="ms">en el período</div></div>'+
+    '<div class="mc bl"><div class="ml">Barrios únicos</div><div class="mv c-bl">'+KP.barrios_n+'</div></div>'+
+    '<div class="mc"><div class="ml">Direcciones únicas</div><div class="mv">'+KP.dirs_n+'+</div></div>'+
+    '<div class="mc gr"><div class="ml">Visitas a clientes</div><div class="mv c-gr">'+KP.total_vis+'</div><div class="ms">'+KP.efect+'% efectividad</div></div>'+
+    '<div class="mc"><div class="ml">Carga total</div><div class="mv">'+KP.carga.toLocaleString('es-AR')+'</div><div class="ms">unidades</div></div>'+
+    '<div class="mc rd"><div class="ml">Fallidas</div><div class="mv c-rd">'+KP.fail+'</div><div class="ms">'+KP.pend+' pendientes</div></div>';
+
+  // ── ALERTAS
+  var alertas=[
+    {ico:'📍',label:'Zona con más visitas',val:KP.zona_mas_vis+' ('+KP.zona_mas_vis_n+')',color:'var(--blue)'},
+    {ico:'📦',label:'Zona con más carga',val:KP.zona_mas_carga+' ('+KP.zona_carga_n.toLocaleString('es-AR')+' u.)',color:'var(--green)'},
+    {ico:'❌',label:'Zona con más fallidas',val:KP.zona_mas_fallas+' ('+KP.zona_fallas_n+')',color:'var(--red)'},
+    {ico:'✅',label:'Zona más efectiva',val:KP.zona_mejor_efect+' ('+KP.zona_mejor_efect_pct+'%)',color:'var(--green)'},
+    {ico:'⚠️',label:'Zona menos efectiva',val:KP.zona_peor_efect+' ('+KP.zona_peor_efect_pct+'%)',color:'var(--amber)'},
+    {ico:'🔁',label:'Dir. más frecuentada',val:KP.dir_top.substring(0,45)+'… ('+KP.dir_top_n+'x)',color:'var(--coral)'},
+  ];
+  document.getElementById('zonas-alertas').innerHTML=alertas.map(function(a){
+    return '<div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 13px;display:flex;align-items:flex-start;gap:8px">'+
+      '<span style="font-size:16px">'+a.ico+'</span>'+
+      '<div><div style="font-size:9.5px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px">'+a.label+'</div>'+
+      '<div style="font-size:12px;font-weight:600;color:'+a.color+'">'+a.val+'</div></div></div>';
+  }).join('');
+
+  // ── GRAFICOS
+  var zonas=ZONA_ORDER.filter(function(z){return Z_ZONA.find(function(x){return x.zona===z;});});
+  function zdat(field){return zonas.map(function(z){var d=Z_ZONA.find(function(x){return x.zona===z;});return d?d[field]:0;});}
+
+  dc('c-z-vis');dc('c-z-carga');dc('c-z-efect');dc('c-z-atr');dc('c-z-vxd');
+  mkC('c-z-vis','bar',{labels:zonas,datasets:[
+    {label:'OK',data:zonas.map(function(z){var d=Z_ZONA.find(function(x){return x.zona===z;});return d?d.ok:0;}),backgroundColor:'#34D399',borderRadius:3,stack:'s'},
+    {label:'Fallidas',data:zonas.map(function(z){var d=Z_ZONA.find(function(x){return x.zona===z;});return d?d.fail:0;}),backgroundColor:'#F87171',borderRadius:3,stack:'s'},
+    {label:'Pend.',data:zonas.map(function(z){var d=Z_ZONA.find(function(x){return x.zona===z;});return d?d.pend:0;}),backgroundColor:'#FBBF24',borderRadius:3,stack:'s'}
+  ]},{plugins:{legend:{display:true,labels:{boxWidth:10,font:{size:10}}}},scales:{x:{stacked:true,ticks:{autoSkip:false,maxRotation:35,font:{size:9}}},y:{stacked:true,beginAtZero:true}}});
+
+  mkC('c-z-carga','bar',{labels:zonas,datasets:[{label:'Carga',data:zdat('carga'),backgroundColor:zonas.map(zcol),borderRadius:4}]},
+    {scales:{x:{ticks:{autoSkip:false,maxRotation:35,font:{size:9}}},y:{beginAtZero:true}}});
+
+  mkC('c-z-efect','bar',{labels:zonas,datasets:[{label:'%',data:zdat('efect'),
+    backgroundColor:zonas.map(function(z){var d=Z_ZONA.find(function(x){return x.zona===z;});var v=d?d.efect:0;return v>=98?'#22C55E':v>=95?'#FBBF24':'#F87171';}),borderRadius:4}]},
+    {scales:{y:{beginAtZero:true,max:100,title:{display:true,text:'%'}},x:{ticks:{autoSkip:false,maxRotation:35,font:{size:9}}}}});
+
+  mkC('c-z-atr','bar',{labels:zonas,datasets:[{label:'Min',data:zdat('atraso_prom'),
+    backgroundColor:zonas.map(function(z){var d=Z_ZONA.find(function(x){return x.zona===z;});var v=d?d.atraso_prom:0;return v>250?'#F87171':v>180?'#FBBF24':'#34D399';}),borderRadius:4}]},
+    {scales:{x:{ticks:{autoSkip:false,maxRotation:35,font:{size:9}}},y:{beginAtZero:true,title:{display:true,text:'min'}}}});
+
+  mkC('c-z-vxd','bar',{labels:zonas,datasets:[{label:'V/día',data:zdat('vis_x_dia'),backgroundColor:zonas.map(zcol),borderRadius:4}]},
+    {scales:{x:{ticks:{autoSkip:false,maxRotation:35,font:{size:9}}},y:{beginAtZero:true,title:{display:true,text:'visitas/día'}}}});
+
+  // ── TABLA ZONA
+  document.getElementById('n-z-zona').textContent=Z_ZONA.length+' zonas';
+  document.getElementById('tb-z-zona').innerHTML=Z_ZONA.slice().sort(function(a,b){return b.visitas-a.visitas;}).map(function(d){
+    var E=d.efect;
+    var atrStr=d.atraso_prom>0?Math.round(d.atraso_prom)+' min':'—';
+    var tsStr=d.tserv_prom>0?Math.round(d.tserv_prom)+' min':'—';
+    return '<tr>'+
+      '<td><b style="color:'+zcol(d.zona)+'">'+d.zona+'</b></td>'+
+      '<td><b>'+d.visitas+'</b></td>'+
+      '<td>'+d.barrios_u+'</td>'+
+      '<td>'+d.dirs_u+'</td>'+
+      '<td>'+d.clientes_u+'</td>'+
+      '<td class="mono">'+d.carga.toLocaleString('es-AR')+'</td>'+
+      '<td class="mono">'+d.carga_x_vis+'</td>'+
+      '<td><span class="bx bg">'+d.ok+'</span></td>'+
+      '<td><span class="bx '+(d.fail>0?'br':'')+'">'+( d.fail||'—')+'</span></td>'+
+      '<td><span class="bx '+(d.pend>0?'ba':'')+'">'+( d.pend||'—')+'</span></td>'+
+      '<td><div style="display:flex;align-items:center;gap:5px"><div class="pb"><div class="pbf" style="width:'+E+'%;background:'+(E>=98?'#22C55E':E>=95?'#FBBF24':'#F87171')+'"></div></div>'+
+        '<b style="font-size:10px;color:'+(E>=98?'var(--green)':E>=95?'var(--amber)':'var(--red)')+'">'+E+'%</b></div></td>'+
+      '<td class="mono">'+d.vis_x_dia+'</td>'+
+      '<td class="mono" style="color:'+(d.atraso_prom>250?'var(--red)':d.atraso_prom>180?'var(--amber)':'var(--text2)')+'">'+atrStr+'</td>'+
+      '<td class="mono">'+tsStr+'</td>'+
+    '</tr>';
+  }).join('');
+
+  // ── HEATMAP empresa x zona
+  var emps=['CIT Logistica','Cacavielo Fernando','Gomez Passut','LM Logistica','Propio','Rivas','Transporte NEF'];
+  var empZmap={};
+  Z_ZONA_EMP.forEach(function(r){
+    if(!empZmap[r.empresa])empZmap[r.empresa]={};
+    empZmap[r.empresa][r.zona]=r.visitas;
+  });
+  var maxPerEmp={};
+  emps.forEach(function(e){
+    var vals=zonas.map(function(z){return empZmap[e]?empZmap[e][z]||0:0;});
+    maxPerEmp[e]=Math.max.apply(null,vals)||1;
+  });
+  var hmHtml='<table style="border-collapse:separate;border-spacing:3px;font-size:11px">';
+  hmHtml+='<tr><td style="width:150px"></td>';
+  zonas.forEach(function(z){hmHtml+='<td style="text-align:center;font-size:8.5px;color:var(--text3);max-width:70px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 2px" title="'+z+'">'+z.replace('CABA ','').replace('GBA ','')+'</td>';});
+  hmHtml+='</tr>';
+  emps.forEach(function(e){
+    hmHtml+='<tr><td style="padding-right:8px;white-space:nowrap">'+etag(e)+'</td>';
+    zonas.forEach(function(z){
+      var v=empZmap[e]?empZmap[e][z]||0:0;
+      var op=v===0?0.05:Math.min(0.15+(v/maxPerEmp[e])*0.85,1);
+      var tip=e+' → '+z+': '+v+' visitas';
+      hmHtml+='<td title="'+tip+'"><div style="background:'+zcol(z)+';opacity:'+op+';width:100%;height:22px;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:white">'+(v>0?v:'')+'</div></td>';
+    });
+    hmHtml+='</tr>';
+  });
+  hmHtml+='</table>';
+  document.getElementById('z-heatmap-emp').innerHTML=hmHtml;
+
+  // ── TOP CLIENTES POR ZONA
+  document.getElementById('tb-z-cz').innerHTML=ZONA_ORDER.filter(function(z){return Z_CZ.some(function(r){return r.zona===z;});}).map(function(z){
+    var rows=Z_CZ.filter(function(r){return r.zona===z;}).sort(function(a,b){return b.visitas-a.visitas;});
+    return rows.map(function(r,i){
+      var E=r.efect;
+      return '<tr style="'+(i===0?'border-top:2px solid var(--border)':'')+'">'+(i===0?'<td rowspan="'+rows.length+'" style="vertical-align:middle;font-weight:700;color:'+zcol(z)+'">'+z+'</td>':'')+'<td style="color:var(--text3);font-size:11px">'+(i===0?'🥇':i===1?'🥈':i===2?'🥉':'#'+(i+1))+'</td>'+
+        '<td style="font-size:11px;max-width:180px;overflow:hidden;text-overflow:ellipsis"><b>'+r['Título']+'</b></td>'+
+        '<td><b>'+r.visitas+'</b></td><td>'+r.dirs_u+'</td>'+
+        '<td class="mono">'+r.carga.toLocaleString('es-AR')+'</td>'+
+        '<td><span class="bx bg">'+r.ok+'</span></td>'+
+        '<td><span class="bx '+(r.fail>0?'br':'')+'">'+( r.fail||'—')+'</span></td>'+
+        '<td><span class="bx '+(E>=98?'bg':E>=90?'ba':'br')+'">'+E+'%</span></td>'+
+      '</tr>';
+    }).join('');
+  }).join('');
+
+  // ── Poblar filtros de barrios y dirs
+  var zonasOpts='<option value="all">Todas las zonas</option>'+ZONA_ORDER.filter(function(z){return Z_BARRIO.some(function(b){return b.zona===z;});}).map(function(z){return '<option value="'+z+'">'+z+'</option>';}).join('');
+  document.getElementById('fz-zona').innerHTML=zonasOpts;
+  document.getElementById('fz-zona-dir').innerHTML=zonasOpts;
+
+  rZonaBarrios();
+  rZonaDirs();
+}
+
+function rZonaBarrios(){
+  var fz=document.getElementById('fz-zona')?.value||'all';
+  var data=Z_BARRIO.filter(function(b){return fz==='all'||b.zona===fz;});
+  document.getElementById('n-z-barrio').textContent=data.length+' barrios';
+  var ZONA_COLOR={"CABA Centro": "#3B82F6", "CABA Norte": "#60A5FA", "CABA Oeste": "#93C5FD", "CABA Sur": "#BFDBFE", "CABA Otros": "#1D4ED8", "GBA Norte": "#F97316", "GBA Norte Lejano": "#FDBA74", "GBA Oeste": "#EF4444", "GBA Sur": "#FCA5A5", "Otros / Interior": "#94A3B8"};
+  function zcol(z){return ZONA_COLOR[z]||'#94A3B8';}
+  document.getElementById('tb-z-barrio').innerHTML=data.map(function(b,i){
+    var E=b.efect; var atrStr=b.atraso_prom>0?Math.round(b.atraso_prom)+' min':'—';
+    return '<tr>'+
+      '<td style="color:var(--text3);font-size:11px">#'+(i+1)+'</td>'+
+      '<td><b>'+b.barrio+'</b></td>'+
+      '<td><span style="font-size:9.5px;padding:1px 6px;border-radius:3px;background:'+zcol(b.zona)+'22;color:var(--text2)">'+b.zona+'</span></td>'+
+      '<td><b>'+b.visitas+'</b></td>'+
+      '<td>'+b.dirs_u+'</td>'+
+      '<td>'+b.clientes_u+'</td>'+
+      '<td class="mono">'+b.carga.toLocaleString('es-AR')+'</td>'+
+      '<td><span class="bx bg">'+b.ok+'</span></td>'+
+      '<td><span class="bx '+(b.fail>0?'br':'')+'">'+( b.fail||'—')+'</span></td>'+
+      '<td><span class="bx '+(E>=98?'bg':E>=95?'ba':'br')+'">'+E+'%</span></td>'+
+      '<td class="mono" style="color:'+(b.atraso_prom>250?'var(--red)':b.atraso_prom>180?'var(--amber)':'var(--text2)')+'">'+atrStr+'</td>'+
+    '</tr>';
+  }).join('');
+}
+
+function rZonaDirs(){
+  var fz=document.getElementById('fz-zona-dir')?.value||'all';
+  var fe=document.getElementById('fz-est')?.value||'all';
+  var data=Z_DIR_RANK.filter(function(d){
+    if(fz!=='all'&&d.zona!==fz)return false;
+    if(fe==='fail'&&d.fail===0)return false;
+    if(fe==='ok'&&d.fail>0)return false;
+    return true;
+  });
+  document.getElementById('n-z-dir').textContent=data.length+' direcciones';
+  var ZONA_COLOR={"CABA Centro": "#3B82F6", "CABA Norte": "#60A5FA", "CABA Oeste": "#93C5FD", "CABA Sur": "#BFDBFE", "CABA Otros": "#1D4ED8", "GBA Norte": "#F97316", "GBA Norte Lejano": "#FDBA74", "GBA Oeste": "#EF4444", "GBA Sur": "#FCA5A5", "Otros / Interior": "#94A3B8"};
+  function zcol(z){return ZONA_COLOR[z]||'#94A3B8';}
+  document.getElementById('tb-z-dir').innerHTML=data.map(function(d,i){
+    var E=d.efect; var atrStr=d.atraso_prom>0?Math.round(d.atraso_prom)+' min':'—';
+    return '<tr>'+
+      '<td style="color:var(--text3);font-size:11px">#'+(i+1)+'</td>'+
+      '<td style="max-width:210px;overflow:hidden;text-overflow:ellipsis;font-size:11px" title="'+d.dir_clean+'"><b>'+d.dir_clean+'</b></td>'+
+      '<td style="font-size:10.5px">'+d.barrio+'</td>'+
+      '<td><span style="font-size:9.5px;padding:1px 6px;border-radius:3px;background:'+zcol(d.zona)+'22;color:var(--text2)">'+d.zona+'</span></td>'+
+      '<td><b>'+d.visitas+'</b></td>'+
+      '<td>'+d.dias_u+'</td>'+
+      '<td class="mono"><b>'+d.vis_x_dia+'</b></td>'+
+      '<td>'+d.clientes_u+'</td>'+
+      '<td class="mono">'+d.carga.toLocaleString('es-AR')+'</td>'+
+      '<td><span class="bx bg">'+d.ok+'</span></td>'+
+      '<td><span class="bx '+(d.fail>0?'br':'')+'">'+( d.fail||'—')+'</span></td>'+
+      '<td><span class="bx '+(E>=98?'bg':E>=95?'ba':E===100?'bg':'br')+'">'+E+'%</span></td>'+
+      '<td class="mono" style="color:'+(d.atraso_prom>250?'var(--red)':d.atraso_prom>180?'var(--amber)':'var(--text2)')+'">'+atrStr+'</td>'+
+    '</tr>';
+  }).join('');
+}
+
+
+
+function descargarExcel(){
+  if(!S.ready){alert('Primero cargá los archivos.');return;}
+  var wb=XLSX.utils.book_new();
+
+  // Hoja 1 — Empresas
+  var emp={};
+  S.viajes.forEach(function(v){
+    if(!emp[v.empresa])emp[v.empresa]={e:v.empresa,vj:0,kp:0,kr:0,pts:0,ok:0,fail:0,pend:0,dt:0,dc:0,tc:0,tm:0,vehs:new Set()};
+    var b=emp[v.empresa];
+    b.vj++;b.kp+=v.km_plan||0;b.kr+=v.km_real||0;b.pts+=v.vis_total||0;b.ok+=v.vis_ok||0;b.fail+=v.vis_fail||0;b.pend+=v.vis_pend||0;
+    if(v.dur_min>0){b.dt+=v.dur_min;b.dc++;}
+    b.vehs.add(v.vehiculo);
+    if(v.tarifa==='Completa')b.tc++;else if(v.tarifa==='Media')b.tm++;
+  });
+  var r1=[['Empresa','Viajes','Veh.unicos','KMs Plan.','KMs Reales','KM/viaje','Puntos','OK','Fallidas','Efect.%','Dur.prom.hs','T.Completa','T.Media']];
+  Object.values(emp).sort(function(a,b){return b.vj-a.vj;}).forEach(function(b){
+    r1.push([b.e,b.vj,b.vehs.size,Math.round(b.kp),Math.round(b.kr),b.vj>0?(b.kp/b.vj).toFixed(1):'—',b.pts,b.ok,b.fail,b.pts>0?(b.ok/b.pts*100).toFixed(1)+'%':'—',b.dc>0?(b.dt/b.dc/60).toFixed(2):0,b.tc,b.tm]);
+  });
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(r1),'1.Empresas');
+
+  // Hoja 2 — Conductores
+  var cnd={};
+  S.viajes.forEach(function(v){
+    if(!cnd[v.conductor])cnd[v.conductor]={c:v.conductor,emp:v.empresa,vj:0,kp:0,kr:0,pts:0,ok:0,fail:0,dt:0,dc:0,tc:0,tm:0};
+    var b=cnd[v.conductor];
+    b.vj++;b.kp+=v.km_plan||0;b.kr+=v.km_real||0;b.pts+=v.vis_total||0;b.ok+=v.vis_ok||0;b.fail+=v.vis_fail||0;
+    if(v.dur_min>0){b.dt+=v.dur_min;b.dc++;}
+    if(v.tarifa==='Completa')b.tc++;else if(v.tarifa==='Media')b.tm++;
+  });
+  var r2=[['Conductor','Empresa','Viajes','KMs Plan.','KMs Reales','Puntos','OK','Fallidas','Efect.%','Dur.prom.hs','T.Completa','T.Media']];
+  Object.values(cnd).filter(function(b){return b.c;}).sort(function(a,b){return b.vj-a.vj;}).forEach(function(b){
+    r2.push([b.c,b.emp,b.vj,Math.round(b.kp),Math.round(b.kr),b.pts,b.ok,b.fail,b.pts>0?(b.ok/b.pts*100).toFixed(1)+'%':'—',b.dc>0?(b.dt/b.dc/60).toFixed(2):0,b.tc,b.tm]);
+  });
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(r2),'2.Conductores');
+
+  // Hoja 3 — Viajes
+  var r3=[['Fecha','Quincena','Empresa','Conductor','Vehiculo','Ini.Prog','Ini.Real','Fin.Real','Dur.hs','KMs Plan','KMs Real','Puntos','OK','Fallidas','Pendientes','Efect.%','Tarifa']];
+  S.viajes.forEach(function(v){
+    r3.push([v.fecha,v.quincena,v.empresa,v.conductor,v.vehiculo,v.ini_prog||'—',v.ini||'—',v.fin||'—',v.dur_min>0?(v.dur_min/60).toFixed(2):0,v.km_plan,v.km_real,v.vis_total,v.vis_ok,v.vis_fail,v.vis_pend,v.vis_total>0?(v.vis_ok/v.vis_total*100).toFixed(1)+'%':'—',v.tarifa]);
+  });
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(r3),'3.Viajes');
+
+  // Hoja 4 — Tarifas (excluye Propio)
+  var r4=[['REGLA: Completa=06:00-12:59 (cualquier dur.) o 13:00+ con dur>=5hs | Media=13:00+ y dur<5hs'],['Fecha','Quincena','Empresa','Conductor','Vehiculo','Ini.Real','Fin.Real','Dur.hs','KMs Plan','Puntos','OK','Fallidas','Tarifa']];
+  S.viajes.filter(function(v){return v.empresa!=='Propio';}).forEach(function(v){
+    r4.push([v.fecha,v.quincena,v.empresa,v.conductor,v.vehiculo,v.ini||'—',v.fin||'—',v.dur_min>0?(v.dur_min/60).toFixed(2):0,v.km_plan,v.vis_total,v.vis_ok,v.vis_fail,v.tarifa]);
+  });
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(r4),'4.Tarifas');
+
+  // Hoja 5 — Zonas
+  var r5=[['Zona','Visitas','Barrios','Clientes','Carga','Carga/vis','OK','Fallidas','Pend.','Efect.%','Atraso prom.min']];
+  (typeof Z_ZONA!=='undefined'?Z_ZONA:[]).forEach(function(z){r5.push([z.zona,z.visitas,z.barrios_u||0,z.clientes_u||0,z.carga,z.carga_x_vis||0,z.ok,z.fail,z.pend,z.efect+'%',z.atraso_prom||0]);});
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(r5),'5.Zonas');
+
+  // Hoja 6 — Barrios
+  var r6=[['Barrio','Zona','Visitas','Clientes','Carga','OK','Fallidas','Efect.%']];
+  (typeof Z_BARRIO!=='undefined'?Z_BARRIO:[]).forEach(function(b){r6.push([b.barrio,b.zona,b.visitas,b.clientes_u||0,b.carga,b.ok,b.fail,b.efect+'%']);});
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(r6),'6.Barrios');
+
+  // Hoja 7 — Clientes
+  var r7=[['Cliente','Visitas','Dias','Vis/dia','Dirs','Carga','OK','Fallidas','Efect.%']];
+  S.cli_rank.forEach(function(c){r7.push([c.nombre,c.visitas,c.dias,c.vxd,c.dirs||0,c.carga,c.ok,c.fail,c.efect+'%']);});
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(r7),'7.Clientes');
+
+  // Hoja 8 — Visitas detalle
+  var r8=[['Cliente','Direccion','Conductor','Vehiculo','Empresa','Carga','Estado']];
+  S.vis_mini.forEach(function(v){r8.push([v.cl,v.d,v.c,v.v,v.emp,v.k,v.e==='completed'?'Completada':v.e==='failed'?'Fallida':'Pendiente']);});
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(r8),'8.Visitas');
+
+  // Hoja 9 — Mejoras (dobles por dirección)
+  var r9=[['Direccion','Fecha','Zona','Veces','Conductores','Clientes','Carga','OK','Fallidas']];
+  S.cli_multi.forEach(function(r){
+    var ok=r.estados.filter(function(e){return e==='completed';}).length;
+    var fail=r.estados.filter(function(e){return e==='failed';}).length;
+    r9.push([r.nombre,r.fecha,'',r.n,r.conductores.join(', '),(r.clientes||[]).join(', '),r.carga||0,ok,fail]);
+  });
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(r9),'9.Mejoras');
+
+  var periodo=S.viajes.length>0?S.viajes[0].fecha.replace(/\//g,'-'):'';
+  XLSX.writeFile(wb,'Zecat_Transporte_'+periodo+'.xlsx');
+}
+
+// OPERADORES LOGÍSTICOS — datos pre-calculados
+const OP_PROV=[{"prov_destino":"Córdoba","visitas":43,"ok":40,"fail":1,"pend":2,"carga":6244,"clientes_n":14,"dirs_n":8,"dias_n":13,"efect":93,"carga_x_vis":145.2},{"prov_destino":"Tucumán","visitas":21,"ok":21,"fail":0,"pend":0,"carga":10356,"clientes_n":6,"dirs_n":4,"dias_n":11,"efect":100,"carga_x_vis":493.1},{"prov_destino":"Mendoza","visitas":16,"ok":16,"fail":0,"pend":0,"carga":3669,"clientes_n":6,"dirs_n":5,"dias_n":10,"efect":100,"carga_x_vis":229.3},{"prov_destino":"Santa Fe","visitas":15,"ok":15,"fail":0,"pend":0,"carga":2050,"clientes_n":11,"dirs_n":8,"dias_n":10,"efect":100,"carga_x_vis":136.7},{"prov_destino":"San Juan","visitas":8,"ok":7,"fail":1,"pend":0,"carga":539,"clientes_n":5,"dirs_n":3,"dias_n":6,"efect":88,"carga_x_vis":67.4},{"prov_destino":"Neuquén","visitas":3,"ok":3,"fail":0,"pend":0,"carga":2057,"clientes_n":1,"dirs_n":1,"dias_n":3,"efect":100,"carga_x_vis":685.7},{"prov_destino":"Salta","visitas":3,"ok":3,"fail":0,"pend":0,"carga":154,"clientes_n":3,"dirs_n":3,"dias_n":2,"efect":100,"carga_x_vis":51.3},{"prov_destino":"Entre Ríos","visitas":2,"ok":2,"fail":0,"pend":0,"carga":74,"clientes_n":1,"dirs_n":1,"dias_n":2,"efect":100,"carga_x_vis":37.0},{"prov_destino":"Río Negro","visitas":2,"ok":2,"fail":0,"pend":0,"carga":500,"clientes_n":1,"dirs_n":1,"dias_n":2,"efect":100,"carga_x_vis":250.0},{"prov_destino":"Chaco","visitas":1,"ok":1,"fail":0,"pend":0,"carga":59,"clientes_n":1,"dirs_n":1,"dias_n":1,"efect":100,"carga_x_vis":59.0},{"prov_destino":"La Pampa","visitas":1,"ok":1,"fail":0,"pend":0,"carga":1293,"clientes_n":1,"dirs_n":1,"dias_n":1,"efect":100,"carga_x_vis":1293.0},{"prov_destino":"Santa Cruz","visitas":1,"ok":1,"fail":0,"pend":0,"carga":34,"clientes_n":1,"dirs_n":1,"dias_n":1,"efect":100,"carga_x_vis":34.0}];
+const OP_DIR=[{"dir_operador":"Av. Dr. Ricardo Balbín 4234, Saavedra","visitas":15,"ok":14,"fail":0,"carga":1320,"clientes_n":5,"provincias":"Córdoba, Mendoza, Santa Fe","prov_n":3,"dias_n":10,"zona":"CABA Norte","barrio":"Saavedra","efect":93},{"dir_operador":"Av. Amancio Alcorta 3208, Nueva Pompeya","visitas":11,"ok":11,"fail":0,"carga":7049,"clientes_n":2,"provincias":"Tucumán","prov_n":1,"dias_n":10,"zona":"CABA Oeste","barrio":"Nueva Pompeya","efect":100},{"dir_operador":"José Ingenieros 3190, B1610 Ricardo Rojas","visitas":11,"ok":10,"fail":1,"carga":783,"clientes_n":8,"provincias":"Córdoba, Entre Ríos, Santa Fe","prov_n":3,"dias_n":7,"zona":"GBA Norte","barrio":"B1610 Ricardo Rojas","efect":91},{"dir_operador":"Ferré 1523","visitas":8,"ok":8,"fail":0,"carga":2288,"clientes_n":1,"provincias":"Córdoba","prov_n":1,"dias_n":8,"zona":"Otros / Interior","barrio":"Córdoba","efect":100},{"dir_operador":"Pepirí 1386, Nueva Pompeya","visitas":8,"ok":8,"fail":0,"carga":1083,"clientes_n":2,"provincias":"Córdoba","prov_n":1,"dias_n":8,"zona":"CABA Oeste","barrio":"Nueva Pompeya","efect":100},{"dir_operador":"Vélez Sársfield 4846, Munro","visitas":8,"ok":8,"fail":0,"carga":1356,"clientes_n":4,"provincias":"Mendoza, Salta, Santa Fe","prov_n":3,"dias_n":7,"zona":"GBA Norte","barrio":"Munro","efect":100},{"dir_operador":"Pergamino 3751 Nave 3 Modulo 76, Villa Soldati","visitas":6,"ok":6,"fail":0,"carga":1849,"clientes_n":1,"provincias":"Tucumán","prov_n":1,"dias_n":6,"zona":"CABA Sur","barrio":"Villa Soldati","efect":100},{"dir_operador":"Erezcano 3880, Nueva Pompeya","visitas":6,"ok":5,"fail":1,"carga":262,"clientes_n":3,"provincias":"San Juan","prov_n":1,"dias_n":5,"zona":"CABA Oeste","barrio":"Nueva Pompeya","efect":83},{"dir_operador":"Carlos Berg 3591, Villa Soldati","visitas":5,"ok":5,"fail":0,"carga":944,"clientes_n":1,"provincias":"Mendoza","prov_n":1,"dias_n":5,"zona":"CABA Sur","barrio":"Villa Soldati","efect":100},{"dir_operador":"Av. Lacarra 1901, Cdad. Autónoma de Buenos Aires","visitas":5,"ok":4,"fail":0,"carga":799,"clientes_n":1,"provincias":"Córdoba","prov_n":1,"dias_n":5,"zona":"Otros / Interior","barrio":"Cdad. Autónoma De Buenos Aires","efect":80},{"dir_operador":"Av. Intendente Francisco Rabanal 2354","visitas":4,"ok":4,"fail":0,"carga":795,"clientes_n":1,"provincias":"Córdoba","prov_n":1,"dias_n":4,"zona":"Otros / Interior","barrio":"Córdoba","efect":100},{"dir_operador":"Pergamino 3751, Cdad. Autónoma de Buenos Aires","visitas":3,"ok":3,"fail":0,"carga":2057,"clientes_n":1,"provincias":"Neuquén","prov_n":1,"dias_n":3,"zona":"Otros / Interior","barrio":"Cdad. Autónoma De Buenos Aires","efect":100},{"dir_operador":"Ávalos 188, La Paternal","visitas":3,"ok":3,"fail":0,"carga":226,"clientes_n":1,"provincias":"Santa Fe","prov_n":1,"dias_n":3,"zona":"Otros / Interior","barrio":"La Paternal","efect":100},{"dir_operador":"Añasco 2790, La Paternal","visitas":2,"ok":2,"fail":0,"carga":500,"clientes_n":1,"provincias":"Río Negro","prov_n":1,"dias_n":2,"zona":"Otros / Interior","barrio":"La Paternal","efect":100},{"dir_operador":"Manuel Ricardo Trelles 2669, La Paternal","visitas":2,"ok":2,"fail":0,"carga":352,"clientes_n":2,"provincias":"Santa Fe","prov_n":1,"dias_n":1,"zona":"Otros / Interior","barrio":"La Paternal","efect":100},{"dir_operador":"Pergamino 3702, Villa Soldati","visitas":2,"ok":2,"fail":0,"carga":1382,"clientes_n":2,"provincias":"Tucumán","prov_n":1,"dias_n":2,"zona":"CABA Sur","barrio":"Villa Soldati","efect":100},{"dir_operador":"Pergamino 3751, Villa Soldati","visitas":2,"ok":2,"fail":0,"carga":1236,"clientes_n":2,"provincias":"Mendoza, Salta","prov_n":2,"dias_n":2,"zona":"CABA Sur","barrio":"Villa Soldati","efect":100},{"dir_operador":"Julio Troxler 3120, Villa Soldati","visitas":2,"ok":2,"fail":0,"carga":52,"clientes_n":1,"provincias":"Córdoba","prov_n":1,"dias_n":2,"zona":"CABA Sur","barrio":"Villa Soldati","efect":100},{"dir_operador":"Pepirí 1543, Nueva Pompeya","visitas":2,"ok":2,"fail":0,"carga":76,"clientes_n":1,"provincias":"Tucumán","prov_n":1,"dias_n":2,"zona":"CABA Oeste","barrio":"Nueva Pompeya","efect":100},{"dir_operador":"Angel Gallardo 272, Caballito","visitas":1,"ok":1,"fail":0,"carga":34,"clientes_n":1,"provincias":"Santa Cruz","prov_n":1,"dias_n":1,"zona":"CABA Oeste","barrio":"Caballito","efect":100},{"dir_operador":"Av. Amancio Alcorta 1955, Barracas","visitas":1,"ok":1,"fail":0,"carga":1293,"clientes_n":1,"provincias":"La Pampa","prov_n":1,"dias_n":1,"zona":"CABA Sur","barrio":"Barracas","efect":100},{"dir_operador":"Av. Int. Francisco Rabanal 2701, Villa Soldati","visitas":1,"ok":1,"fail":0,"carga":152,"clientes_n":1,"provincias":"San Juan","prov_n":1,"dias_n":1,"zona":"CABA Sur","barrio":"Villa Soldati","efect":100},{"dir_operador":"Ferré 1537, C1437 Cdad. Autónoma de Buenos Aires","visitas":1,"ok":1,"fail":0,"carga":90,"clientes_n":1,"provincias":"Córdoba","prov_n":1,"dias_n":1,"zona":"Otros / Interior","barrio":"C1437 Cdad. Autónoma De Buenos Aires","efect":100},{"dir_operador":"Estanislao Zeballos 333, Avellaneda","visitas":1,"ok":1,"fail":0,"carga":45,"clientes_n":1,"provincias":"Salta","prov_n":1,"dias_n":1,"zona":"GBA Sur","barrio":"Avellaneda","efect":100},{"dir_operador":"Berón de Astrada 2675, C1437FSQ Cdad. Autónoma de Buenos Aires","visitas":1,"ok":1,"fail":0,"carga":190,"clientes_n":1,"provincias":"Santa Fe","prov_n":1,"dias_n":1,"zona":"Otros / Interior","barrio":"C1437Fsq Cdad. Autónoma De Buenos Aires","efect":100},{"dir_operador":"John W. Cooke 3225, ciudad de buenos aires","visitas":1,"ok":1,"fail":0,"carga":125,"clientes_n":1,"provincias":"San Juan","prov_n":1,"dias_n":1,"zona":"Otros / Interior","barrio":"Ciudad De Buenos Aires","efect":100},{"dir_operador":"Pergamino 3751, Modulo 49, C1437 Buenos Aires","visitas":1,"ok":1,"fail":0,"carga":570,"clientes_n":1,"provincias":"Santa Fe","prov_n":1,"dias_n":1,"zona":"Otros / Interior","barrio":"Modulo 49","efect":100},{"dir_operador":"Pergamino 3751, C1437 Cdad. Autónoma de Buenos Aires","visitas":1,"ok":1,"fail":0,"carga":36,"clientes_n":1,"provincias":"Santa Fe","prov_n":1,"dias_n":1,"zona":"Otros / Interior","barrio":"C1437 Cdad. Autónoma De Buenos Aires","efect":100},{"dir_operador":"Pergamino 3751 Nave A, Villa Soldati","visitas":1,"ok":1,"fail":0,"carga":59,"clientes_n":1,"provincias":"Chaco","prov_n":1,"dias_n":1,"zona":"CABA Sur","barrio":"Villa Soldati","efect":100},{"dir_operador":"Remedios de Escalada de San Martín 4064, Valentin Alsina","visitas":1,"ok":1,"fail":0,"carga":26,"clientes_n":1,"provincias":"Mendoza","prov_n":1,"dias_n":1,"zona":"Otros / Interior","barrio":"Valentin Alsina","efect":100}];
+const OP_CLI=[{"Título":"Sanchez Ruiz Martin Alejandro","visitas":8,"ok":8,"fail":0,"carga":2288,"provincias":"Córdoba","prov_n":1,"dirs_n":1,"dias_n":8,"efect":100},{"Título":"GM Promociones S.A.","visitas":7,"ok":7,"fail":0,"carga":1081,"provincias":"Córdoba","prov_n":1,"dirs_n":1,"dias_n":7,"efect":100},{"Título":"Grupo Adal SRL","visitas":7,"ok":7,"fail":0,"carga":5152,"provincias":"Tucumán","prov_n":1,"dirs_n":1,"dias_n":7,"efect":100},{"Título":"SIMPLE STORE S.A.S","visitas":6,"ok":6,"fail":0,"carga":869,"provincias":"Córdoba, Santa Fe","prov_n":2,"dirs_n":2,"dias_n":6,"efect":100},{"Título":"Komuk  SRL","visitas":6,"ok":6,"fail":0,"carga":1849,"provincias":"Tucumán","prov_n":1,"dirs_n":1,"dias_n":6,"efect":100},{"Título":"Ortega Guemberena SA","visitas":5,"ok":4,"fail":0,"carga":799,"provincias":"Córdoba","prov_n":1,"dirs_n":1,"dias_n":5,"efect":80},{"Título":"INDUSTRIA GEO S A","visitas":5,"ok":5,"fail":0,"carga":1206,"provincias":"Mendoza","prov_n":1,"dirs_n":1,"dias_n":5,"efect":100},{"Título":"Andina Soluciones SA","visitas":5,"ok":5,"fail":0,"carga":944,"provincias":"Mendoza","prov_n":1,"dirs_n":1,"dias_n":5,"efect":100},{"Título":"FREM BESTANI MARIA SOLEDAD","visitas":4,"ok":4,"fail":0,"carga":1897,"provincias":"Tucumán","prov_n":1,"dirs_n":1,"dias_n":4,"efect":100},{"Título":"PIC INSUMOS S.A.S.","visitas":4,"ok":4,"fail":0,"carga":795,"provincias":"Córdoba","prov_n":1,"dirs_n":1,"dias_n":4,"efect":100},{"Título":"Martinez Mariela","visitas":3,"ok":2,"fail":0,"carga":159,"provincias":"Córdoba","prov_n":1,"dirs_n":1,"dias_n":3,"efect":67},{"Título":"Groupadvince SAS","visitas":3,"ok":3,"fail":0,"carga":552,"provincias":"Córdoba","prov_n":1,"dirs_n":1,"dias_n":3,"efect":100},{"Título":"Proar Imagen Promocional S.R.L.","visitas":3,"ok":3,"fail":0,"carga":226,"provincias":"Santa Fe","prov_n":1,"dirs_n":1,"dias_n":3,"efect":100},{"Título":"Stocco Elba Rita Maria","visitas":3,"ok":3,"fail":0,"carga":270,"provincias":"Mendoza","prov_n":1,"dirs_n":1,"dias_n":3,"efect":100},{"Título":"SANCAS S.R.L.","visitas":3,"ok":3,"fail":0,"carga":2057,"provincias":"Neuquén","prov_n":1,"dirs_n":1,"dias_n":3,"efect":100},{"Título":"Irruenza S.A","visitas":3,"ok":3,"fail":0,"carga":201,"provincias":"Santa Fe","prov_n":1,"dirs_n":1,"dias_n":3,"efect":100},{"Título":"HIPERLAPSE SRL","visitas":2,"ok":2,"fail":0,"carga":130,"provincias":"San Juan","prov_n":1,"dirs_n":1,"dias_n":2,"efect":100},{"Título":"Lopez Osuna Hebe Alicia","visitas":2,"ok":2,"fail":0,"carga":74,"provincias":"Entre Ríos","prov_n":1,"dirs_n":1,"dias_n":2,"efect":100},{"Título":"Rebagliati Santiago Horacio","visitas":2,"ok":2,"fail":0,"carga":500,"provincias":"Río Negro","prov_n":1,"dirs_n":1,"dias_n":2,"efect":100},{"Título":"REGALANDO EXPERIENCIAS SA","visitas":2,"ok":2,"fail":0,"carga":52,"provincias":"Córdoba","prov_n":1,"dirs_n":1,"dias_n":2,"efect":100},{"Título":"RELINCHO S.A.S.","visitas":2,"ok":2,"fail":0,"carga":60,"provincias":"San Juan","prov_n":1,"dirs_n":1,"dias_n":2,"efect":100},{"Título":"Grupo MP S.R.L.","visitas":2,"ok":1,"fail":1,"carga":72,"provincias":"San Juan","prov_n":1,"dirs_n":1,"dias_n":2,"efect":50},{"Título":"Pampenorte S.R.L","visitas":2,"ok":2,"fail":0,"carga":76,"provincias":"Tucumán","prov_n":1,"dirs_n":1,"dias_n":2,"efect":100},{"Título":"Conci S.A.","visitas":1,"ok":1,"fail":0,"carga":34,"provincias":"Córdoba","prov_n":1,"dirs_n":1,"dias_n":1,"efect":100},{"Título":"FORTUNA ALEJANDRO","visitas":1,"ok":1,"fail":0,"carga":54,"provincias":"Santa Fe","prov_n":1,"dirs_n":1,"dias_n":1,"efect":100},{"Título":"Don Lalo SRL En Formacion","visitas":1,"ok":1,"fail":0,"carga":90,"provincias":"Córdoba","prov_n":1,"dirs_n":1,"dias_n":1,"efect":100},{"Título":"Banchio Marcelo J","visitas":1,"ok":1,"fail":0,"carga":1191,"provincias":"Mendoza","prov_n":1,"dirs_n":1,"dias_n":1,"efect":100},{"Título":"Agrotecnologia Sala S.A.","visitas":1,"ok":0,"fail":1,"carga":25,"provincias":"Córdoba","prov_n":1,"dirs_n":1,"dias_n":1,"efect":0},{"Título":"ANDRE JUAN PABLO","visitas":1,"ok":1,"fail":0,"carga":125,"provincias":"San Juan","prov_n":1,"dirs_n":1,"dias_n":1,"efect":100},{"Título":"Barroso Hector Martin","visitas":1,"ok":1,"fail":0,"carga":26,"provincias":"Mendoza","prov_n":1,"dirs_n":1,"dias_n":1,"efect":100},{"Título":"AGROADS AGRIBUSINESS S.A.","visitas":1,"ok":1,"fail":0,"carga":20,"provincias":"Córdoba","prov_n":1,"dirs_n":1,"dias_n":1,"efect":100},{"Título":"AGROPECUARIA EL ABUELO SRL","visitas":1,"ok":1,"fail":0,"carga":45,"provincias":"Salta","prov_n":1,"dirs_n":1,"dias_n":1,"efect":100},{"Título":"D Y Z Indumentaria S.R.L","visitas":1,"ok":1,"fail":0,"carga":20,"provincias":"Santa Fe","prov_n":1,"dirs_n":1,"dias_n":1,"efect":100},{"Título":"DE BERNARDI JOSE IGNACIO ALBERTO","visitas":1,"ok":1,"fail":0,"carga":32,"provincias":"Mendoza","prov_n":1,"dirs_n":1,"dias_n":1,"efect":100},{"Título":"Greveno Hernan Lionel","visitas":1,"ok":1,"fail":0,"carga":351,"provincias":"Santa Fe","prov_n":1,"dirs_n":1,"dias_n":1,"efect":100},{"Título":"Globalwear  SAS","visitas":1,"ok":1,"fail":0,"carga":45,"provincias":"Salta","prov_n":1,"dirs_n":1,"dias_n":1,"efect":100},{"Título":"GRUPO FARO S. A. S.","visitas":1,"ok":1,"fail":0,"carga":2,"provincias":"Córdoba","prov_n":1,"dirs_n":1,"dias_n":1,"efect":100},{"Título":"PIERMOMA S.A.S.","visitas":1,"ok":1,"fail":0,"carga":48,"provincias":"Córdoba","prov_n":1,"dirs_n":1,"dias_n":1,"efect":100},{"Título":"Grupo Marayes S.R.L.","visitas":1,"ok":1,"fail":0,"carga":152,"provincias":"San Juan","prov_n":1,"dirs_n":1,"dias_n":1,"efect":100},{"Título":"Grupo MGO SRL","visitas":1,"ok":1,"fail":0,"carga":1350,"provincias":"Tucumán","prov_n":1,"dirs_n":1,"dias_n":1,"efect":100},{"Título":"Nuestro Origen SRL","visitas":1,"ok":1,"fail":0,"carga":1293,"provincias":"La Pampa","prov_n":1,"dirs_n":1,"dias_n":1,"efect":100},{"Título":"Hanna SRL","visitas":1,"ok":1,"fail":0,"carga":36,"provincias":"Santa Fe","prov_n":1,"dirs_n":1,"dias_n":1,"efect":100},{"Título":"PRO IMAGEN SRL","visitas":1,"ok":1,"fail":0,"carga":190,"provincias":"Santa Fe","prov_n":1,"dirs_n":1,"dias_n":1,"efect":100},{"Título":"Remonda Castro  y Cia. S.A.C.","visitas":1,"ok":1,"fail":0,"carga":361,"provincias":"Santa Fe","prov_n":1,"dirs_n":1,"dias_n":1,"efect":100},{"Título":"Petcoff Georgina Vanesa","visitas":1,"ok":1,"fail":0,"carga":59,"provincias":"Chaco","prov_n":1,"dirs_n":1,"dias_n":1,"efect":100},{"Título":"QUO PRODUCTOS SRL","visitas":1,"ok":1,"fail":0,"carga":1,"provincias":"Santa Fe","prov_n":1,"dirs_n":1,"dias_n":1,"efect":100},{"Título":"Rinaldi Matias Omar","visitas":1,"ok":1,"fail":0,"carga":40,"provincias":"Santa Fe","prov_n":1,"dirs_n":1,"dias_n":1,"efect":100},{"Título":"Rodriguez Zelada Romulo Facundo","visitas":1,"ok":1,"fail":0,"carga":32,"provincias":"Tucumán","prov_n":1,"dirs_n":1,"dias_n":1,"efect":100},{"Título":"Vittar Sandra Elizabeth","visitas":1,"ok":1,"fail":0,"carga":64,"provincias":"Salta","prov_n":1,"dirs_n":1,"dias_n":1,"efect":100},{"Título":"Yunta SRL","visitas":1,"ok":1,"fail":0,"carga":34,"provincias":"Santa Cruz","prov_n":1,"dirs_n":1,"dias_n":1,"efect":100}];
+const OP_STATS={"total_visitas":1137,"via_operador":116,"directo":1021,"pct_operador":10.2,"provincias_n":12,"operadores_n":30,"clientes_via_op":50,"carga_op":27029,"carga_dir":101246,"ok_op":112,"fail_op":2};
+
+function rOperadores(){
+  var ST=OP_STATS;
+  var PC={"Córdoba": "#3B82F6", "Tucumán": "#F97316", "Mendoza": "#A78BFA", "Santa Fe": "#34D399", "San Juan": "#F472B6", "Neuquén": "#FBBF24", "Salta": "#38BDB8", "Entre Ríos": "#60A5FA", "Río Negro": "#F87171", "Chaco": "#FCD34D", "La Pampa": "#86EFAC", "Santa Cruz": "#94A3B8"};
+  function pc(p){return PC[p]||'#94A3B8';}
+  var efOp=ST.ok_op>0?Math.round(ST.ok_op/(ST.ok_op+ST.fail_op)*100):0;
+  document.getElementById('mg-op').innerHTML=
+    '<div class="mc co"><div class="ml">Vía operador</div><div class="mv c-co">'+ST.via_operador+'</div><div class="ms">'+ST.pct_operador+'% del total</div></div>'+
+    '<div class="mc bl"><div class="ml">Provincias destino</div><div class="mv c-bl">'+ST.provincias_n+'</div></div>'+
+    '<div class="mc"><div class="ml">Operadores únicos</div><div class="mv">'+ST.operadores_n+'</div></div>'+
+    '<div class="mc"><div class="ml">Clientes vía op.</div><div class="mv">'+ST.clientes_via_op+'</div></div>'+
+    '<div class="mc gr"><div class="ml">Carga al interior</div><div class="mv c-gr">'+ST.carga_op.toLocaleString("es-AR")+'</div><div class="ms">unidades</div></div>'+
+    '<div class="mc am"><div class="ml">Efectividad</div><div class="mv">'+efOp+'%</div></div>'+
+    '<div class="mc"><div class="ml">Entregas directas</div><div class="mv">'+ST.directo+'</div></div>'+
+    '<div class="mc te"><div class="ml">Carga directa</div><div class="mv c-te">'+ST.carga_dir.toLocaleString("es-AR")+'</div></div>';
+  dc('c-op-prov');dc('c-op-carga');dc('c-op-pie');dc('c-op-cli');dc('c-op-carga-cli');
+  var pL=OP_PROV.map(function(p){return p.prov_destino;});
+  mkC('c-op-prov','bar',{labels:pL,datasets:[{label:'OK',data:OP_PROV.map(function(p){return p.ok;}),backgroundColor:'#34D399',borderRadius:3,stack:'s'},{label:'Fallidas',data:OP_PROV.map(function(p){return p.fail;}),backgroundColor:'#F87171',borderRadius:3,stack:'s'}]},{plugins:{legend:{display:true,labels:{boxWidth:10,font:{size:10}}}},scales:{x:{stacked:true,ticks:{autoSkip:false,maxRotation:35,font:{size:9}}},y:{stacked:true,beginAtZero:true}}});
+  mkC('c-op-carga','bar',{labels:pL,datasets:[{label:'Unidades',data:OP_PROV.map(function(p){return p.carga;}),backgroundColor:OP_PROV.map(function(p){return pc(p.prov_destino);}),borderRadius:4}]},{scales:{x:{ticks:{autoSkip:false,maxRotation:35,font:{size:9}}},y:{beginAtZero:true}}});
+  mkC('c-op-pie','doughnut',{labels:['Directas','Vía operador'],datasets:[{data:[ST.directo,ST.via_operador],backgroundColor:['#34D399','#F97171'],borderWidth:0}]},{plugins:{legend:{display:true,position:'bottom',labels:{boxWidth:10,font:{size:10}}}},cutout:'55%'});
+  var topC=OP_CLI.slice(0,15);
+  mkC('c-op-cli','bar',{labels:topC.map(function(c){return c['Título'].substring(0,22);}),datasets:[{label:'Visitas',data:topC.map(function(c){return c.visitas;}),backgroundColor:'#F97171',borderRadius:4}]},{scales:{x:{ticks:{autoSkip:false,maxRotation:50,font:{size:9}}},y:{beginAtZero:true,ticks:{stepSize:1}}}});
+  mkC('c-op-carga-cli','bar',{labels:topC.map(function(c){return c['Título'].substring(0,22);}),datasets:[{label:'Carga',data:topC.map(function(c){return c.carga;}),backgroundColor:'#A78BFA',borderRadius:4}]},{scales:{x:{ticks:{autoSkip:false,maxRotation:50,font:{size:9}}},y:{beginAtZero:true}}});
+  document.getElementById('n-op-prov').textContent=OP_PROV.length+' provincias';
+  document.getElementById('tb-op-prov').innerHTML=OP_PROV.map(function(p){var E=p.efect;return'<tr><td><b style="color:'+pc(p.prov_destino)+'">'+p.prov_destino+'</b></td><td><b>'+p.visitas+'</b></td><td>'+p.clientes_n+'</td><td>'+p.dirs_n+'</td><td class="mono">'+p.carga.toLocaleString("es-AR")+'</td><td class="mono">'+p.carga_x_vis+'</td><td><span class="bx bg">'+p.ok+'</span></td><td><span class="bx '+(p.fail>0?'br':'')+'">'+( p.fail||'—')+'</span></td><td><span class="bx '+(E>=95?'bg':E>=85?'ba':'br')+'">'+E+'%</span></td><td>'+p.dias_n+'</td></tr>';}).join('');
+  document.getElementById('n-op-dir').textContent=OP_DIR.length+' operadores';
+  document.getElementById('tb-op-dir').innerHTML=OP_DIR.map(function(d){var E=d.efect;var pTags=(d.provincias||'').split(',').map(function(p){p=p.trim();return'<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:'+pc(p)+'22;color:var(--text2);margin-right:2px">'+p+'</span>';}).join('');return'<tr><td style="font-size:10.5px;max-width:200px;overflow:hidden;text-overflow:ellipsis"><b>'+d.dir_operador+'</b></td><td style="font-size:10px">'+d.barrio+'</td><td><b>'+d.visitas+'</b></td><td>'+d.clientes_n+'</td><td>'+pTags+'</td><td class="mono">'+d.carga.toLocaleString("es-AR")+'</td><td><span class="bx bg">'+d.ok+'</span></td><td><span class="bx '+(d.fail>0?'br':'')+'">'+( d.fail||'—')+'</span></td><td><span class="bx '+(E>=95?'bg':E>=85?'ba':'br')+'">'+E+'%</span></td></tr>';}).join('');
+  document.getElementById('n-op-cli').textContent=OP_CLI.length+' clientes';
+  document.getElementById('tb-op-cli').innerHTML=OP_CLI.map(function(c){var E=c.efect;var pTags=(c.provincias||'').split(',').map(function(p){p=p.trim();return'<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:'+pc(p)+'22;color:var(--text2);margin-right:2px">'+p+'</span>';}).join('');return'<tr><td style="font-size:11px;max-width:190px;overflow:hidden;text-overflow:ellipsis"><b>'+c['Título']+'</b></td><td><b>'+c.visitas+'</b></td><td>'+pTags+'</td><td><span class="bx bb">'+c.prov_n+'</span></td><td>'+c.dirs_n+'</td><td class="mono">'+c.carga.toLocaleString("es-AR")+'</td><td><span class="bx bg">'+c.ok+'</span></td><td><span class="bx '+(c.fail>0?'br':'')+'">'+( c.fail||'—')+'</span></td><td><span class="bx '+(E>=95?'bg':E>=85?'ba':'br')+'">'+E+'%</span></td></tr>';}).join('');
+}
+
+</script>
+</body>
+</html>
