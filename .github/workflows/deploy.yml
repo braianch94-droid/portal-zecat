@@ -1,4 +1,4 @@
-name: Deploy to GitHub Pages
+name: Deploy to GitHub Pages + Cloudflare Pages
 
 on:
   push:
@@ -15,21 +15,33 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  deploy:
+  deploy-github:
+    name: Deploy to GitHub Pages
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/configure-pages@v4
         with:
           enablement: true
-
       - uses: actions/upload-pages-artifact@v3
         with:
           path: .
-
       - uses: actions/deploy-pages@v4
         id: deployment
+
+  deploy-cloudflare:
+    name: Deploy to Cloudflare Pages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: portal-zecat
+          directory: .
+          gitHubToken: ${{ secrets.GITHUB_TOKEN }}
