@@ -2047,7 +2047,6 @@ body.dark #recModal button{background:#334155;color:#cbd5e1}
       <th style="width:36px">#</th>
       <th>Operario</th>
       <th>Grupo</th>
-      <th style="text-align:right">D&iacute;as Activos</th>
       <th style="text-align:right">Total L&iacute;neas</th>
       <th style="text-align:right">Lin/D&iacute;a</th>
       <th style="text-align:center">vs Target</th>
@@ -2793,7 +2792,7 @@ function buildResumen(){
   var grpLabels={picking:'Picking',pie:'Pie Máquina',muestra:'Muestra Simple',control:'Control'};
   var grpColors={picking:'#2563eb',pie:'#d97706',muestra:'#7c3aed',control:'#64748b'};
   if(!rows.length){
-    tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:28px;color:#aaa">Sin datos para el período seleccionado</td></tr>';
+    tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:28px;color:#aaa">Sin datos para el período seleccionado</td></tr>';
   } else {
     rows.forEach(function(op,i){
       var tr=document.createElement('tr');
@@ -2808,7 +2807,6 @@ function buildResumen(){
       tr.innerHTML='<td style="color:#999;text-align:center">'+(i+1)+'</td>'
         +'<td style="font-weight:600">'+op.resp+'</td>'
         +'<td><span style="background:'+gc+'22;color:'+gc+';padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600">'+gl+'</span></td>'
-        +'<td style="text-align:right">'+op.dias+'</td>'
         +'<td style="text-align:right">'+op.lineas.toLocaleString()+'</td>'
         +'<td style="text-align:right;font-weight:700;color:'+(op.grupo==='picking'?(op.ld>=TARGET?'#16a34a':op.ld>=70?'#d97706':'#dc2626'):'#333')+'">'+op.ld+'</td>'
         +'<td style="text-align:center">'+tgtHtml+'</td>'
