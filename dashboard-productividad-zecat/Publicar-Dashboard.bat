@@ -1,6 +1,7 @@
 @echo off
 setlocal
-set REPO=C:\Users\bchevasco\OneDrive - Articulos Promocionales SA\Escritorio\Productividad
+set REPO=%~dp0
+set REPO=%REPO:~0,-1%
 
 echo ==============================================
 echo  ZECAT - Actualizar y publicar dashboard
@@ -19,7 +20,7 @@ echo.
 
 echo [2/3] Preparando para publicar...
 cd /d "%REPO%"
-copy /Y "Dashboard_Productividad.html" "index.html" >nul
+copy /Y "%REPO%\Dashboard_Productividad.html" "%REPO%\index.html" >nul
 git add index.html
 git diff --cached --quiet
 if %errorlevel% equ 0 (
@@ -44,7 +45,7 @@ echo.
 
 :done
 echo ==============================================
-echo  Dashboard online en:
+echo  Listo. Ver dashboard online en:
 echo  https://braianch94-droid.github.io/dashboard-productividad-zecat/
 echo ==============================================
 echo.

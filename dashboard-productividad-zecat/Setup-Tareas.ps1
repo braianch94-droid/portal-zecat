@@ -1,55 +1,67 @@
 #Requires -RunAsAdministrator
 <#
     Setup-Tareas.ps1
-    Registra 3 tareas programadas para actualizar el Dashboard de Productividad:
-      - 08:00 hs
-      - 12:00 hs
-      - 16:00 hs
+    Registra una tarea programada que ejecuta el ciclo completo:
+      1. Genera el dashboard desde productividad.xlsx
+      2. Copia el HTML al repositorio portal-zecat
+      3. Hace git push → el portal online se actualiza en 2-3 min
+
     Ejecutar UNA SOLA VEZ como Administrador.
+    Para cambiar el horario, editar $Horario y volver a ejecutar.
 #>
 
-$scriptPath = Join-Path $PSScriptRoot "Update-Dashboard.ps1"
+# ── Configuración ─────────────────────────────────────────────────────────────
+$Horario   = "07:00"   # Hora de ejecución diaria (formato HH:mm)
+$NomTarea  = "DashboardProductividad_AutoUpdate"
+$BatPath   = "$PSScriptRoot\Actualizar-Dashboard.bat"
+# ──────────────────────────────────────────────────────────────────────────────
 
-if (-not (Test-Path $scriptPath)) {
-    Write-Error "No se encontro el script: $scriptPath"
+if (-not (Test-Path $BatPath)) {
+    Write-Error "No se encontro el archivo: $BatPath"
+    Write-Host  "Asegurate de que Actualizar-Dashboard.bat este en la carpeta Productividad."
     exit 1
 }
 
-$exe  = "powershell.exe"
-$args = "-ExecutionPolicy Bypass -WindowStyle Hidden -NonInteractive -File `"$scriptPath`""
+$action = New-ScheduledTaskAction `
+    -Execute  "cmd.exe" `
+    -Argument "/c `"$BatPath`""
 
-$action   = New-ScheduledTaskAction -Execute $exe -Argument $args
+$trigger = New-ScheduledTaskTrigger -Daily -At $Horario
+
 $settings = New-ScheduledTaskSettingsSet `
-    -ExecutionTimeLimit (New-TimeSpan -Hours 1) `
+    -ExecutionTimeLimit  (New-TimeSpan -Hours 1) `
     -StartWhenAvailable `
-    -MultipleInstances IgnoreNew
+    -MultipleInstances   IgnoreNew `
+    -Hidden
 
-$tasks = @(
-    @{ Name = "DashboardProductividad_08"; Hour = "08:00" }
-    @{ Name = "DashboardProductividad_12"; Hour = "12:00" }
-    @{ Name = "DashboardProductividad_16"; Hour = "16:00" }
-)
-
-foreach ($t in $tasks) {
-    $trigger = New-ScheduledTaskTrigger -Daily -At $t.Hour
-
-    $existing = Get-ScheduledTask -TaskName $t.Name -ErrorAction SilentlyContinue
-    if ($existing) {
-        Unregister-ScheduledTask -TaskName $t.Name -Confirm:$false
-        Write-Host "Tarea existente eliminada: $($t.Name)"
-    }
-
-    Register-ScheduledTask `
-        -TaskName  $t.Name `
-        -Action    $action `
-        -Trigger   $trigger `
-        -Settings  $settings `
-        -RunLevel  Highest `
-        -Force | Out-Null
-
-    Write-Host "OK  Tarea registrada: $($t.Name) a las $($t.Hour)"
+# Eliminar tarea anterior si existe
+$existing = Get-ScheduledTask -TaskName $NomTarea -ErrorAction SilentlyContinue
+if ($existing) {
+    Unregister-ScheduledTask -TaskName $NomTarea -Confirm:$false
+    Write-Host "Tarea anterior eliminada."
 }
 
+Register-ScheduledTask `
+    -TaskName   $NomTarea `
+    -Action     $action `
+    -Trigger    $trigger `
+    -Settings   $settings `
+    -RunLevel   Highest `
+    -Force | Out-Null
+
 Write-Host ""
-Write-Host "Listo. El dashboard se actualizara automaticamente a las 08:00, 12:00 y 16:00."
-Write-Host "Podes verificar las tareas en: Programador de tareas > Biblioteca del Programador de tareas"
+Write-Host "============================================="
+Write-Host "  Tarea programada registrada correctamente"
+Write-Host "============================================="
+Write-Host ""
+Write-Host "  Nombre  : $NomTarea"
+Write-Host "  Horario : todos los dias a las $Horario hs"
+Write-Host "  Accion  : genera dashboard + sube a GitHub"
+Write-Host ""
+Write-Host "  El portal online se actualizara automaticamente"
+Write-Host "  cada dia ~$Horario hs (Argentina)."
+Write-Host ""
+Write-Host "  Podas verificar en:"
+Write-Host "  Programador de tareas > Biblioteca del Programador de tareas"
+Write-Host "  Tarea: $NomTarea"
+Write-Host ""

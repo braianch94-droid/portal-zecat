@@ -7,8 +7,8 @@
 # STAFFING: solo lineas de picking regular (SIN/CON LOGO)
 # ============================================================
 param(
-    [string]$Source  = "C:\Users\bchevasco\OneDrive - Articulos Promocionales SA\Escritorio\Productividad\productividad.xlsx",
-    [string]$Output  = "C:\Users\bchevasco\OneDrive - Articulos Promocionales SA\Escritorio\Productividad\Dashboard_Productividad.xlsx",
+    [string]$Source  = "$PSScriptRoot\productividad.xlsx",
+    [string]$Output  = "$PSScriptRoot\Dashboard_Productividad.xlsx",
     [string]$LezFilter = "Lezcano"
 )
 
@@ -390,6 +390,31 @@ try {
     }
     $latestStaff=($staffRows|Where-Object{$_.YM -eq $latestYM}|Select-Object -First 1)
 
+    # Ultimos 7 dias de picking (solo equipo regular SIN/CON LOGO)
+    $reg7Dates=@($pkDay.Keys|Where-Object{$allResp[$_.Split("|")[0]]}|
+        ForEach-Object{$_.Split("|")[1]}|Sort-Object -Unique|Select-Object -Last 7)
+    $day7Rows=[System.Collections.Generic.List[PSObject]]::new()
+    $prevD7L=$null
+    foreach($d7ymd in $reg7Dates){
+        $d7dt=[datetime]::Parse($d7ymd)
+        $d7L=0;$d7Ops=@{}
+        foreach($resp in $sortedResp){
+            $d7k="$resp|$d7ymd"
+            if($pkDay[$d7k]){$d7L+=$pkDay[$d7k];$d7Ops[$resp]=$true}
+        }
+        $d7n=$d7Ops.Count
+        $d7LD=if($d7n){[Math]::Round($d7L/$d7n,1)}else{0}
+        $d7T=$d7n*$TARGET
+        $d7C=if($d7T){[Math]::Round($d7L/$d7T*100,1)}else{0}
+        $d7Dlt=if($null -ne $prevD7L){[int]($d7L-$prevD7L)}else{$null}
+        $day7Rows.Add([PSCustomObject]@{
+            Fecha=$d7dt.ToString("dd/MM")
+            DiaSem=@('Do','Lu','Ma','Mi','Ju','Vi','Sa')[[int]$d7dt.DayOfWeek]
+            Ops=$d7n;Lines=[int]$d7L;LinesPerOp=$d7LD;Target=$d7T;Cumpl=$d7C;Delta=$d7Dlt
+        })
+        $prevD7L=$d7L
+    }
+
     # mermaRows
     $mermaRows=[System.Collections.Generic.List[PSObject]]::new()
     foreach($ym in ($mermaMes.Keys|Sort-Object)){
@@ -519,6 +544,51 @@ try {
     $r3=KPI-Card $ws1 $row 6 7 "OLAS PROCESADAS"               $totOlas $C.White $C.NavyHdr "#,##0"
     $row=[Math]::Max([Math]::Max($r1,$r2),$r3); RowH $ws1 $row 6; $row++
 
+    # ── GRAFICO EVOLUCION DIARIA (flotante, arriba derecha) ──
+    $cdDates=@($pkDay.Keys|Where-Object{$allResp[$_.Split("|")[0]]}|
+        ForEach-Object{$_.Split("|")[1]}|Sort-Object -Unique|Select-Object -Last 30)
+    $cdR=2;$cdC=16
+    foreach($cdd in $cdDates){
+        $cddT=0
+        foreach($rsp in $sortedResp){$cddk="$rsp|$cdd";if($pkDay[$cddk]){$cddT+=$pkDay[$cddk]}}
+        $ws1.Cells.Item($cdR,$cdC).Value2=[datetime]::Parse($cdd).ToString("dd/MM")
+        $ws1.Cells.Item($cdR,$cdC+1).Value2=[int]$cddT
+        $cdR++
+    }
+    try{
+        $valRange=$ws1.Range($ws1.Cells.Item(2,$cdC+1),$ws1.Cells.Item($cdR-1,$cdC+1))
+        $lblRange=$ws1.Range($ws1.Cells.Item(2,$cdC),  $ws1.Cells.Item($cdR-1,$cdC))
+        $xl.ScreenUpdating=$false
+        $xl.Visible=$true
+        $dashWb.Activate(); $ws1.Activate()
+        $cObj=$ws1.ChartObjects().Add([double]650,[double]44,[double]510,[double]200)
+        $xl.Visible=$false
+        $cht=$cObj.Chart
+        $cht.ChartType=4  # xlLine
+        $cht.SetSourceData($valRange)
+        try{
+            $cSer=$cht.SeriesCollection().Item(1)
+            try{$cSer.XValues=$lblRange}catch{}
+            $cSer.Name="Total lineas equipo"
+            try{$cSer.Border.Color=[long](rgb 46 117 182);$cSer.Border.Weight=2}catch{}
+            try{$cSer.MarkerStyle=-4142}catch{}
+        }catch{Write-Host "  [WARN] Series: $_"}
+        $cht.HasTitle=$true
+        $cht.ChartTitle.Text="Evolucion diaria del equipo (ultimos 30 dias)"
+        $cht.ChartTitle.Font.Size=10;$cht.ChartTitle.Font.Bold=$true
+        $cht.HasLegend=$false
+        try{$cht.PlotArea.Interior.Color=[long]$C.LightGray}catch{}
+        try{$cht.ChartArea.Interior.Color=[long]$C.White}catch{}
+        try{$cht.ChartArea.Border.LineStyle=-4142}catch{}
+        try{$cht.Axes(1).TickLabels.Font.Size=7;$cht.Axes(1).TickLabelSpacing=5}catch{}
+        try{$cht.Axes(2).TickLabels.Font.Size=8}catch{}
+        # Ocultar columnas de datos al final (no antes de XValues)
+        $ws1.Columns.Item($cdC).Hidden=$true
+        $ws1.Columns.Item($cdC+1).Hidden=$true
+        $xl.ScreenUpdating=$true
+        Write-Host "[$($NOW.ToString('HH:mm:ss'))] GRAFICO OK"
+    }catch{Write-Host "  [WARN] Grafico($($_.InvocationInfo.ScriptLineNumber)): $($_.Exception.Message)"}
+
     MR $ws1 $row 2 $row 7
     W ($ws1.Cells.Item($row,2)) "  DESTACADOS DEL MES" $C.SkyBlue $C.NavyHdr $true 11 -4131; $row++
     if($latestRows.Count-ge 1){
@@ -535,6 +605,47 @@ try {
         W ($ws1.Cells.Item($row,3)) $bottom.Resp $C.White $C.NavyHdr $true 10 -4131
         MR $ws1 $row 4 $row 5
         W ($ws1.Cells.Item($row,4)) "$($bottom.LineasDia) lin/dia  ($($bottom.Cumplim)%)" $C.White $C.RedTxt $true 10 -4131; $row++
+    }
+    RowH $ws1 $row 6; $row++
+    # ── ULTIMOS 7 DIAS ──
+    MR $ws1 $row 2 $row 9
+    W ($ws1.Cells.Item($row,2)) "  ULTIMOS 7 DIAS DE PICKING (EQUIPO)" $C.SkyBlue $C.NavyHdr $true 11 -4131; $row++
+    RowH $ws1 $row 20
+    $d7hdrs=@("FECHA","DIA","OPERARIOS","TOTAL LINEAS","LINEAS/OP","TARGET DIA","CUMPL%","VS AYER")
+    for($c7=0;$c7 -lt $d7hdrs.Count;$c7++){W ($ws1.Cells.Item($row,$c7+2)) $d7hdrs[$c7] $C.NavyHdr $C.TextWhite $true 9 -4108}
+    $row++
+    $ridx7=0
+    foreach($d7 in $day7Rows){
+        RowH $ws1 $row 18
+        $rb7=if($ridx7%2){$C.White}else{$C.LightGray}
+        $pc7=PerfColors $d7.LinesPerOp
+        $cBg7=if($d7.Cumpl-ge 100){$C.GreenBg}elseif($d7.Cumpl-ge 83){$C.YellowBg}else{$C.RedBg}
+        $cFg7=if($d7.Cumpl-ge 100){$C.GreenFg}elseif($d7.Cumpl-ge 83){$C.YellowFg}else{$C.RedFg}
+        $dStr7=if($null -eq $d7.Delta){"-"}elseif($d7.Delta-ge 0){"+$($d7.Delta)"}else{"$($d7.Delta)"}
+        $dFg7=if($null -eq $d7.Delta){$C.Gray}elseif($d7.Delta-gt 50){$C.GreenTxt}elseif($d7.Delta-lt -50){$C.RedTxt}else{$C.Gray}
+        W ($ws1.Cells.Item($row,2)) $d7.Fecha       $rb7    $C.TextDark $false 9 -4108
+        W ($ws1.Cells.Item($row,3)) $d7.DiaSem      $rb7    $C.TextDark $false 9 -4108
+        W ($ws1.Cells.Item($row,4)) $d7.Ops         $rb7    $C.TextDark $false 9 -4108
+        W ($ws1.Cells.Item($row,5)) $d7.Lines       $rb7    $C.TextDark $false 9 -4108 "#,##0"
+        W ($ws1.Cells.Item($row,6)) $d7.LinesPerOp  $pc7[0] $pc7[1]    $true  9 -4108 "0.0"
+        W ($ws1.Cells.Item($row,7)) $d7.Target      $rb7    $C.TextDark $false 9 -4108 "#,##0"
+        W ($ws1.Cells.Item($row,8)) "$($d7.Cumpl)%" $cBg7   $cFg7      $true  9 -4108
+        W ($ws1.Cells.Item($row,9)) $dStr7          $rb7    $dFg7       $true  9 -4108
+        $ridx7++;$row++
+    }
+    if($day7Rows.Count){
+        RowH $ws1 $row 20
+        $avg7L =[Math]::Round(($day7Rows|Measure-Object Lines      -Average).Average,0)
+        $avg7LD=[Math]::Round(($day7Rows|Measure-Object LinesPerOp -Average).Average,1)
+        $avg7C =[Math]::Round(($day7Rows|Measure-Object Cumpl      -Average).Average,1)
+        $ldt7=PerfColors $avg7LD
+        $cBgA=if($avg7C-ge 100){$C.GreenBg}elseif($avg7C-ge 83){$C.YellowBg}else{$C.RedBg}
+        $cFgA=if($avg7C-ge 100){$C.GreenFg}elseif($avg7C-ge 83){$C.YellowFg}else{$C.RedFg}
+        W ($ws1.Cells.Item($row,2)) "PROM 7 DIAS"  $C.SkyBlue $C.NavyHdr $true 9 -4131
+        W ($ws1.Cells.Item($row,5)) $avg7L         $C.SkyBlue $C.NavyHdr $true 9 -4108 "#,##0"
+        W ($ws1.Cells.Item($row,6)) $avg7LD        $ldt7[0]   $ldt7[1]   $true 9 -4108 "0.0"
+        W ($ws1.Cells.Item($row,8)) "$avg7C%"      $cBgA      $cFgA      $true 9 -4108
+        $row++
     }
     RowH $ws1 $row 6; $row++
     MR $ws1 $row 2 $row 7
@@ -785,6 +896,8 @@ try {
         $cell.Font.Bold=$true;$cell.Font.Size=8;$cell.HorizontalAlignment=-4108;$cell.WrapText=$true
     }
     W ($ws5.Cells.Item($row,$nDays+2)) "PROM/DIA" $C.NavyHdr $C.TextWhite $true 9 -4108
+    W ($ws5.Cells.Item($row,$nDays+3)) "PROM 7D"  $C.NavyHdr $C.TextWhite $true 9 -4108
+    $last7DAll=@($allDates|Select-Object -Last 7)
     $row++
     $idx=0
     foreach($resp in $allOps2){
@@ -808,11 +921,23 @@ try {
             $pc=PerfColors $avg
             W ($ws5.Cells.Item($row,$nDays+2)) $avg $pc[0] $pc[1] $true 9 -4108 "0.0"
         }
+        # Promedio ultimos 7 dias
+        $dv7p=@()
+        foreach($d7y2 in $last7DAll){
+            $dk7p2="$resp|$d7y2"
+            if($pkDay[$dk7p2]){$dv7p+=[Math]::Round($pkDay[$dk7p2],0)}
+        }
+        if($dv7p.Count){
+            $a7p=[Math]::Round(($dv7p|Measure-Object -Average).Average,1)
+            $pc7p=PerfColors $a7p
+            W ($ws5.Cells.Item($row,$nDays+3)) $a7p $pc7p[0] $pc7p[1] $true 9 -4108 "0.0"
+        }
         $idx++;$row++
     }
     $nDaysInt=[int]$nDays; ColW $ws5 1 24
     for($d=2;$d -le ($nDaysInt+1);$d++){try{ColW $ws5 $d 5.5}catch{}}
     try{ColW $ws5 ($nDaysInt+2) 9}catch{}
+    try{ColW $ws5 ($nDaysInt+3) 9}catch{}
     Write-Host "[$($NOW.ToString('HH:mm:ss'))] PRODUCCION_DIARIA OK"
 
     # ===========================================================
@@ -1376,6 +1501,26 @@ try {
     }
     $jsRecMonthly="{"+($jsRecMonParts -join ",")+"}"
 
+    # --- Serializar datos para HTML: tabla 7 dias y grafico evolucion 30 dias ---
+    $jsDay7Parts=[System.Collections.Generic.List[string]]::new()
+    foreach($r7 in $day7Rows){
+        $dlt7=if($null -eq $r7.Delta){"null"}else{[string][int]$r7.Delta}
+        $jsDay7Parts.Add("{f:'$($r7.Fecha)',d:'$($r7.DiaSem)',ops:$($r7.Ops),lines:$($r7.Lines),lpo:$($r7.LinesPerOp),tgt:$($r7.Target),cum:$($r7.Cumpl),dlt:$dlt7}")
+    }
+    $jsDay7Rows="["+($jsDay7Parts -join ",")+"]"
+
+    $evol30Dates=@($pkDay.Keys|Where-Object{$allResp[$_.Split("|")[0]]}|ForEach-Object{$_.Split("|")[1]}|Sort-Object -Unique|Select-Object -Last 30)
+    $evol30LblParts=[System.Collections.Generic.List[string]]::new()
+    $evol30DataParts=[System.Collections.Generic.List[string]]::new()
+    foreach($e30d in $evol30Dates){
+        $e30T=0
+        foreach($rsp in $sortedResp){$e30k="$rsp|$e30d";if($pkDay[$e30k]){$e30T+=$pkDay[$e30k]}}
+        $evol30LblParts.Add("'$([datetime]::Parse($e30d).ToString('dd/MM'))'")
+        $evol30DataParts.Add("$([int]$e30T)")
+    }
+    $jsEvol30Labels="["+($evol30LblParts -join ",")+"]"
+    $jsEvol30Data="["+($evol30DataParts -join ",")+"]"
+
     $html = @"
 <!DOCTYPE html>
 <html lang="es">
@@ -1456,6 +1601,9 @@ body.dark tbody td{color:#e2e8f0}
 body.dark .nodata{background:#1e293b;border-color:#334155;color:#64748b}
 body.dark footer{color:#475569;background:#020617}
 body.dark .info-box{background:#1e293b;border-color:#334155;color:#94a3b8}
+tfoot td{border-top:2px solid #e0e0e0;font-weight:700}
+body.dark tfoot tr{background:#0f172a}
+body.dark tfoot td{color:#e2e8f0;border-top-color:#334155}
 #themeToggle{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);border-radius:50px;width:42px;height:42px;color:white;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
 #themeToggle:hover{background:rgba(255,255,255,.22);transform:scale(1.08)}
 </style>
@@ -1516,7 +1664,15 @@ body.dark .info-box{background:#1e293b;border-color:#334155;color:#94a3b8}
 <!-- ===== SECCION: PICKING ===== -->
 <div id="sec-picking" class="sec active">
 
-<div class="kpi-grid g5">
+<div class="charts-row c1">
+  <div class="chart-card" style="border-top:3px solid #2563eb;margin-bottom:0">
+    <div class="chart-title">&#128200; Evoluci&oacute;n diaria del equipo &mdash; &uacute;ltimos 30 d&iacute;as h&aacute;biles</div>
+    <div class="chart-subtitle">Total l&iacute;neas picking regular (SIN LOGO + CON LOGO) &mdash; equipo completo</div>
+    <div style="position:relative;height:200px"><canvas id="chartEvol30"></canvas></div>
+  </div>
+</div>
+
+<div class="kpi-grid g5" style="margin-top:18px">
   <div class="kpi-card blue"><div class="kpi-label">Operarios Activos</div><div class="kpi-value" id="kpiOps">-</div><div class="kpi-sub" id="kpiOpsSub">Picking regular</div></div>
   <div class="kpi-card green"><div class="kpi-label">Lineas / D&iacute;a</div><div class="kpi-value" id="kpiLD">-</div><div class="kpi-sub">Target: $TARGET lin/d&iacute;a</div></div>
   <div class="kpi-card amber"><div class="kpi-label">Cumplimiento</div><div class="kpi-value" id="kpiCum">-</div><div class="kpi-sub" id="kpiCumSub">Total lineas: -</div></div>
@@ -1530,6 +1686,24 @@ body.dark .info-box{background:#1e293b;border-color:#334155;color:#94a3b8}
 </div>
 
 <div class="info-box">&#127919; Target: <strong>$TARGET lineas/d&iacute;a</strong> &mdash; Verde &ge; $TARGET &mdash; Naranja &ge; 70 &mdash; Rojo &lt; 70</div>
+
+<div class="table-card" style="margin-bottom:18px">
+  <div class="rank-title">&#128197; Resumen &mdash; &Uacute;ltimos 7 d&iacute;as de picking regular</div>
+  <div class="rank-sub">Total equipo (SIN LOGO + CON LOGO) &mdash; target $TARGET lin/operario/d&iacute;a</div>
+  <table>
+    <thead><tr>
+      <th>Fecha</th><th>D&iacute;a</th>
+      <th style="text-align:right">Operarios</th>
+      <th style="text-align:right">Total L&iacute;neas</th>
+      <th style="text-align:right">Lin/Op</th>
+      <th style="text-align:right">Target d&iacute;a</th>
+      <th style="text-align:center">Cumpl%</th>
+      <th style="text-align:center">vs Ayer</th>
+    </tr></thead>
+    <tbody id="body7d"></tbody>
+    <tfoot id="foot7d"></tfoot>
+  </table>
+</div>
 
 <div class="charts-row c3">
   <div class="chart-card">
@@ -1706,6 +1880,9 @@ const merma1L=[$jsMerma1L];
 const merma2L=[$jsMerma2L];
 const recMonthly=$jsRecMonthly;
 const MES=['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const day7Rows=$jsDay7Rows;
+const evol30Labels=$jsEvol30Labels;
+const evol30Data=$jsEvol30Data;
 
 // Tab navigation
 function switchTab(name){
@@ -2152,6 +2329,13 @@ $pickersJs
 
 chartEvol.data.datasets.slice(0,-1).forEach(function(ds){pickerDataFull.push(ds.data.slice());pickerOrigColors.push(ds.borderColor);});
 
+const chartEvol30=new Chart('chartEvol30',{type:'line',data:{
+  labels:evol30Labels,datasets:[
+    {label:'Total lineas equipo',data:evol30Data,borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.08)',borderWidth:2.5,tension:.3,fill:true,pointRadius:3,pointHoverRadius:5}
+  ]},options:{responsive:true,maintainAspectRatio:false,
+  plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return ctx.parsed.y.toLocaleString('es-AR')+' lineas';}}}},
+  scales:{y:{min:0,grid:{color:'#eeeeee'},ticks:{color:'#666666'}},x:{grid:{display:false},ticks:{color:'#666666',font:{size:9},maxTicksLimit:15}}}}});
+
 const chartMerma=null; // canvas eliminado — datos de Pedido Merma no se muestran
 
 const chartPie=new Chart('chartPie',{type:'line',data:{
@@ -2190,7 +2374,7 @@ const chartRecOp=new Chart('chartRecOp',{type:'bar',data:{
   scales:{y:{min:0,grid:{color:'#eeeeee'},ticks:{stepSize:1,color:'#666666'}},x:{grid:{display:false},ticks:{color:'#666666',font:{size:10},maxRotation:35}}}}});
 
 // ===== DARK / LIGHT THEME =====
-var _allCharts=[chartRanking,chartTeamTrend,chartStaff,chartEvol,chartMerma,chartPie,chartLez,chartRecMon,chartRecCat,chartRecOp];
+var _allCharts=[chartRanking,chartTeamTrend,chartStaff,chartEvol,chartMerma,chartPie,chartLez,chartRecMon,chartRecCat,chartRecOp,chartEvol30];
 function updateChartColors(dark){
   var grid=dark?'#334155':'#eeeeee';
   var tick=dark?'#94a3b8':'#666666';
@@ -2231,6 +2415,43 @@ try {
   document.getElementById('selAnio').value='$jsInitYear';
   document.getElementById('selMes').value='$jsInitMon';
   applyFilter();
+  // Poblar tabla 7 dias (datos estaticos, no cambian con filtros)
+  (function(){
+    var b=document.getElementById('body7d');
+    var f=document.getElementById('foot7d');
+    if(!day7Rows||!day7Rows.length){
+      b.innerHTML='<tr><td colspan="8" style="text-align:center;color:#aaa;padding:20px">Sin datos disponibles</td></tr>';
+      return;
+    }
+    day7Rows.forEach(function(r){
+      var cumC=r.cum>=100?'#16a34a':r.cum>=70?'#d97706':'#dc2626';
+      var dltStr=r.dlt===null?'&mdash;':r.dlt>0?'<span style="color:#16a34a;font-weight:700">+'+r.dlt+'</span>':r.dlt<0?'<span style="color:#dc2626;font-weight:700">'+r.dlt+'</span>':'<span style="color:#999">0</span>';
+      b.innerHTML+='<tr>'
+        +'<td><strong>'+r.f+'</strong></td>'
+        +'<td>'+r.d+'</td>'
+        +'<td style="text-align:right">'+r.ops+'</td>'
+        +'<td style="text-align:right"><strong>'+r.lines.toLocaleString('es-AR')+'</strong></td>'
+        +'<td style="text-align:right">'+r.lpo+'</td>'
+        +'<td style="text-align:right">'+r.tgt+'</td>'
+        +'<td style="text-align:center;font-weight:700;color:'+cumC+'">'+r.cum+'%</td>'
+        +'<td style="text-align:center">'+dltStr+'</td>'
+        +'</tr>';
+    });
+    var aL=Math.round(day7Rows.reduce(function(s,r){return s+r.lines;},0)/day7Rows.length);
+    var aO=(day7Rows.reduce(function(s,r){return s+r.ops;},0)/day7Rows.length).toFixed(1);
+    var aP=(day7Rows.reduce(function(s,r){return s+r.lpo;},0)/day7Rows.length).toFixed(1);
+    var aC=(day7Rows.reduce(function(s,r){return s+r.cum;},0)/day7Rows.length).toFixed(1);
+    var acC=parseFloat(aC)>=100?'#16a34a':parseFloat(aC)>=70?'#d97706':'#dc2626';
+    f.innerHTML='<tr>'
+      +'<td colspan="2" style="padding:9px 11px">PROM 7 D&Iacute;AS</td>'
+      +'<td style="text-align:right;padding:9px 11px">'+aO+'</td>'
+      +'<td style="text-align:right;padding:9px 11px">'+aL.toLocaleString('es-AR')+'</td>'
+      +'<td style="text-align:right;padding:9px 11px">'+aP+'</td>'
+      +'<td style="text-align:right;padding:9px 11px">&mdash;</td>'
+      +'<td style="text-align:center;padding:9px 11px;color:'+acC+'">'+aC+'%</td>'
+      +'<td style="text-align:center;padding:9px 11px">&mdash;</td>'
+      +'</tr>';
+  })();
   // Si ya hay dark mode guardado, aplicar colores a los charts recién creados
   if(document.body.classList.contains('dark')) updateChartColors(true);
 } catch(err) {
