@@ -348,6 +348,20 @@ iframe {
       </div>
     </div>
 
+    <!-- ── INVENTARIO CÍCLICO ── -->
+    <div class="section">
+      <div class="sec-header" onclick="toggleSection(this)">
+        <svg class="sec-ico" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 3c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm7 13H5v-.23c0-.62.28-1.2.76-1.58C7.47 15.82 9.64 15 12 15s4.53.82 6.24 2.19c.48.38.76.97.76 1.58V19z"/></svg>
+        <span class="sec-label">Inventario Cíclico</span>
+        <span class="chevron">›</span>
+      </div>
+      <div class="sec-items">
+        <div class="nav-item" data-module="ciclico" data-tab="" onclick="navigate(this)">
+          <span class="nav-dot"></span>Dashboard Cíclico
+        </div>
+      </div>
+    </div>
+
     <!-- ── TRANSPORTE ── -->
     <div class="section">
       <div class="sec-header" onclick="toggleSection(this)">
@@ -424,6 +438,18 @@ iframe {
     </iframe>
   </div>
 
+  <!-- Inventario Cíclico frame -->
+  <div class="frame-wrap" id="fw-ciclico">
+    <div class="splash" id="splash-ciclico">
+      <div class="splash-spinner"></div>
+      <span>Cargando Inventario Cíclico…</span>
+    </div>
+    <iframe id="ifr-ciclico"
+      src="./inventario-ciclico-zecat/index.html"
+      onload="onLoad('ciclico')">
+    </iframe>
+  </div>
+
   <!-- Transporte frame -->
   <div class="frame-wrap" id="fw-transporte">
     <div class="splash" id="splash-transporte">
@@ -450,6 +476,10 @@ const INJECT = {
     header { display: none !important; }
     .main-tabs { display: none !important; }
   `,
+  ciclico: `
+    #themeBtn { display: none !important; }
+    body { overflow: auto !important; }
+  `,
   transporte: `
     .sidebar { display: none !important; }
     .topbar  { display: none !important; }
@@ -467,7 +497,7 @@ const PAGE_ID = {
 
 let currentModule = 'productividad';
 let isDark = false;
-const loaded = { productividad: false, asistencia: false, transporte: false };
+const loaded = { productividad: false, asistencia: false, ciclico: false, transporte: false };
 // Queue: pending navigation calls waiting for iframe to finish loading
 const pending = {};
 
