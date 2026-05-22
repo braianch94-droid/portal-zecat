@@ -9,43 +9,48 @@
 <style>
 /* ── VARIABLES ── */
 :root {
-  --sb-bg: #1A2235;
-  --sb-hover: #242E45;
-  --sb-active: #2D3A55;
+  --sb-bg: rgba(10,14,26,.97);
+  --sb-hover: rgba(255,255,255,.045);
+  --sb-active: rgba(249,113,113,.12);
   --sb-border: rgba(255,255,255,.07);
   --sb-accent: #F97171;
-  --sb-text-dim: rgba(255,255,255,.3);
-  --sb-text-mid: rgba(255,255,255,.58);
+  --sb-text-dim: rgba(255,255,255,.24);
+  --sb-text-mid: rgba(255,255,255,.52);
   --sb-text: rgba(255,255,255,.88);
   --sb-section: rgba(255,255,255,.22);
-  --portal-bg: #111520;
-  --toggle-bg: rgba(255,255,255,.06);
-  --toggle-hover: rgba(255,255,255,.1);
+  --portal-bg: #080B15;
+  --dot: rgba(255,255,255,.022);
+  --toggle-bg: rgba(255,255,255,.05);
+  --toggle-hover: rgba(255,255,255,.09);
 }
 body.light {
-  --sb-bg: #FFFFFF;
-  --sb-hover: #F4F6FB;
-  --sb-active: #EEF1FF;
-  --sb-border: #E2E6F0;
-  --sb-text-dim: #94A3B8;
-  --sb-text-mid: #4A5568;
-  --sb-text: #0D1B2A;
-  --sb-section: #94A3B8;
+  --sb-bg: rgba(255,255,255,.97);
+  --sb-hover: rgba(249,113,113,.05);
+  --sb-active: rgba(249,113,113,.09);
+  --sb-border: #E2E8F2;
+  --sb-text-dim: #A8B4C8;
+  --sb-text-mid: #5A6880;
+  --sb-text: #0D1826;
+  --sb-section: #8896B0;
+  --portal-bg: #EEF1F8;
+  --dot: rgba(0,0,0,.03);
   --toggle-bg: rgba(0,0,0,.04);
   --toggle-hover: rgba(0,0,0,.07);
-  --portal-bg: #F0F2F7;
 }
 
 /* ── RESET ── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* ── BODY ── */
 body {
   font-family: 'DM Sans', 'Segoe UI', system-ui, sans-serif;
   display: flex;
   height: 100vh;
   overflow: hidden;
-  background: var(--portal-bg);
-  transition: background .25s;
+  background-color: var(--portal-bg);
+  background-image: radial-gradient(var(--dot) 1px, transparent 1px);
+  background-size: 28px 28px;
+  transition: background-color .3s;
 }
 
 /* ── SIDEBAR ── */
@@ -53,19 +58,32 @@ body {
   width: 228px;
   min-width: 228px;
   background: var(--sb-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   display: flex;
   flex-direction: column;
   height: 100vh;
   overflow: hidden;
   flex-shrink: 0;
   border-right: 1px solid var(--sb-border);
-  transition: background .25s, border-color .25s;
+  box-shadow: 4px 0 28px rgba(0,0,0,.22);
+  position: relative;
   z-index: 10;
+  transition: background .25s, border-color .25s;
+}
+.sidebar::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent 0%, #F97171 50%, transparent 100%);
+  opacity: .5;
+  pointer-events: none;
 }
 
-/* Brand */
+/* ── BRAND ── */
 .brand {
-  padding: 16px 14px 14px;
+  padding: 17px 14px 15px;
   border-bottom: 1px solid var(--sb-border);
   display: flex;
   align-items: center;
@@ -73,90 +91,88 @@ body {
   flex-shrink: 0;
   transition: border-color .25s;
 }
-.brand-text { line-height: 1.2; }
+.brand-text { line-height: 1.2; flex: 1; min-width: 0; }
 .brand-name {
-  font-size: 14.5px;
+  font-size: 15px;
   font-weight: 700;
-  color: var(--sb-text);
   letter-spacing: .2px;
-  transition: color .25s;
+  background: linear-gradient(135deg, var(--sb-text) 20%, #F97171 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 .brand-sub {
   font-size: 10px;
   color: var(--sb-text-dim);
   margin-top: 2px;
+  letter-spacing: .4px;
+  text-transform: uppercase;
   transition: color .25s;
 }
 .brand-version {
-  margin-left: auto;
   font-size: 9.5px;
   font-weight: 600;
-  color: var(--sb-text-dim);
-  background: rgba(249,113,113,.15);
-  color: #F97171;
-  padding: 2px 6px;
-  border-radius: 4px;
+  color: var(--sb-accent);
+  background: rgba(249,113,113,.1);
+  border: 1px solid rgba(249,113,113,.2);
+  padding: 2px 7px;
+  border-radius: 5px;
   white-space: nowrap;
   flex-shrink: 0;
+  letter-spacing: .2px;
 }
 
-/* Nav */
+/* ── NAV ── */
 .nav {
   flex: 1;
   overflow-y: auto;
   padding: 6px 0 4px;
   scrollbar-width: thin;
-  scrollbar-color: rgba(255,255,255,.1) transparent;
+  scrollbar-color: rgba(255,255,255,.08) transparent;
 }
-body.light .nav {
-  scrollbar-color: rgba(0,0,0,.1) transparent;
-}
-.nav::-webkit-scrollbar { width: 4px; }
+body.light .nav { scrollbar-color: rgba(0,0,0,.1) transparent; }
+.nav::-webkit-scrollbar { width: 3px; }
 .nav::-webkit-scrollbar-track { background: transparent; }
-.nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 4px; }
+.nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 3px; }
 body.light .nav::-webkit-scrollbar-thumb { background: rgba(0,0,0,.1); }
 
-/* Section header */
-.section { margin-bottom: 1px; }
-
+/* ── SECTION HEADERS ── */
+.section { margin-bottom: 2px; }
 .sec-header {
   display: flex;
   align-items: center;
-  padding: 9px 14px;
+  padding: 8px 14px;
   cursor: pointer;
   color: var(--sb-text-mid);
-  font-size: 12.5px;
-  font-weight: 600;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .8px;
   transition: background .12s, color .12s;
   user-select: none;
-  border-left: 2.5px solid transparent;
-  letter-spacing: .1px;
+  gap: 8px;
 }
 .sec-header:hover { background: var(--sb-hover); color: var(--sb-text); }
 .sec-header.open { color: var(--sb-text); }
-.sec-header.open { border-left-color: var(--sb-accent); }
-
 .sec-ico {
-  width: 15px; height: 15px;
-  margin-right: 9px;
+  width: 14px; height: 14px;
   fill: currentColor;
-  opacity: .65;
+  opacity: .6;
   flex-shrink: 0;
-  transition: opacity .12s;
+  transition: opacity .15s;
 }
-.sec-header.open .sec-ico, .sec-header:hover .sec-ico { opacity: 1; }
-
+.sec-header.open .sec-ico { opacity: 1; fill: var(--sb-accent); }
+.sec-header:hover .sec-ico { opacity: .9; }
 .sec-label { flex: 1; }
-
 .chevron {
   font-size: 11px;
   color: var(--sb-text-dim);
   transition: transform .2s, color .12s;
   line-height: 1;
 }
-.sec-header.open .chevron { transform: rotate(90deg); }
+.sec-header.open .chevron { transform: rotate(90deg); color: var(--sb-text-mid); }
 
-/* Section items */
+/* ── SECTION ITEMS ── */
 .sec-items {
   max-height: 0;
   overflow: hidden;
@@ -164,22 +180,27 @@ body.light .nav::-webkit-scrollbar-thumb { background: rgba(0,0,0,.1); }
 }
 .sec-header.open + .sec-items { max-height: 400px; }
 
+/* ── NAV ITEMS ── */
 .nav-item {
   display: flex;
   align-items: center;
-  padding: 7px 14px 7px 36px;
+  padding: 7px 12px 7px 14px;
   cursor: pointer;
-  font-size: 12px;
-  font-weight: 500;
+  font-size: 12.5px;
+  font-weight: 400;
   color: var(--sb-text-mid);
   transition: background .12s, color .12s, border-color .12s;
   border-left: 2.5px solid transparent;
   user-select: none;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  gap: 8px;
+  border-radius: 0 6px 6px 0;
+  margin-right: 8px;
 }
-.nav-item:hover { background: var(--sb-hover); color: var(--sb-text); }
+.nav-item:hover {
+  background: var(--sb-hover);
+  color: var(--sb-text);
+  border-left-color: rgba(249,113,113,.35);
+}
 .nav-item.active {
   background: var(--sb-active);
   color: var(--sb-text);
@@ -189,17 +210,18 @@ body.light .nav::-webkit-scrollbar-thumb { background: rgba(0,0,0,.1); }
 .nav-dot {
   width: 5px; height: 5px;
   border-radius: 50%;
-  background: rgba(255,255,255,.2);
-  margin-right: 9px;
+  background: var(--sb-text-dim);
   flex-shrink: 0;
-  transition: background .12s, transform .12s;
+  transition: background .12s, transform .15s, box-shadow .15s;
 }
-body.light .nav-dot { background: rgba(0,0,0,.15); }
-.nav-item.active .nav-dot { background: var(--sb-accent); transform: scale(1.2); }
-.nav-item:hover .nav-dot { background: rgba(255,255,255,.4); }
-body.light .nav-item:hover .nav-dot { background: rgba(0,0,0,.3); }
+.nav-item.active .nav-dot {
+  background: var(--sb-accent);
+  transform: scale(1.4);
+  box-shadow: 0 0 5px rgba(249,113,113,.5);
+}
+.nav-item:hover .nav-dot { background: var(--sb-text-mid); }
 
-/* Footer */
+/* ── FOOTER ── */
 .sb-footer {
   padding: 10px 12px;
   border-top: 1px solid var(--sb-border);
@@ -220,8 +242,9 @@ body.light .nav-item:hover .nav-dot { background: rgba(0,0,0,.3); }
   transition: background .12s, color .12s;
   user-select: none;
   width: 100%;
-  border: none;
+  border: 1px solid var(--sb-border);
   text-align: left;
+  font-family: inherit;
 }
 .theme-btn:hover { background: var(--toggle-hover); color: var(--sb-text); }
 .theme-ico { font-size: 14px; }
@@ -231,8 +254,7 @@ body.light .nav-item:hover .nav-dot { background: rgba(0,0,0,.3); }
   flex: 1;
   position: relative;
   overflow: hidden;
-  background: var(--portal-bg);
-  transition: background .25s;
+  background: transparent;
 }
 
 .frame-wrap {
@@ -249,7 +271,7 @@ iframe {
   display: block;
 }
 
-/* Splash while loading */
+/* ── SPLASH ── */
 .splash {
   position: absolute;
   inset: 0;
@@ -257,21 +279,38 @@ iframe {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: var(--portal-bg);
+  background-color: var(--portal-bg);
+  background-image: radial-gradient(var(--dot) 1px, transparent 1px);
+  background-size: 28px 28px;
   color: var(--sb-text-dim);
   font-size: 12.5px;
-  gap: 10px;
+  gap: 14px;
   transition: opacity .3s;
   pointer-events: none;
 }
-.splash-spinner {
-  width: 24px; height: 24px;
-  border: 2px solid rgba(249,113,113,.2);
-  border-top-color: #F97171;
-  border-radius: 50%;
-  animation: spin .8s linear infinite;
+.splash-icon {
+  width: 44px; height: 44px;
+  background: linear-gradient(135deg, #F97171 0%, #ff9b71 100%);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Arial Black', sans-serif;
+  font-weight: 900;
+  font-size: 24px;
+  color: white;
+  box-shadow: 0 4px 20px rgba(249,113,113,.35);
+  animation: splashPulse 1.8s ease-in-out infinite;
 }
-@keyframes spin { to { transform: rotate(360deg); } }
+.splash-label {
+  color: var(--sb-text-mid);
+  font-size: 13px;
+  letter-spacing: .2px;
+}
+@keyframes splashPulse {
+  0%, 100% { transform: scale(1);    box-shadow: 0 4px 20px rgba(249,113,113,.35); }
+  50%       { transform: scale(1.07); box-shadow: 0 6px 28px rgba(249,113,113,.55); }
+}
 .splash.hidden { opacity: 0; }
 </style>
 </head>
@@ -290,7 +329,7 @@ iframe {
       <div class="brand-name">Zecat</div>
       <div class="brand-sub">Portal de Gestión</div>
     </div>
-    <div class="brand-version">AR 3.4</div>
+    <div class="brand-version">AR 4.0</div>
   </div>
 
   <!-- Navigation -->
@@ -417,8 +456,8 @@ iframe {
   <!-- Productividad frame -->
   <div class="frame-wrap active" id="fw-productividad">
     <div class="splash" id="splash-productividad">
-      <div class="splash-spinner"></div>
-      <span>Cargando Productividad…</span>
+      <div class="splash-icon">Z</div>
+      <span class="splash-label">Cargando Productividad…</span>
     </div>
     <iframe id="ifr-productividad"
       src="./dashboard-productividad-zecat/index.html"
@@ -429,8 +468,8 @@ iframe {
   <!-- Asistencia frame -->
   <div class="frame-wrap" id="fw-asistencia">
     <div class="splash" id="splash-asistencia">
-      <div class="splash-spinner"></div>
-      <span>Cargando Asistencia…</span>
+      <div class="splash-icon">Z</div>
+      <span class="splash-label">Cargando Asistencia…</span>
     </div>
     <iframe id="ifr-asistencia"
       src="./reporte-personal-zecat/index.html"
@@ -441,8 +480,8 @@ iframe {
   <!-- Inventario Cíclico frame -->
   <div class="frame-wrap" id="fw-ciclico">
     <div class="splash" id="splash-ciclico">
-      <div class="splash-spinner"></div>
-      <span>Cargando Inventario Cíclico…</span>
+      <div class="splash-icon">Z</div>
+      <span class="splash-label">Cargando Inventario Cíclico…</span>
     </div>
     <iframe id="ifr-ciclico"
       src="./inventario-ciclico-zecat/index.html"
@@ -453,8 +492,8 @@ iframe {
   <!-- Transporte frame -->
   <div class="frame-wrap" id="fw-transporte">
     <div class="splash" id="splash-transporte">
-      <div class="splash-spinner"></div>
-      <span>Cargando Transporte…</span>
+      <div class="splash-icon">Z</div>
+      <span class="splash-label">Cargando Transporte…</span>
     </div>
     <iframe id="ifr-transporte"
       src="./Logistica4/index.html"
@@ -496,7 +535,7 @@ const PAGE_ID = {
 };
 
 let currentModule = 'productividad';
-let isDark = false;
+let isDark = true;
 const loaded = { productividad: false, asistencia: false, ciclico: false, transporte: false };
 // Queue: pending navigation calls waiting for iframe to finish loading
 const pending = {};
