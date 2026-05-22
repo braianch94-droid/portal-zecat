@@ -72,6 +72,9 @@ jobs:
     name: Deploy to Cloudflare Pages
     needs: sync-and-deploy
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
     steps:
       - uses: actions/checkout@v4
         with:
