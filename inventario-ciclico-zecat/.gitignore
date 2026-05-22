@@ -1,0 +1,28 @@
+# ── Archivos de datos (nunca subir al repo) ──────────────────────
+*.xlsx
+*.xls
+*.csv
+
+# ── Archivos generados automaticamente ───────────────────────────
+Dashboard_Ciclico.html
+
+# ── Estado del ciclo (se auto-genera al primer run) ──────────────
+ciclo_actual.json
+historial_recomendaciones.json
+cobertura_familias.json
+
+# ── Windows ───────────────────────────────────────────────────────
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# ── Temporales y previews ─────────────────────────────────────────
+*.tmp
+*.log
+*.err
+~$*
+email_preview_*.html
+
+# ── Claude Code (interno) ─────────────────────────────────────────
+.claude/
