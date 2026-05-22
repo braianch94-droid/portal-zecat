@@ -18,7 +18,7 @@ $NOW     = Get-Date
 # Operarios excluidos del cálculo de PRODUCTIVIDAD del equipo (extras, no-pickers regulares)
 # Usar fragmentos del nombre, sin distinguir mayúsculas. Ej: "AIRALA" matchea "AIRALA CESAR".
 # Agregar más separados por coma. "Falta definir" se excluye siempre.
-$ExcludeFromProd = @("AIRALA","Falta definir")
+$ExcludeFromProd = @("AIRALA","Falta definir","Pie de Maquina","MAQUINA","Muestra Simple","LEZCANO")
 
 function IsExcludedFromProd($name){
     foreach($ex in $ExcludeFromProd){ if($name -like "*$ex*"){return $true} }
@@ -139,6 +139,7 @@ try {
     $pieMes     = @{}
     $allMon     = @{}
     $allResp    = @{}   # pickeadores regulares unicos
+    $dayGroupData = @{}  # date → @{CL;SL;CLops;SLops} para filtros Web
     $allOperators = @{}
     $opsByDay   = @{}   # operarios por dia (todos los grupos reales)
 
@@ -196,6 +197,15 @@ try {
             $pkMes[$key].L+=$L; $pkMes[$key].U+=$U; $pkMes[$key].Olas++
             $pkMes[$key].Days[$ymd]=$true
             if($grp -like "*CON LOGO*"){ $pkMes[$key].CL++ } else { $pkMes[$key].SL++ }
+            # Acumular por grupo por dia (para filtros Web)
+            if(-not $dayGroupData[$ymd]){ $dayGroupData[$ymd]=@{CL=0;SL=0;CLops=@{};SLops=@{}} }
+            if($grp -like "*CON LOGO*"){
+                $dayGroupData[$ymd].CL += $L
+                $dayGroupData[$ymd].CLops[$picker] = $true
+            } else {
+                $dayGroupData[$ymd].SL += $L
+                $dayGroupData[$ymd].SLops[$picker] = $true
+            }
         }
         if($isLezcano){
             if(-not $lezcanoMes[$ym]){ $lezcanoMes[$ym]=@{L=0;U=0;Olas=0;Days=@{}} }
@@ -298,7 +308,7 @@ try {
     # AGREGACIONES
     # ===========================================================
     $sortedMon  = $allMon.Keys  | Sort-Object
-    $sortedResp = $allResp.Keys | Sort-Object
+    $sortedResp = @($allResp.Keys | Where-Object{-not (IsExcludedFromProd $_)} | Sort-Object)
     $latestYM   = $sortedMon[-1]
     $lyParts    = $latestYM.Split("-")
     $latestNom  = "$($MES_NOM[[int]$lyParts[1]]) $($lyParts[0])"
@@ -407,10 +417,16 @@ try {
         $d7T=$d7n*$TARGET
         $d7C=if($d7T){[Math]::Round($d7L/$d7T*100,1)}else{0}
         $d7Dlt=if($null -ne $prevD7L){[int]($d7L-$prevD7L)}else{$null}
+        $d7gd=$dayGroupData[$d7ymd]
+        $d7CL=if($d7gd){[int]$d7gd.CL}else{0}
+        $d7SL=if($d7gd){[int]$d7gd.SL}else{0}
+        $d7CLn=if($d7gd){$d7gd.CLops.Count}else{0}
+        $d7SLn=if($d7gd){$d7gd.SLops.Count}else{0}
         $day7Rows.Add([PSCustomObject]@{
             Fecha=$d7dt.ToString("dd/MM")
             DiaSem=@('Do','Lu','Ma','Mi','Ju','Vi','Sa')[[int]$d7dt.DayOfWeek]
             Ops=$d7n;Lines=[int]$d7L;LinesPerOp=$d7LD;Target=$d7T;Cumpl=$d7C;Delta=$d7Dlt
+            CLLines=$d7CL;CLOps=$d7CLn;SLLines=$d7SL;SLOps=$d7SLn
         })
         $prevD7L=$d7L
     }
@@ -1319,6 +1335,42 @@ try {
 
     # ---- Construir datos para charts y monthlyData JS ----
     $allYears = @{}
+    # Leer pickeadores oficiales por mes desde estructura ARG - CHI.xlsx
+    $pickeadoresByMon = @{}
+    $estructuraPath = "C:\Users\bchevasco\OneDrive - Articulos Promocionales SA\Escritorio\Inteligencia Artificial\Personal\estructura ARG - CHI.xlsx"
+    if(Test-Path $estructuraPath){
+        try{
+            $xtWb = $xl.Workbooks.Open($estructuraPath)
+            $xtWs = $xtWb.Sheets.Item("ARG")
+            $xtArr = $xtWs.UsedRange.Value2
+            $xtRows = $xtArr.GetUpperBound(0)
+            $xtCols = $xtArr.GetUpperBound(1)
+            $pkCol=$null; $mesCol=$null
+            for($c=1;$c -le $xtCols;$c++){
+                $h="$($xtArr[1,$c])".Trim()
+                if($h -like "*Pickeadores*"){$pkCol=$c}
+                if($h -eq "Mes"){$mesCol=$c}
+            }
+            if($pkCol -and $mesCol){
+                for($r=2;$r -le $xtRows;$r++){
+                    $mesVal=$xtArr[$r,$mesCol]; $pkVal=$xtArr[$r,$pkCol]
+                    if($mesVal -and $pkVal){
+                        try{
+                            $mesDate=[datetime]::FromOADate([double]$mesVal)
+                            $ymx="$($mesDate.Year)-$('{0:00}' -f $mesDate.Month)"
+                            $pkInt=[int]$pkVal
+                            if(-not $pickeadoresByMon[$ymx] -or $pickeadoresByMon[$ymx] -lt $pkInt){
+                                $pickeadoresByMon[$ymx]=$pkInt
+                            }
+                        }catch{}
+                    }
+                }
+            }
+            $xtWb.Close($false)
+            Write-Host "[$($NOW.ToString('HH:mm:ss'))] Pickeadores cargados: $($pickeadoresByMon.Count) meses"
+        }catch{ Write-Host "  [WARN] No se pudo leer estructura: $_" }
+    }
+
     $jsMonthlyDataParts = [System.Collections.Generic.List[string]]::new()
     $jsAllDataList = [System.Collections.Generic.List[string]]::new()
     $jsMonLabelsList=[System.Collections.Generic.List[string]]::new()
@@ -1341,7 +1393,11 @@ try {
         $mR=@($sumRows|Where-Object{$_.YM -eq $mon})
         if($mR.Count){
             $mRProd=@($mR|Where-Object{-not (IsExcludedFromProd $_.Resp)})
-            $tld=if($mRProd.Count){[Math]::Round(($mRProd|Measure-Object LineasDia -Average).Average,1)}else{0}
+            $mWkDays=if($staffByMes[$mon]){[int]$staffByMes[$mon].WorkDays.Count}else{1}
+            $mWkDays=if($mWkDays -gt 0){$mWkDays}else{1}
+            $mProdTotL=($mRProd|Measure-Object Lineas -Sum).Sum
+            $mPick=if($pickeadoresByMon[$mon]){$pickeadoresByMon[$mon]}else{[math]::Max($mRProd.Count,1)}
+            $tld=[Math]::Round($mProdTotL/$mWkDays/$mPick,1)
             $jsTeamLDList.Add($tld.ToString($IC))
             $jsTeamLinList.Add(($mR|Measure-Object Lineas -Sum).Sum.ToString($IC))
             if($tld -ge $TARGET){$jsTeamColors.Add("'#16a34a'")}
@@ -1349,7 +1405,8 @@ try {
             else{$jsTeamColors.Add("'#dc2626'")}
         }else{$jsTeamLDList.Add("0");$jsTeamLinList.Add("0");$jsTeamColors.Add("'#dc2626'")}
         $sr2=$staffRows|Where-Object{$_.YM -eq $mon}|Select-Object -First 1
-        if($sr2){$jsStaffNecList.Add($sr2.PersonasNecesarias.ToString($IC));$jsStaffActList.Add($sr2.PersonasActuales.ToString($IC))}
+        $sr2Pick=if($pickeadoresByMon[$mon]){$pickeadoresByMon[$mon]}else{if($sr2){$sr2.PersonasActuales}else{0}}
+        if($sr2){$jsStaffNecList.Add($sr2.PersonasNecesarias.ToString($IC));$jsStaffActList.Add($sr2Pick.ToString($IC))}
         else{$jsStaffNecList.Add("0");$jsStaffActList.Add("0")}
         $mr2=$mermaRows|Where-Object{$_.YM -eq $mon}|Select-Object -First 1
         if($mr2){
@@ -1373,20 +1430,25 @@ try {
         # Excluir extras del cálculo de productividad del equipo
         $mProdRows=@($mRows|Where-Object{-not (IsExcludedFromProd $_.Resp)})
         $mTotOps=$mProdRows.Count
-        $mAvgLD=if($mTotOps){[Math]::Round(($mProdRows|Measure-Object LineasDia -Average).Average,1)}else{0}
+        # Usar pickeadores oficiales del archivo de estructura como denominador real
+        $mPickOficial=if($pickeadoresByMon[$mon]){$pickeadoresByMon[$mon]}else{[math]::Max($mTotOps,1)}
+        $mWDays=if($staffByMes[$mon]){[int]$staffByMes[$mon].WorkDays.Count}else{1}
+        $mWDays=if($mWDays -gt 0){$mWDays}else{1}
+        $mProdTotalL=($mProdRows|Measure-Object Lineas -Sum).Sum
+        $mAvgLD=[Math]::Round($mProdTotalL/$mWDays/$mPickOficial,1)
         $mCumAv=[Math]::Round($mAvgLD/$TARGET*100,1)
         $mRateG=if($mTotL){[Math]::Round($mTotRC/($mTotL/1000),2)}else{0}
         $sr=$staffRows|Where-Object{$_.YM -eq $mon}|Select-Object -First 1
         $mStaffNec=if($sr){$sr.PersonasNecesarias}else{0}
-        $mStaffAct=if($sr){$sr.PersonasActuales}else{0}
+        $mStaffAct=$mPickOficial
         $pickerParts=[System.Collections.Generic.List[string]]::new()
-        foreach($op in $mRows){
+        foreach($op in $mProdRows){
             $rn=$op.Resp -replace "'",""
             $tr=if($trendByResp[$op.Resp]){($trendByResp[$op.Resp].Txt -replace "'","")}else{"-"}
             $pickerParts.Add("{resp:'$rn',dias:$($op.Dias),olas:$($op.Olas),lineas:$($op.Lineas),ld:$($op.LineasDia.ToString($IC)),cumpl:$($op.Cumplim.ToString($IC)),unidades:$($op.Unidades),recCnt:$($op.RecCnt),trend:'$tr'}")
         }
         $pickersArr="["+($pickerParts -join ",")+"]"
-        $jsMonthlyDataParts.Add("'$mon':{totOps:$mTotOps,avgLD:$($mAvgLD.ToString($IC)),cumAv:$($mCumAv.ToString($IC)),totL:$mTotL,totU:$mTotU,totRC:$mTotRC,rateG:$($mRateG.ToString($IC)),totOlas:$mTotOlas,staffNec:$($mStaffNec.ToString($IC)),staffAct:$($mStaffAct.ToString($IC)),pickers:$pickersArr}")
+        $jsMonthlyDataParts.Add("'$mon':{totOps:$mTotOps,pickeadores:$mPickOficial,avgLD:$($mAvgLD.ToString($IC)),cumAv:$($mCumAv.ToString($IC)),totL:$mTotL,totU:$mTotU,totRC:$mTotRC,rateG:$($mRateG.ToString($IC)),totOlas:$mTotOlas,staffNec:$($mStaffNec.ToString($IC)),staffAct:$($mStaffAct.ToString($IC)),pickers:$pickersArr}")
     }
     $jsMonthlyData = "{" + ($jsMonthlyDataParts -join ",") + "}"
 
@@ -1505,21 +1567,64 @@ try {
     $jsDay7Parts=[System.Collections.Generic.List[string]]::new()
     foreach($r7 in $day7Rows){
         $dlt7=if($null -eq $r7.Delta){"null"}else{[string][int]$r7.Delta}
-        $jsDay7Parts.Add("{f:'$($r7.Fecha)',d:'$($r7.DiaSem)',ops:$($r7.Ops),lines:$($r7.Lines),lpo:$($r7.LinesPerOp),tgt:$($r7.Target),cum:$($r7.Cumpl),dlt:$dlt7}")
+        $jsDay7Parts.Add("{f:'$($r7.Fecha)',d:'$($r7.DiaSem)',ops:$($r7.Ops),lines:$($r7.Lines),lpo:$($r7.LinesPerOp),tgt:$($r7.Target),cum:$($r7.Cumpl),dlt:$dlt7,cl:$($r7.CLLines),clops:$($r7.CLOps),sl:$($r7.SLLines),slops:$($r7.SLOps)}")
     }
     $jsDay7Rows="["+($jsDay7Parts -join ",")+"]"
 
     $evol30Dates=@($pkDay.Keys|Where-Object{$allResp[$_.Split("|")[0]]}|ForEach-Object{$_.Split("|")[1]}|Sort-Object -Unique|Select-Object -Last 30)
     $evol30LblParts=[System.Collections.Generic.List[string]]::new()
     $evol30DataParts=[System.Collections.Generic.List[string]]::new()
+    $evol30TgtParts=[System.Collections.Generic.List[string]]::new()
     foreach($e30d in $evol30Dates){
         $e30T=0
         foreach($rsp in $sortedResp){$e30k="$rsp|$e30d";if($pkDay[$e30k]){$e30T+=$pkDay[$e30k]}}
         $evol30LblParts.Add("'$([datetime]::Parse($e30d).ToString('dd/MM'))'")
         $evol30DataParts.Add("$([int]$e30T)")
+        $e30ym=$e30d.Substring(0,7)
+        $e30pick=if($pickeadoresByMon[$e30ym]){$pickeadoresByMon[$e30ym]}else{4}
+        $evol30TgtParts.Add("$($e30pick*$TARGET)")
     }
     $jsEvol30Labels="["+($evol30LblParts -join ",")+"]"
     $jsEvol30Data="["+($evol30DataParts -join ",")+"]"
+    # Datos por grupo (Con Logo / Sin Logo) para filtros
+    $evol30CLParts=[System.Collections.Generic.List[string]]::new()
+    $evol30SLParts=[System.Collections.Generic.List[string]]::new()
+    foreach($e30d in $evol30Dates){
+        $e30gd=$dayGroupData[$e30d]
+        $evol30CLParts.Add($(if($e30gd){"$([int]$e30gd.CL)"}else{"0"}))
+        $evol30SLParts.Add($(if($e30gd){"$([int]$e30gd.SL)"}else{"0"}))
+    }
+    $jsEvol30CL="["+($evol30CLParts -join ",")+"]"
+    $jsEvol30SL="["+($evol30SLParts -join ",")+"]"
+    $jsEvol30Target="["+($evol30TgtParts -join ",")+"]"
+
+    # Resumen General: datos unificados por mes para TODOS los grupos
+    $jsResumeParts = [System.Collections.Generic.List[string]]::new()
+    foreach($mon in $sortedMon){
+        # Picking regulares (excluidos extras)
+        $mPkRows2 = @($sumRows | Where-Object{$_.YM -eq $mon -and -not (IsExcludedFromProd $_.Resp)} | Sort-Object LineasDia -Descending)
+        $pkArr2 = [System.Collections.Generic.List[string]]::new()
+        foreach($op in $mPkRows2){
+            $rn=$op.Resp -replace "'",""; $rc=$op.RecCnt
+            $pkArr2.Add("{resp:'$rn',dias:$($op.Dias),lineas:$($op.Lineas),ld:$($op.LineasDia.ToString($IC)),cumpl:$($op.Cumplim.ToString($IC)),recCnt:$rc}")
+        }
+        $pkJs2 = "["+($pkArr2 -join ",")+"]"
+        # Pie de Maquina (M1 y M2)
+        $pieArr2 = [System.Collections.Generic.List[string]]::new()
+        $prMon2 = $pieRows | Where-Object{$_.YM -eq $mon} | Select-Object -First 1
+        if($prMon2){
+            if($prMon2.M1Dias -gt 0){ $pieArr2.Add("{resp:'Pie Maquina 1',dias:$($prMon2.M1Dias),lineas:$($prMon2.M1Lineas),ld:$($prMon2.M1LD.ToString($IC)),cumpl:0,recCnt:0}") }
+            if($prMon2.M2Dias -gt 0){ $pieArr2.Add("{resp:'Pie Maquina 2',dias:$($prMon2.M2Dias),lineas:$($prMon2.M2Lineas),ld:$($prMon2.M2LD.ToString($IC)),cumpl:0,recCnt:0}") }
+        }
+        $pieJs2 = "["+($pieArr2 -join ",")+"]"
+        # Muestra Simple (Lezcano)
+        $lezArr2 = [System.Collections.Generic.List[string]]::new()
+        $lrMon2 = $lezRows | Where-Object{$_.YM -eq $mon} | Select-Object -First 1
+        if($lrMon2){ $lezArr2.Add("{resp:'LEZCANO AGUSTIN',dias:$($lrMon2.Dias),lineas:$($lrMon2.Lineas),ld:$($lrMon2.LineasDia.ToString($IC)),cumpl:0,recCnt:$($lrMon2.RecCnt)}") }
+        $lezJs2 = "["+($lezArr2 -join ",")+"]"
+        $jsResumeParts.Add("'$mon':{picking:$pkJs2,pie:$pieJs2,muestra:$lezJs2,control:[]}")
+    }
+    $jsResumeData = "{" + ($jsResumeParts -join ",") + "}"
 
     $html = @"
 <!DOCTYPE html>
@@ -1604,6 +1709,13 @@ body.dark .info-box{background:#1e293b;border-color:#334155;color:#94a3b8}
 tfoot td{border-top:2px solid #e0e0e0;font-weight:700}
 body.dark tfoot tr{background:#0f172a}
 body.dark tfoot td{color:#e2e8f0;border-top-color:#334155}
+.grp-btns{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.grp-btn{border:1.5px solid #cccccc;border-radius:20px;padding:5px 16px;font-size:12px;font-weight:600;cursor:pointer;background:white;color:#555555;transition:all .18s}
+.grp-btn:hover{border-color:#2563eb;color:#2563eb}
+.grp-btn.active{background:#2563eb;border-color:#2563eb;color:white}
+body.dark .grp-btn{background:#1e293b;border-color:#334155;color:#94a3b8}
+body.dark .grp-btn:hover{border-color:#3b82f6;color:#60a5fa}
+body.dark .grp-btn.active{background:#2563eb;border-color:#2563eb;color:white}
 #themeToggle{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);border-radius:50px;width:42px;height:42px;color:white;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
 #themeToggle:hover{background:rgba(255,255,255,.22);transform:scale(1.08)}
 </style>
@@ -1631,6 +1743,7 @@ body.dark tfoot td{color:#e2e8f0;border-top-color:#334155}
   <button class="tab-btn" onclick="switchTab('muestra')" id="btn-muestra">&#128203; Muestra Simple</button>
   <button class="tab-btn" onclick="switchTab('reclamos')" id="btn-reclamos">&#128683; Reclamos</button>
   <button class="tab-btn" onclick="switchTab('control')" id="btn-control">&#128269; Control</button>
+  <button class="tab-btn" onclick="switchTab('resumen')" id="btn-resumen">&#128202; Resumen General</button>
 </nav>
 
 <div class="container">
@@ -1664,10 +1777,15 @@ body.dark tfoot td{color:#e2e8f0;border-top-color:#334155}
 <!-- ===== SECCION: PICKING ===== -->
 <div id="sec-picking" class="sec active">
 
+<div class="grp-btns">
+  <button class="grp-btn active" id="grpBtnAll" onclick="setGrpFilter('all')">Todos (Con + Sin Logo)</button>
+  <button class="grp-btn" id="grpBtnCL" onclick="setGrpFilter('cl')">Con Logo</button>
+  <button class="grp-btn" id="grpBtnSL" onclick="setGrpFilter('sl')">Sin Logo</button>
+</div>
 <div class="charts-row c1">
   <div class="chart-card" style="border-top:3px solid #2563eb;margin-bottom:0">
-    <div class="chart-title">&#128200; Evoluci&oacute;n diaria del equipo &mdash; &uacute;ltimos 30 d&iacute;as h&aacute;biles</div>
-    <div class="chart-subtitle">Total l&iacute;neas picking regular (SIN LOGO + CON LOGO) &mdash; equipo completo</div>
+    <div class="chart-title" id="evol30Title">&#128200; Evoluci&oacute;n diaria del equipo &mdash; &uacute;ltimos 30 d&iacute;as h&aacute;biles</div>
+    <div class="chart-subtitle" id="evol30Sub">Total l&iacute;neas picking regular (Con Logo + Sin Logo) &mdash; equipo completo</div>
     <div style="position:relative;height:200px"><canvas id="chartEvol30"></canvas></div>
   </div>
 </div>
@@ -1856,6 +1974,73 @@ body.dark tfoot td{color:#e2e8f0;border-top-color:#334155}
   <div class="nodata" style="margin-top:0">&#128269; La secci&oacute;n Control est&aacute; en desarrollo.<br><br>Cuando la pesta&ntilde;a Control del Excel fuente tenga datos, los indicadores aparecer&aacute;n aqu&iacute; autom&aacute;ticamente.</div>
 </div><!-- /sec-control -->
 
+<!-- ===== SECCION: RESUMEN GENERAL ===== -->
+<div id="sec-resumen" class="sec">
+
+<div class="kpi-grid g4" style="margin-bottom:18px">
+  <div class="kpi-card blue">
+    <div class="kpi-label">&#128230; Picking &mdash; Operarios</div>
+    <div class="kpi-value" id="rs-pk-ops">&#8212;</div>
+    <div class="kpi-sub" id="rs-pk-sub">Sin datos</div>
+  </div>
+  <div class="kpi-card amber">
+    <div class="kpi-label">&#9881; Pie de M&aacute;quina &mdash; Turnos</div>
+    <div class="kpi-value" id="rs-pie-ops">&#8212;</div>
+    <div class="kpi-sub" id="rs-pie-sub">Sin datos</div>
+  </div>
+  <div class="kpi-card purple">
+    <div class="kpi-label">&#128203; Muestra Simple</div>
+    <div class="kpi-value" id="rs-lez-ops">&#8212;</div>
+    <div class="kpi-sub" id="rs-lez-sub">Sin datos</div>
+  </div>
+  <div class="kpi-card slate">
+    <div class="kpi-label">&#128269; Control</div>
+    <div class="kpi-value">&#8212;</div>
+    <div class="kpi-sub">Sin datos a&uacute;n</div>
+  </div>
+</div>
+
+<div class="grp-btns">
+  <button class="grp-btn active" id="rsBtnAll"  onclick="setResGrp('all')">Todos</button>
+  <button class="grp-btn" id="rsBtnPk"   onclick="setResGrp('picking')">&#128230; Picking</button>
+  <button class="grp-btn" id="rsBtnPie"  onclick="setResGrp('pie')">&#9881; Pie de M&aacute;quina</button>
+  <button class="grp-btn" id="rsBtnLez"  onclick="setResGrp('muestra')">&#128203; Muestra Simple</button>
+  <button class="grp-btn" id="rsBtnCtrl" onclick="setResGrp('control')" style="opacity:.45;cursor:not-allowed">&#128269; Control</button>
+</div>
+
+<div class="table-card" style="margin-bottom:18px">
+  <div class="rank-title">&#127942; Ranking de Performance por Operario</div>
+  <div class="rank-sub" id="rs-sub">Seleccion&aacute; un mes espec&iacute;fico para ver el detalle</div>
+  <table>
+    <thead><tr>
+      <th style="width:36px">#</th>
+      <th>Operario</th>
+      <th>Grupo</th>
+      <th style="text-align:right">D&iacute;as Activos</th>
+      <th style="text-align:right">Total L&iacute;neas</th>
+      <th style="text-align:right">Lin/D&iacute;a</th>
+      <th style="text-align:center">vs Target</th>
+      <th style="text-align:center">Reclamos</th>
+    </tr></thead>
+    <tbody id="rs-tbody"></tbody>
+  </table>
+</div>
+
+<div class="charts-row c2">
+  <div class="chart-card" style="border-top:3px solid #2563eb">
+    <div class="chart-title">&#128200; Evoluci&oacute;n Lin/D&iacute;a por grupo</div>
+    <div class="chart-subtitle">Todos los meses disponibles</div>
+    <div style="position:relative;height:230px"><canvas id="chartResGrp"></canvas></div>
+  </div>
+  <div class="chart-card" style="border-top:3px solid #dc2626">
+    <div class="chart-title">&#128683; Reclamos por operario</div>
+    <div class="chart-subtitle" id="rs-rec-sub">Mes seleccionado</div>
+    <div style="position:relative;height:230px"><canvas id="chartResRec"></canvas></div>
+  </div>
+</div>
+
+</div><!-- /sec-resumen -->
+
 </div><!-- /container -->
 <footer>Dashboard v5 &mdash; Zecat Art&iacute;culos Promocionales SA &nbsp;|&nbsp; $($NOW.ToString('dd/MM/yyyy HH:mm'))</footer>
 
@@ -1883,6 +2068,12 @@ const MES=['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto',
 const day7Rows=$jsDay7Rows;
 const evol30Labels=$jsEvol30Labels;
 const evol30Data=$jsEvol30Data;
+const evol30CL=$jsEvol30CL;
+const evol30SL=$jsEvol30SL;
+const evol30Target=$jsEvol30Target;
+const resumeData=$jsResumeData;
+var _grpFilter='all';
+var _rsGrp='all';
 
 // Tab navigation
 function switchTab(name){
@@ -1892,6 +2083,7 @@ function switchTab(name){
   document.getElementById('btn-'+name).classList.add('active');
   // Mostrar filtro de operario en Picking y Reclamos
   document.getElementById('opFilterWrap').style.display=(name==='picking'||name==='reclamos')?'':'none';
+  if(name==='resumen') buildResumen();
 }
 
 // Poblar selector de anios
@@ -1950,7 +2142,7 @@ function applyFilter(){
     var d=monthlyData[k];
     if(!d) return;
     teamValidM++;
-    aggOpsSum+=d.totOps; aggLDSum+=d.avgLD; aggSN+=d.staffNec; aggSA+=d.staffAct;
+    aggOpsSum+=(d.pickeadores||d.totOps); aggLDSum+=d.avgLD; aggSN+=d.staffNec; aggSA+=(d.pickeadores||d.staffAct);
     if(selOp==='all'){aggL+=d.totL;aggU+=d.totU;aggRC+=d.totRC;aggOlas+=d.totOlas;}
     d.pickers.forEach(function(pk){
       if(selOp!=='all'&&pk.resp!==selOp) return;
@@ -2281,6 +2473,8 @@ function applyFilter(){
       +'</tr>';
     recCatBodyEl.innerHTML+=tr;
   });
+  // Actualizar Resumen si está activo
+  if(document.getElementById('sec-resumen').classList.contains('active')) buildResumen();
 }
 
 function resetFilter(){
@@ -2331,10 +2525,83 @@ chartEvol.data.datasets.slice(0,-1).forEach(function(ds){pickerDataFull.push(ds.
 
 const chartEvol30=new Chart('chartEvol30',{type:'line',data:{
   labels:evol30Labels,datasets:[
-    {label:'Total lineas equipo',data:evol30Data,borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.08)',borderWidth:2.5,tension:.3,fill:true,pointRadius:3,pointHoverRadius:5}
+    {label:'Total lineas equipo',data:evol30Data,borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.08)',borderWidth:2.5,tension:.3,fill:true,pointRadius:3,pointHoverRadius:5},
+    {label:'Target',data:evol30Target,borderColor:'rgba(220,38,38,.65)',borderWidth:1.5,borderDash:[7,4],pointRadius:0,fill:false,tension:0}
   ]},options:{responsive:true,maintainAspectRatio:false,
-  plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return ctx.parsed.y.toLocaleString('es-AR')+' lineas';}}}},
+  plugins:{legend:{display:true,position:'bottom',labels:{boxWidth:12,font:{size:10},color:'#444444'}},tooltip:{callbacks:{label:function(ctx){return ctx.dataset.label+': '+ctx.parsed.y.toLocaleString('es-AR')+(ctx.datasetIndex===0?' lineas':'');}}}},
   scales:{y:{min:0,grid:{color:'#eeeeee'},ticks:{color:'#666666'}},x:{grid:{display:false},ticks:{color:'#666666',font:{size:9},maxTicksLimit:15}}}}});
+
+function setGrpFilter(g){
+  _grpFilter=g;
+  // Botones
+  document.getElementById('grpBtnAll').classList.toggle('active',g==='all');
+  document.getElementById('grpBtnCL').classList.toggle('active',g==='cl');
+  document.getElementById('grpBtnSL').classList.toggle('active',g==='sl');
+  // Datos del chart
+  var data=g==='cl'?evol30CL:g==='sl'?evol30SL:evol30Data;
+  var col=g==='cl'?'#2563eb':g==='sl'?'#16a34a':'#2563eb';
+  var bg=g==='cl'?'rgba(37,99,235,.08)':g==='sl'?'rgba(22,163,74,.08)':'rgba(37,99,235,.08)';
+  chartEvol30.data.datasets[0].data=data;
+  chartEvol30.data.datasets[0].borderColor=col;
+  chartEvol30.data.datasets[0].backgroundColor=bg;
+  // dataset[1] = target line, no se toca
+  chartEvol30.update();
+  // Titulo
+  var lbl=g==='cl'?'Con Logo':g==='sl'?'Sin Logo':'Con Logo + Sin Logo';
+  document.getElementById('evol30Title').textContent='📈 Evolución diaria del equipo — últimos 30 días hábiles';
+  document.getElementById('evol30Sub').textContent='Total líneas picking regular ('+lbl+') — equipo completo';
+  // Rebuild tabla 7 dias con filtro
+  _build7dTable();
+}
+
+function _build7dTable(){
+  var b=document.getElementById('body7d');
+  var f=document.getElementById('foot7d');
+  if(!day7Rows||!day7Rows.length){
+    b.innerHTML='<tr><td colspan="8" style="text-align:center;color:#aaa;padding:20px">Sin datos disponibles</td></tr>';
+    return;
+  }
+  b.innerHTML='';
+  var g=_grpFilter;
+  day7Rows.forEach(function(r){
+    var lines=g==='cl'?r.cl:g==='sl'?r.sl:r.lines;
+    var ops=g==='cl'?r.clops:g==='sl'?r.slops:r.ops;
+    var lpo=ops?Math.round(lines/ops*10)/10:0;
+    var tgt=ops*$TARGET;
+    var cum=tgt?Math.round(lines/tgt*1000)/10:0;
+    var cumC=cum>=100?'#16a34a':cum>=70?'#d97706':'#dc2626';
+    var dltStr=g!=='all'?'&mdash;':(r.dlt===null?'&mdash;':r.dlt>0?'<span style="color:#16a34a;font-weight:700">+'+r.dlt+'</span>':r.dlt<0?'<span style="color:#dc2626;font-weight:700">'+r.dlt+'</span>':'<span style="color:#999">0</span>');
+    b.innerHTML+='<tr>'
+      +'<td><strong>'+r.f+'</strong></td>'
+      +'<td>'+r.d+'</td>'
+      +'<td style="text-align:right">'+ops+'</td>'
+      +'<td style="text-align:right"><strong>'+lines.toLocaleString('es-AR')+'</strong></td>'
+      +'<td style="text-align:right">'+lpo+'</td>'
+      +'<td style="text-align:right">'+(tgt||'&mdash;')+'</td>'
+      +'<td style="text-align:center;font-weight:700;color:'+cumC+'">'+cum+'%</td>'
+      +'<td style="text-align:center">'+dltStr+'</td>'
+      +'</tr>';
+  });
+  var aL=Math.round(day7Rows.reduce(function(s,r){return s+(g==='cl'?r.cl:g==='sl'?r.sl:r.lines);},0)/day7Rows.length);
+  var aO=(day7Rows.reduce(function(s,r){return s+(g==='cl'?r.clops:g==='sl'?r.slops:r.ops);},0)/day7Rows.length).toFixed(1);
+  var aP=parseFloat(aO)?Math.round(aL/parseFloat(aO)*10)/10:0;
+  var aC=(day7Rows.reduce(function(s,r){
+    var li=g==='cl'?r.cl:g==='sl'?r.sl:r.lines;
+    var op=g==='cl'?r.clops:g==='sl'?r.slops:r.ops;
+    var t=op*$TARGET;
+    return s+(t?li/t*100:0);
+  },0)/day7Rows.length).toFixed(1);
+  var acC=parseFloat(aC)>=100?'#16a34a':parseFloat(aC)>=70?'#d97706':'#dc2626';
+  f.innerHTML='<tr>'
+    +'<td colspan="2" style="padding:9px 11px">PROM 7 D&Iacute;AS</td>'
+    +'<td style="text-align:right;padding:9px 11px">'+aO+'</td>'
+    +'<td style="text-align:right;padding:9px 11px">'+aL.toLocaleString('es-AR')+'</td>'
+    +'<td style="text-align:right;padding:9px 11px">'+aP+'</td>'
+    +'<td style="text-align:right;padding:9px 11px">&mdash;</td>'
+    +'<td style="text-align:center;padding:9px 11px;color:'+acC+'">'+aC+'%</td>'
+    +'<td style="text-align:center;padding:9px 11px">&mdash;</td>'
+    +'</tr>';
+}
 
 const chartMerma=null; // canvas eliminado — datos de Pedido Merma no se muestran
 
@@ -2373,8 +2640,106 @@ const chartRecOp=new Chart('chartRecOp',{type:'bar',data:{
   plugins:{legend:{display:false}},
   scales:{y:{min:0,grid:{color:'#eeeeee'},ticks:{stepSize:1,color:'#666666'}},x:{grid:{display:false},ticks:{color:'#666666',font:{size:10},maxRotation:35}}}}});
 
+// ===== RESUMEN GENERAL =====
+const chartResGrp=new Chart('chartResGrp',{type:'line',data:{
+  labels:[$jsMonLabels],
+  datasets:[
+    {label:'Picking equipo',data:[$jsTeamLD],borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.08)',borderWidth:2.5,tension:.3,fill:true,pointRadius:3,spanGaps:true},
+    {label:'Pie Máquina 1',data:[$jsPie1],borderColor:'#d97706',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
+    {label:'Pie Máquina 2',data:[$jsPie2],borderColor:'#f59e0b',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true,borderDash:[4,3]},
+    {label:'Muestra Simple',data:[$jsLezLD],borderColor:'#7c3aed',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true}
+  ]},
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'bottom',labels:{color:'#444',font:{size:11},boxWidth:12}},tooltip:{mode:'index',intersect:false}},
+    scales:{y:{min:0,grid:{color:'#eeeeee'},ticks:{color:'#666666'},title:{display:true,text:'Lin/Día',color:'#666'}},x:{grid:{display:false},ticks:{color:'#666666',font:{size:10},maxRotation:30}}}}});
+
+const chartResRec=new Chart('chartResRec',{type:'bar',data:{
+  labels:[],datasets:[{label:'Reclamos',data:[],backgroundColor:[],borderRadius:4}]},
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false}},
+    scales:{y:{min:0,grid:{color:'#eeeeee'},ticks:{stepSize:1,color:'#666666'}},x:{grid:{display:false},ticks:{color:'#666666',font:{size:10},maxRotation:35}}}}});
+
+function setResGrp(g){
+  _rsGrp=g;
+  var btns={all:'rsBtnAll',picking:'rsBtnPk',pie:'rsBtnPie',muestra:'rsBtnLez',control:'rsBtnCtrl'};
+  Object.keys(btns).forEach(function(k){ var el=document.getElementById(btns[k]); if(el) el.classList.toggle('active',k===g); });
+  buildResumen();
+}
+
+function buildResumen(){
+  var idx=getFilteredIndices();
+  var selKeys=idx.map(function(i){return allMonKeys[i];});
+  var byOp={};
+  selKeys.forEach(function(mon){
+    var d=resumeData[mon]; if(!d) return;
+    var grps=_rsGrp==='all'?['picking','pie','muestra']:_rsGrp==='control'?[]:[ _rsGrp];
+    grps.forEach(function(g){
+      if(!d[g]) return;
+      d[g].forEach(function(op){
+        var k=op.resp+'||'+g;
+        if(!byOp[k]) byOp[k]={resp:op.resp,grupo:g,dias:0,lineas:0,ldSum:0,ldN:0,recCnt:0};
+        byOp[k].dias+=op.dias; byOp[k].lineas+=op.lineas;
+        byOp[k].ldSum+=op.ld; byOp[k].ldN++;
+        byOp[k].recCnt+=op.recCnt;
+      });
+    });
+  });
+  var rows=Object.values(byOp).map(function(o){
+    var ld=o.ldN?Math.round(o.ldSum/o.ldN*10)/10:0;
+    return {resp:o.resp,grupo:o.grupo,dias:o.dias,lineas:o.lineas,ld:ld,recCnt:o.recCnt};
+  }).sort(function(a,b){return b.ld-a.ld;});
+
+  // Tabla
+  var tbody=document.getElementById('rs-tbody');
+  tbody.innerHTML='';
+  var grpLabels={picking:'Picking',pie:'Pie Máquina',muestra:'Muestra Simple',control:'Control'};
+  var grpColors={picking:'#2563eb',pie:'#d97706',muestra:'#7c3aed',control:'#64748b'};
+  if(!rows.length){
+    tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:28px;color:#aaa">Sin datos para el período seleccionado</td></tr>';
+  } else {
+    rows.forEach(function(op,i){
+      var tr=document.createElement('tr');
+      var gc=grpColors[op.grupo]||'#64748b';
+      var gl=grpLabels[op.grupo]||op.grupo;
+      var tgtHtml=op.grupo==='picking'?('<span style="font-weight:700;color:'+(op.ld>=TARGET?'#16a34a':op.ld>=70?'#d97706':'#dc2626')+'">'+Math.round(op.ld/TARGET*100)+'%</span>'):'-';
+      var recC=op.recCnt===0?'#16a34a':op.recCnt<=3?'#d97706':'#dc2626';
+      tr.innerHTML='<td style="color:#999;text-align:center">'+(i+1)+'</td>'
+        +'<td style="font-weight:600">'+op.resp+'</td>'
+        +'<td><span style="background:'+gc+'22;color:'+gc+';padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600">'+gl+'</span></td>'
+        +'<td style="text-align:right">'+op.dias+'</td>'
+        +'<td style="text-align:right">'+op.lineas.toLocaleString()+'</td>'
+        +'<td style="text-align:right;font-weight:700;color:'+(op.grupo==='picking'?(op.ld>=TARGET?'#16a34a':op.ld>=70?'#d97706':'#dc2626'):'#333')+'">'+op.ld+'</td>'
+        +'<td style="text-align:center">'+tgtHtml+'</td>'
+        +'<td style="text-align:center"><span style="background:'+recC+';color:white;padding:1px 9px;border-radius:12px;font-size:12px;font-weight:600">'+op.recCnt+'</span></td>';
+      tbody.appendChild(tr);
+    });
+  }
+
+  // KPIs
+  var pkR=Object.values(byOp).filter(function(o){return o.grupo==='picking';});
+  var piR=Object.values(byOp).filter(function(o){return o.grupo==='pie';});
+  var lzR=Object.values(byOp).filter(function(o){return o.grupo==='muestra';});
+  function avgLd(arr){return arr.length?Math.round(arr.reduce(function(s,o){return s+(o.ldN?o.ldSum/o.ldN:0);},0)/arr.length*10)/10:0;}
+  document.getElementById('rs-pk-ops').textContent=pkR.length||'—';
+  document.getElementById('rs-pk-sub').textContent=pkR.length?'Prom: '+avgLd(pkR)+' lin/día':'Sin datos';
+  document.getElementById('rs-pie-ops').textContent=piR.length||'—';
+  document.getElementById('rs-pie-sub').textContent=piR.length?'Prom: '+avgLd(piR)+' lin/día':'Sin datos';
+  document.getElementById('rs-lez-ops').textContent=lzR.length||'—';
+  document.getElementById('rs-lez-sub').textContent=lzR.length?'Prom: '+avgLd(lzR)+' lin/día':'Sin datos';
+  var pLabel=selKeys.length===1?monLabels[idx[0]]:(selKeys.length+' meses');
+  document.getElementById('rs-sub').textContent='Período: '+pLabel+' — '+rows.length+' operario'+(rows.length!==1?'s':'');
+
+  // Chart reclamos
+  var recArr=rows.filter(function(r){return r.recCnt>0;}).sort(function(a,b){return b.recCnt-a.recCnt;}).slice(0,12);
+  chartResRec.data.labels=recArr.map(function(r){return r.resp;});
+  chartResRec.data.datasets[0].data=recArr.map(function(r){return r.recCnt;});
+  chartResRec.data.datasets[0].backgroundColor=recArr.map(function(r){return r.recCnt<=2?'#d97706':'#dc2626';});
+  document.getElementById('rs-rec-sub').textContent=recArr.length?'Top '+recArr.length+' operarios con reclamos':'Sin reclamos en el período';
+  chartResRec.update();
+}
+
 // ===== DARK / LIGHT THEME =====
-var _allCharts=[chartRanking,chartTeamTrend,chartStaff,chartEvol,chartMerma,chartPie,chartLez,chartRecMon,chartRecCat,chartRecOp,chartEvol30];
+var _allCharts=[chartRanking,chartTeamTrend,chartStaff,chartEvol,chartMerma,chartPie,chartLez,chartRecMon,chartRecCat,chartRecOp,chartEvol30,chartResGrp,chartResRec];
 function updateChartColors(dark){
   var grid=dark?'#334155':'#eeeeee';
   var tick=dark?'#94a3b8':'#666666';
@@ -2415,43 +2780,10 @@ try {
   document.getElementById('selAnio').value='$jsInitYear';
   document.getElementById('selMes').value='$jsInitMon';
   applyFilter();
-  // Poblar tabla 7 dias (datos estaticos, no cambian con filtros)
-  (function(){
-    var b=document.getElementById('body7d');
-    var f=document.getElementById('foot7d');
-    if(!day7Rows||!day7Rows.length){
-      b.innerHTML='<tr><td colspan="8" style="text-align:center;color:#aaa;padding:20px">Sin datos disponibles</td></tr>';
-      return;
-    }
-    day7Rows.forEach(function(r){
-      var cumC=r.cum>=100?'#16a34a':r.cum>=70?'#d97706':'#dc2626';
-      var dltStr=r.dlt===null?'&mdash;':r.dlt>0?'<span style="color:#16a34a;font-weight:700">+'+r.dlt+'</span>':r.dlt<0?'<span style="color:#dc2626;font-weight:700">'+r.dlt+'</span>':'<span style="color:#999">0</span>';
-      b.innerHTML+='<tr>'
-        +'<td><strong>'+r.f+'</strong></td>'
-        +'<td>'+r.d+'</td>'
-        +'<td style="text-align:right">'+r.ops+'</td>'
-        +'<td style="text-align:right"><strong>'+r.lines.toLocaleString('es-AR')+'</strong></td>'
-        +'<td style="text-align:right">'+r.lpo+'</td>'
-        +'<td style="text-align:right">'+r.tgt+'</td>'
-        +'<td style="text-align:center;font-weight:700;color:'+cumC+'">'+r.cum+'%</td>'
-        +'<td style="text-align:center">'+dltStr+'</td>'
-        +'</tr>';
-    });
-    var aL=Math.round(day7Rows.reduce(function(s,r){return s+r.lines;},0)/day7Rows.length);
-    var aO=(day7Rows.reduce(function(s,r){return s+r.ops;},0)/day7Rows.length).toFixed(1);
-    var aP=(day7Rows.reduce(function(s,r){return s+r.lpo;},0)/day7Rows.length).toFixed(1);
-    var aC=(day7Rows.reduce(function(s,r){return s+r.cum;},0)/day7Rows.length).toFixed(1);
-    var acC=parseFloat(aC)>=100?'#16a34a':parseFloat(aC)>=70?'#d97706':'#dc2626';
-    f.innerHTML='<tr>'
-      +'<td colspan="2" style="padding:9px 11px">PROM 7 D&Iacute;AS</td>'
-      +'<td style="text-align:right;padding:9px 11px">'+aO+'</td>'
-      +'<td style="text-align:right;padding:9px 11px">'+aL.toLocaleString('es-AR')+'</td>'
-      +'<td style="text-align:right;padding:9px 11px">'+aP+'</td>'
-      +'<td style="text-align:right;padding:9px 11px">&mdash;</td>'
-      +'<td style="text-align:center;padding:9px 11px;color:'+acC+'">'+aC+'%</td>'
-      +'<td style="text-align:center;padding:9px 11px">&mdash;</td>'
-      +'</tr>';
-  })();
+  // Poblar tabla 7 dias (datos estaticos, filtrable por grupo)
+  _build7dTable();
+  // Inicializar Resumen (precarga datos para que el tab sea instantáneo)
+  buildResumen();
   // Si ya hay dark mode guardado, aplicar colores a los charts recién creados
   if(document.body.classList.contains('dark')) updateChartColors(true);
 } catch(err) {
