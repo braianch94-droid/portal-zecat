@@ -1058,11 +1058,8 @@ function toggleRsmDetail(id) {
 function switchTab(tab) {
     document.querySelectorAll('.tab-panel').forEach(function(el){ el.classList.remove('active'); });
     document.querySelectorAll('.main-tab').forEach(function(el){ el.classList.remove('active'); });
-    var panel = document.getElementById('tab-' + tab);
-    if (panel) panel.classList.add('active');
-    var activeBtn = document.querySelector('.main-tab[onclick*="\'' + tab + '\'"]');
-    if (activeBtn) { activeBtn.classList.add('active'); }
-    else if (typeof event !== 'undefined' && event && event.target) { event.target.classList.add('active'); }
+    document.getElementById('tab-' + tab).classList.add('active');
+    event.target.classList.add('active');
     currentTab = tab;
 }
 var currentTab = 'resumen';

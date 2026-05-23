@@ -239,12 +239,9 @@ try {
     $rRows = $rArr.GetUpperBound(0)
     $recOpMes=@{}; $recByCat=@{}; $recByFam=@{}; $recByMes=@{}; $recByPik=@{}; $lezcanoRecMes=@{}
     $recDataByMonth=@{}   # key=YM → {Cnt,ByOp={op:cnt},ByCat={cat:cnt}}
-    $recDetailByOpMon=@{}  # key="op|ym" → lista de reclamos individuales con NP, fecha, art, motivo, comentario
-
-    function EscJs($s){ if(-not $s){return ""} ; ($s -replace "\\","/" -replace "'","&#39;" -replace '"',"&#34;" -replace "`r","" -replace "`n"," " -replace "`t"," ").Trim() }
 
     for($r=2; $r -le $rRows; $r++){
-        # Cols: 1=id_web 2=entrega 3=np 4=fecha_reclamo 5=estado 6=jira 7=articulo 8=Q_pedido 9=reclam 10=comentario 11=cliente 12=familia 13=categoria 15=Pickeador
+        # Nueva estructura Reclamos: col4=fecha reclamo(OA), col9=qty reclam., col12=familia, col13=categoría, col15=Pickeador
         $fechaRaw=$rArr[$r,4]
         if(-not $fechaRaw){ continue }
         $dtRec=$null; try{$dtRec=[datetime]::FromOADate([double]$fechaRaw)}catch{continue}
@@ -253,12 +250,6 @@ try {
         $rpk=if(-not $rpkRaw -or ($rpkRaw -is [double] -and $rpkRaw -lt 0)){"Falta definir pickeador"}else{"$rpkRaw".Trim()}  # #N/A → etiqueta
         $qty=[double]($rArr[$r,9] -as [double])
         $cat=$rArr[$r,13]; $fam=$rArr[$r,12]
-        # Leer campos adicionales para el detalle
-        $npNum  = EscJs "$($rArr[$r,3])"
-        $art    = EscJs ("$($rArr[$r,7])".Substring(0,[Math]::Min("$($rArr[$r,7])".Length,80)))
-        $com    = EscJs ("$($rArr[$r,10])".Substring(0,[Math]::Min("$($rArr[$r,10])".Length,220)))
-        $cli    = EscJs ("$($rArr[$r,11])".Substring(0,[Math]::Min("$($rArr[$r,11])".Length,70)))
-        $catEsc = EscJs "$cat"
         $isLez=($rpk -like "*$LezFilter*")
         if(-not $recByMes[$ym]){$recByMes[$ym]=@{Cnt=0;Qty=0}}
         $recByMes[$ym].Cnt++; $recByMes[$ym].Qty+=$qty
@@ -288,11 +279,6 @@ try {
             $recByPik[$rpk].Cnt++; $recByPik[$rpk].Qty+=$qty
             if($cat){if(-not $recByPik[$rpk].Cats[$cat]){$recByPik[$rpk].Cats[$cat]=0};$recByPik[$rpk].Cats[$cat]++}
         }
-        # Guardar registro individual para modal de detalle
-        $opKeyDetail = if($isLez){"LEZCANO AGUSTIN"}else{$rpk}
-        $dkDetail = "$opKeyDetail|$ym"
-        if(-not $recDetailByOpMon[$dkDetail]){ $recDetailByOpMon[$dkDetail]=[System.Collections.Generic.List[string]]::new() }
-        $recDetailByOpMon[$dkDetail].Add("{np:'$npNum',f:'$($dtRec.ToString("dd/MM/yy"))',art:'$art',q:$([int]$qty),mot:'$catEsc',com:'$com',cli:'$cli'}")
     }
 
     # ===========================================================
@@ -1577,14 +1563,6 @@ try {
     }
     $jsRecMonthly="{"+($jsRecMonParts -join ",")+"}"
 
-    # Detalle individual de reclamos por operario+mes
-    $jsRecDetailParts=[System.Collections.Generic.List[string]]::new()
-    foreach($dk in $recDetailByOpMon.Keys){
-        $dkEsc=$dk -replace "'",""; $arr2="["+($recDetailByOpMon[$dk] -join ",")+"]"
-        $jsRecDetailParts.Add("'$dkEsc':$arr2")
-    }
-    $jsRecDetail="{"+($jsRecDetailParts -join ",")+"}"
-
     # --- Serializar datos para HTML: tabla 7 dias y grafico evolucion 30 dias ---
     $jsDay7Parts=[System.Collections.Generic.List[string]]::new()
     foreach($r7 in $day7Rows){
@@ -1619,34 +1597,6 @@ try {
     $jsEvol30CL="["+($evol30CLParts -join ",")+"]"
     $jsEvol30SL="["+($evol30SLParts -join ",")+"]"
     $jsEvol30Target="["+($evol30TgtParts -join ",")+"]"
-
-    # Resumen General: datos unificados por mes para TODOS los grupos
-    $jsResumeParts = [System.Collections.Generic.List[string]]::new()
-    foreach($mon in $sortedMon){
-        # Picking regulares (excluidos extras)
-        $mPkRows2 = @($sumRows | Where-Object{$_.YM -eq $mon -and -not (IsExcludedFromProd $_.Resp)} | Sort-Object LineasDia -Descending)
-        $pkArr2 = [System.Collections.Generic.List[string]]::new()
-        foreach($op in $mPkRows2){
-            $rn=$op.Resp -replace "'",""; $rc=$op.RecCnt
-            $pkArr2.Add("{resp:'$rn',dias:$($op.Dias),lineas:$($op.Lineas),ld:$($op.LineasDia.ToString($IC)),cumpl:$($op.Cumplim.ToString($IC)),recCnt:$rc}")
-        }
-        $pkJs2 = "["+($pkArr2 -join ",")+"]"
-        # Pie de Maquina (M1 y M2)
-        $pieArr2 = [System.Collections.Generic.List[string]]::new()
-        $prMon2 = $pieRows | Where-Object{$_.YM -eq $mon} | Select-Object -First 1
-        if($prMon2){
-            if($prMon2.M1Dias -gt 0){ $pieArr2.Add("{resp:'Pie Maquina 1',dias:$($prMon2.M1Dias),lineas:$($prMon2.M1Lineas),ld:$($prMon2.M1LD.ToString($IC)),cumpl:0,recCnt:0}") }
-            if($prMon2.M2Dias -gt 0){ $pieArr2.Add("{resp:'Pie Maquina 2',dias:$($prMon2.M2Dias),lineas:$($prMon2.M2Lineas),ld:$($prMon2.M2LD.ToString($IC)),cumpl:0,recCnt:0}") }
-        }
-        $pieJs2 = "["+($pieArr2 -join ",")+"]"
-        # Muestra Simple (Lezcano)
-        $lezArr2 = [System.Collections.Generic.List[string]]::new()
-        $lrMon2 = $lezRows | Where-Object{$_.YM -eq $mon} | Select-Object -First 1
-        if($lrMon2){ $lezArr2.Add("{resp:'LEZCANO AGUSTIN',dias:$($lrMon2.Dias),lineas:$($lrMon2.Lineas),ld:$($lrMon2.LineasDia.ToString($IC)),cumpl:0,recCnt:$($lrMon2.RecCnt)}") }
-        $lezJs2 = "["+($lezArr2 -join ",")+"]"
-        $jsResumeParts.Add("'$mon':{picking:$pkJs2,pie:$pieJs2,muestra:$lezJs2,control:[]}")
-    }
-    $jsResumeData = "{" + ($jsResumeParts -join ",") + "}"
 
     $html = @"
 <!DOCTYPE html>
@@ -1740,15 +1690,6 @@ body.dark .grp-btn:hover{border-color:#3b82f6;color:#60a5fa}
 body.dark .grp-btn.active{background:#2563eb;border-color:#2563eb;color:white}
 #themeToggle{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);border-radius:50px;width:42px;height:42px;color:white;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
 #themeToggle:hover{background:rgba(255,255,255,.22);transform:scale(1.08)}
-body.dark #recModal>div{background:#1e293b;color:#e2e8f0}
-body.dark #recModal #recModalTitle{color:#f1f5f9}
-body.dark #recModal #recModalSub{color:#64748b}
-body.dark #recModal table thead tr{background:#0f172a}
-body.dark #recModal table thead th{color:#94a3b8;border-bottom-color:#334155}
-body.dark #recModal table tbody tr{background:#1e293b!important}
-body.dark #recModal table tbody tr:nth-child(even){background:#0f172a!important}
-body.dark #recModal table tbody td{color:#e2e8f0;border-bottom-color:#334155}
-body.dark #recModal button{background:#334155;color:#cbd5e1}
 </style>
 </head>
 <body>
@@ -1774,7 +1715,6 @@ body.dark #recModal button{background:#334155;color:#cbd5e1}
   <button class="tab-btn" onclick="switchTab('muestra')" id="btn-muestra">&#128203; Muestra Simple</button>
   <button class="tab-btn" onclick="switchTab('reclamos')" id="btn-reclamos">&#128683; Reclamos</button>
   <button class="tab-btn" onclick="switchTab('control')" id="btn-control">&#128269; Control</button>
-  <button class="tab-btn" onclick="switchTab('resumen')" id="btn-resumen">&#128202; Resumen General</button>
 </nav>
 
 <div class="container">
@@ -2005,101 +1945,7 @@ body.dark #recModal button{background:#334155;color:#cbd5e1}
   <div class="nodata" style="margin-top:0">&#128269; La secci&oacute;n Control est&aacute; en desarrollo.<br><br>Cuando la pesta&ntilde;a Control del Excel fuente tenga datos, los indicadores aparecer&aacute;n aqu&iacute; autom&aacute;ticamente.</div>
 </div><!-- /sec-control -->
 
-<!-- ===== SECCION: RESUMEN GENERAL ===== -->
-<div id="sec-resumen" class="sec">
-
-<div class="kpi-grid g4" style="margin-bottom:18px">
-  <div class="kpi-card blue">
-    <div class="kpi-label">&#128230; Picking &mdash; Operarios</div>
-    <div class="kpi-value" id="rs-pk-ops">&#8212;</div>
-    <div class="kpi-sub" id="rs-pk-sub">Sin datos</div>
-  </div>
-  <div class="kpi-card amber">
-    <div class="kpi-label">&#9881; Pie de M&aacute;quina &mdash; Turnos</div>
-    <div class="kpi-value" id="rs-pie-ops">&#8212;</div>
-    <div class="kpi-sub" id="rs-pie-sub">Sin datos</div>
-  </div>
-  <div class="kpi-card purple">
-    <div class="kpi-label">&#128203; Muestra Simple</div>
-    <div class="kpi-value" id="rs-lez-ops">&#8212;</div>
-    <div class="kpi-sub" id="rs-lez-sub">Sin datos</div>
-  </div>
-  <div class="kpi-card slate">
-    <div class="kpi-label">&#128269; Control</div>
-    <div class="kpi-value">&#8212;</div>
-    <div class="kpi-sub">Sin datos a&uacute;n</div>
-  </div>
-</div>
-
-<div class="grp-btns">
-  <button class="grp-btn active" id="rsBtnAll"  onclick="setResGrp('all')">Todos</button>
-  <button class="grp-btn" id="rsBtnPk"   onclick="setResGrp('picking')">&#128230; Picking</button>
-  <button class="grp-btn" id="rsBtnPie"  onclick="setResGrp('pie')">&#9881; Pie de M&aacute;quina</button>
-  <button class="grp-btn" id="rsBtnLez"  onclick="setResGrp('muestra')">&#128203; Muestra Simple</button>
-  <button class="grp-btn" id="rsBtnCtrl" onclick="setResGrp('control')" style="opacity:.45;cursor:not-allowed">&#128269; Control</button>
-</div>
-
-<div class="table-card" style="margin-bottom:18px">
-  <div class="rank-title">&#127942; Ranking de Performance por Operario</div>
-  <div class="rank-sub" id="rs-sub">Seleccion&aacute; un mes espec&iacute;fico para ver el detalle</div>
-  <table>
-    <thead><tr>
-      <th style="width:36px">#</th>
-      <th>Operario</th>
-      <th>Grupo</th>
-      <th style="text-align:right">Total L&iacute;neas</th>
-      <th style="text-align:right">Lin/D&iacute;a</th>
-      <th style="text-align:center">vs Target</th>
-      <th style="text-align:center">Reclamos</th>
-    </tr></thead>
-    <tbody id="rs-tbody"></tbody>
-  </table>
-</div>
-
-<div class="charts-row c2">
-  <div class="chart-card" style="border-top:3px solid #2563eb">
-    <div class="chart-title">&#128200; Evoluci&oacute;n Lin/D&iacute;a por grupo</div>
-    <div class="chart-subtitle">Todos los meses disponibles</div>
-    <div style="position:relative;height:230px"><canvas id="chartResGrp"></canvas></div>
-  </div>
-  <div class="chart-card" style="border-top:3px solid #dc2626">
-    <div class="chart-title">&#128683; Reclamos por operario</div>
-    <div class="chart-subtitle" id="rs-rec-sub">Mes seleccionado</div>
-    <div style="position:relative;height:230px"><canvas id="chartResRec"></canvas></div>
-  </div>
-</div>
-
-</div><!-- /sec-resumen -->
-
 </div><!-- /container -->
-
-<!-- ===== MODAL DETALLE RECLAMOS ===== -->
-<div id="recModal" onclick="if(event.target===this)closeRecModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9000;overflow-y:auto;padding:24px 12px">
-  <div style="background:white;max-width:960px;margin:0 auto;border-radius:14px;padding:28px 28px 20px;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.3)">
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px;gap:12px">
-      <div>
-        <div style="font-size:16px;font-weight:700;color:#111" id="recModalTitle">Reclamos</div>
-        <div style="font-size:12px;color:#888;margin-top:4px" id="recModalSub"></div>
-      </div>
-      <button onclick="closeRecModal()" style="background:#f0f0f0;border:none;border-radius:8px;width:34px;height:34px;font-size:18px;cursor:pointer;color:#555;flex-shrink:0;line-height:1">&#x2715;</button>
-    </div>
-    <div style="overflow-x:auto">
-      <table style="width:100%;border-collapse:collapse;font-size:12.5px" id="recModalTable">
-        <thead><tr style="background:#f5f5f5">
-          <th style="padding:9px 10px;text-align:left;font-size:10.5px;text-transform:uppercase;color:#666;border-bottom:2px solid #e0e0e0;white-space:nowrap">NP</th>
-          <th style="padding:9px 10px;text-align:left;font-size:10.5px;text-transform:uppercase;color:#666;border-bottom:2px solid #e0e0e0;white-space:nowrap">Fecha</th>
-          <th style="padding:9px 10px;text-align:left;font-size:10.5px;text-transform:uppercase;color:#666;border-bottom:2px solid #e0e0e0">Art&iacute;culo</th>
-          <th style="padding:9px 10px;text-align:right;font-size:10.5px;text-transform:uppercase;color:#666;border-bottom:2px solid #e0e0e0;white-space:nowrap">Q Reclam.</th>
-          <th style="padding:9px 10px;text-align:left;font-size:10.5px;text-transform:uppercase;color:#666;border-bottom:2px solid #e0e0e0">Motivo</th>
-          <th style="padding:9px 10px;text-align:left;font-size:10.5px;text-transform:uppercase;color:#666;border-bottom:2px solid #e0e0e0">Comentario</th>
-          <th style="padding:9px 10px;text-align:left;font-size:10.5px;text-transform:uppercase;color:#666;border-bottom:2px solid #e0e0e0">Cliente</th>
-        </tr></thead>
-        <tbody id="recModalBody"></tbody>
-      </table>
-    </div>
-    <div style="text-align:right;margin-top:14px;font-size:11px;color:#aaa" id="recModalFooter"></div>
-  </div>
-</div>
 <footer>Dashboard v5 &mdash; Zecat Art&iacute;culos Promocionales SA &nbsp;|&nbsp; $($NOW.ToString('dd/MM/yyyy HH:mm'))</footer>
 
 <script>
@@ -2129,10 +1975,7 @@ const evol30Data=$jsEvol30Data;
 const evol30CL=$jsEvol30CL;
 const evol30SL=$jsEvol30SL;
 const evol30Target=$jsEvol30Target;
-const resumeData=$jsResumeData;
-const recDetail=$jsRecDetail;
 var _grpFilter='all';
-var _rsGrp='all';
 
 // Tab navigation
 function switchTab(name){
@@ -2142,7 +1985,6 @@ function switchTab(name){
   document.getElementById('btn-'+name).classList.add('active');
   // Mostrar filtro de operario en Picking y Reclamos
   document.getElementById('opFilterWrap').style.display=(name==='picking'||name==='reclamos')?'':'none';
-  if(name==='resumen') buildResumen();
 }
 
 // Poblar selector de anios
@@ -2506,9 +2348,9 @@ function applyFilter(){
     var taC=opTasa===0?'#16a34a':opTasa<=3?'#d97706':'#dc2626';
     var bestCat=opBestCat[op]||'-';
     var medal=i===0?'&#127945;':i===1?'&#129352;':i===2?'&#129353;':(i+1)+'';
-    var tr='<tr style="cursor:pointer" onclick="openRecModal(\''+op.replace(/'/g,'')+'\',\''+op.replace(/'/g,'')+'\')" title="Ver detalle de reclamos">'
+    var tr='<tr>'
       +'<td style="text-align:center;font-weight:700">'+medal+'</td>'
-      +'<td style="font-weight:600">'+op+' <span style="font-size:11px;color:#2563eb">🔍</span></td>'
+      +'<td style="font-weight:600">'+op+'</td>'
       +'<td style="text-align:right;font-weight:700;color:'+rcC+'">'+cnt+'</td>'
       +'<td style="text-align:right;color:'+taC+'">'+opTasa.toFixed(2)+'</td>'
       +'<td style="color:#555">'+bestCat+'</td>'
@@ -2532,8 +2374,6 @@ function applyFilter(){
       +'</tr>';
     recCatBodyEl.innerHTML+=tr;
   });
-  // Actualizar Resumen si está activo
-  if(document.getElementById('sec-resumen').classList.contains('active')) buildResumen();
 }
 
 function resetFilter(){
@@ -2699,147 +2539,8 @@ const chartRecOp=new Chart('chartRecOp',{type:'bar',data:{
   plugins:{legend:{display:false}},
   scales:{y:{min:0,grid:{color:'#eeeeee'},ticks:{stepSize:1,color:'#666666'}},x:{grid:{display:false},ticks:{color:'#666666',font:{size:10},maxRotation:35}}}}});
 
-// ===== RESUMEN GENERAL =====
-const chartResGrp=new Chart('chartResGrp',{type:'line',data:{
-  labels:[$jsMonLabels],
-  datasets:[
-    {label:'Picking equipo',data:[$jsTeamLD],borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.08)',borderWidth:2.5,tension:.3,fill:true,pointRadius:3,spanGaps:true},
-    {label:'Pie Máquina 1',data:[$jsPie1],borderColor:'#d97706',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
-    {label:'Pie Máquina 2',data:[$jsPie2],borderColor:'#f59e0b',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true,borderDash:[4,3]},
-    {label:'Muestra Simple',data:[$jsLezLD],borderColor:'#7c3aed',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true}
-  ]},
-  options:{responsive:true,maintainAspectRatio:false,
-    plugins:{legend:{position:'bottom',labels:{color:'#444',font:{size:11},boxWidth:12}},tooltip:{mode:'index',intersect:false}},
-    scales:{y:{min:0,grid:{color:'#eeeeee'},ticks:{color:'#666666'},title:{display:true,text:'Lin/Día',color:'#666'}},x:{grid:{display:false},ticks:{color:'#666666',font:{size:10},maxRotation:30}}}}});
-
-const chartResRec=new Chart('chartResRec',{type:'bar',data:{
-  labels:[],datasets:[{label:'Reclamos',data:[],backgroundColor:[],borderRadius:4}]},
-  options:{responsive:true,maintainAspectRatio:false,
-    plugins:{legend:{display:false}},
-    scales:{y:{min:0,grid:{color:'#eeeeee'},ticks:{stepSize:1,color:'#666666'}},x:{grid:{display:false},ticks:{color:'#666666',font:{size:10},maxRotation:35}}}}});
-
-// ===== MODAL DETALLE RECLAMOS =====
-function openRecModal(resp, label){
-  var idx=getFilteredIndices();
-  var selKeys=idx.map(function(i){return allMonKeys[i];});
-  var recs=[];
-  selKeys.forEach(function(mon){
-    var k=resp+'|'+mon;
-    if(recDetail[k]) recs=recs.concat(recDetail[k]);
-  });
-  if(!recs.length){return;}
-  var pLabel=selKeys.length===1?monLabels[idx[0]]:(selKeys.length+' meses');
-  document.getElementById('recModalTitle').textContent=(label||resp)+' — Detalle de reclamos';
-  document.getElementById('recModalSub').textContent='Período: '+pLabel+' · '+recs.length+' reclamo'+(recs.length!==1?'s':'');
-  var tbody=document.getElementById('recModalBody');
-  tbody.innerHTML='';
-  recs.forEach(function(rc,i){
-    var bg=i%2?'#fafafa':'#fff';
-    var tr=document.createElement('tr');
-    tr.style.background=bg;
-    tr.innerHTML='<td style="padding:8px 10px;font-weight:600;color:#2563eb;white-space:nowrap">'+rc.np+'</td>'
-      +'<td style="padding:8px 10px;white-space:nowrap;color:#555">'+rc.f+'</td>'
-      +'<td style="padding:8px 10px">'+rc.art+'</td>'
-      +'<td style="padding:8px 10px;text-align:right;font-weight:600">'+rc.q+'</td>'
-      +'<td style="padding:8px 10px;color:#d97706;font-size:12px">'+rc.mot+'</td>'
-      +'<td style="padding:8px 10px;color:#555;font-size:12px;max-width:280px">'+rc.com+'</td>'
-      +'<td style="padding:8px 10px;color:#777;font-size:11px;white-space:nowrap">'+rc.cli+'</td>';
-    tbody.appendChild(tr);
-  });
-  document.getElementById('recModalFooter').textContent='Clic fuera del cuadro para cerrar';
-  document.getElementById('recModal').style.display='block';
-  document.body.style.overflow='hidden';
-}
-function closeRecModal(){
-  document.getElementById('recModal').style.display='none';
-  document.body.style.overflow='';
-}
-document.addEventListener('keydown',function(e){if(e.key==='Escape')closeRecModal();});
-
-function setResGrp(g){
-  _rsGrp=g;
-  var btns={all:'rsBtnAll',picking:'rsBtnPk',pie:'rsBtnPie',muestra:'rsBtnLez',control:'rsBtnCtrl'};
-  Object.keys(btns).forEach(function(k){ var el=document.getElementById(btns[k]); if(el) el.classList.toggle('active',k===g); });
-  buildResumen();
-}
-
-function buildResumen(){
-  var idx=getFilteredIndices();
-  var selKeys=idx.map(function(i){return allMonKeys[i];});
-  var byOp={};
-  selKeys.forEach(function(mon){
-    var d=resumeData[mon]; if(!d) return;
-    var grps=_rsGrp==='all'?['picking','pie','muestra']:_rsGrp==='control'?[]:[ _rsGrp];
-    grps.forEach(function(g){
-      if(!d[g]) return;
-      d[g].forEach(function(op){
-        var k=op.resp+'||'+g;
-        if(!byOp[k]) byOp[k]={resp:op.resp,grupo:g,dias:0,lineas:0,ldSum:0,ldN:0,recCnt:0};
-        byOp[k].dias+=op.dias; byOp[k].lineas+=op.lineas;
-        byOp[k].ldSum+=op.ld; byOp[k].ldN++;
-        byOp[k].recCnt+=op.recCnt;
-      });
-    });
-  });
-  var rows=Object.values(byOp).map(function(o){
-    var ld=o.ldN?Math.round(o.ldSum/o.ldN*10)/10:0;
-    return {resp:o.resp,grupo:o.grupo,dias:o.dias,lineas:o.lineas,ld:ld,recCnt:o.recCnt};
-  }).sort(function(a,b){return b.ld-a.ld;});
-
-  // Tabla
-  var tbody=document.getElementById('rs-tbody');
-  tbody.innerHTML='';
-  var grpLabels={picking:'Picking',pie:'Pie Máquina',muestra:'Muestra Simple',control:'Control'};
-  var grpColors={picking:'#2563eb',pie:'#d97706',muestra:'#7c3aed',control:'#64748b'};
-  if(!rows.length){
-    tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:28px;color:#aaa">Sin datos para el período seleccionado</td></tr>';
-  } else {
-    rows.forEach(function(op,i){
-      var tr=document.createElement('tr');
-      var gc=grpColors[op.grupo]||'#64748b';
-      var gl=grpLabels[op.grupo]||op.grupo;
-      var tgtHtml=op.grupo==='picking'?('<span style="font-weight:700;color:'+(op.ld>=TARGET?'#16a34a':op.ld>=70?'#d97706':'#dc2626')+'">'+Math.round(op.ld/TARGET*100)+'%</span>'):'-';
-      var recC=op.recCnt===0?'#16a34a':op.recCnt<=3?'#d97706':'#dc2626';
-      var recCell=op.recCnt>0
-        ?'<span style="background:'+recC+';color:white;padding:1px 9px;border-radius:12px;font-size:12px;font-weight:600;cursor:pointer;text-decoration:underline" onclick="openRecModal(\''+op.resp.replace(/'/g,'')+'\',\''+op.resp.replace(/'/g,'')+'\')" title="Ver detalle de reclamos">'+op.recCnt+' 🔍</span>'
-        :'<span style="background:'+recC+';color:white;padding:1px 9px;border-radius:12px;font-size:12px;font-weight:600">0</span>';
-      if(op.recCnt>0){tr.style.cursor='pointer'; tr.title='Clic para ver detalle de reclamos'; tr.onclick=function(){openRecModal(op.resp,op.resp);};}
-      tr.innerHTML='<td style="color:#999;text-align:center">'+(i+1)+'</td>'
-        +'<td style="font-weight:600">'+op.resp+'</td>'
-        +'<td><span style="background:'+gc+'22;color:'+gc+';padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600">'+gl+'</span></td>'
-        +'<td style="text-align:right">'+op.lineas.toLocaleString()+'</td>'
-        +'<td style="text-align:right;font-weight:700;color:'+(op.grupo==='picking'?(op.ld>=TARGET?'#16a34a':op.ld>=70?'#d97706':'#dc2626'):'#333')+'">'+op.ld+'</td>'
-        +'<td style="text-align:center">'+tgtHtml+'</td>'
-        +'<td style="text-align:center">'+recCell+'</td>';
-      tbody.appendChild(tr);
-    });
-  }
-
-  // KPIs
-  var pkR=Object.values(byOp).filter(function(o){return o.grupo==='picking';});
-  var piR=Object.values(byOp).filter(function(o){return o.grupo==='pie';});
-  var lzR=Object.values(byOp).filter(function(o){return o.grupo==='muestra';});
-  function avgLd(arr){return arr.length?Math.round(arr.reduce(function(s,o){return s+(o.ldN?o.ldSum/o.ldN:0);},0)/arr.length*10)/10:0;}
-  document.getElementById('rs-pk-ops').textContent=pkR.length||'—';
-  document.getElementById('rs-pk-sub').textContent=pkR.length?'Prom: '+avgLd(pkR)+' lin/día':'Sin datos';
-  document.getElementById('rs-pie-ops').textContent=piR.length||'—';
-  document.getElementById('rs-pie-sub').textContent=piR.length?'Prom: '+avgLd(piR)+' lin/día':'Sin datos';
-  document.getElementById('rs-lez-ops').textContent=lzR.length||'—';
-  document.getElementById('rs-lez-sub').textContent=lzR.length?'Prom: '+avgLd(lzR)+' lin/día':'Sin datos';
-  var pLabel=selKeys.length===1?monLabels[idx[0]]:(selKeys.length+' meses');
-  document.getElementById('rs-sub').textContent='Período: '+pLabel+' — '+rows.length+' operario'+(rows.length!==1?'s':'');
-
-  // Chart reclamos
-  var recArr=rows.filter(function(r){return r.recCnt>0;}).sort(function(a,b){return b.recCnt-a.recCnt;}).slice(0,12);
-  chartResRec.data.labels=recArr.map(function(r){return r.resp;});
-  chartResRec.data.datasets[0].data=recArr.map(function(r){return r.recCnt;});
-  chartResRec.data.datasets[0].backgroundColor=recArr.map(function(r){return r.recCnt<=2?'#d97706':'#dc2626';});
-  document.getElementById('rs-rec-sub').textContent=recArr.length?'Top '+recArr.length+' operarios con reclamos':'Sin reclamos en el período';
-  chartResRec.update();
-}
-
 // ===== DARK / LIGHT THEME =====
-var _allCharts=[chartRanking,chartTeamTrend,chartStaff,chartEvol,chartMerma,chartPie,chartLez,chartRecMon,chartRecCat,chartRecOp,chartEvol30,chartResGrp,chartResRec];
+var _allCharts=[chartRanking,chartTeamTrend,chartStaff,chartEvol,chartMerma,chartPie,chartLez,chartRecMon,chartRecCat,chartRecOp,chartEvol30];
 function updateChartColors(dark){
   var grid=dark?'#334155':'#eeeeee';
   var tick=dark?'#94a3b8':'#666666';
@@ -2882,8 +2583,6 @@ try {
   applyFilter();
   // Poblar tabla 7 dias (datos estaticos, filtrable por grupo)
   _build7dTable();
-  // Inicializar Resumen (precarga datos para que el tab sea instantáneo)
-  buildResumen();
   // Si ya hay dark mode guardado, aplicar colores a los charts recién creados
   if(document.body.classList.contains('dark')) updateChartColors(true);
 } catch(err) {
