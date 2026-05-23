@@ -364,7 +364,7 @@ const selAnioEl=document.getElementById('selAnio');
 years.forEach(function(y){var o=document.createElement('option');o.value=y;o.textContent=y;selAnioEl.appendChild(o);});
 
 // Poblar selector de operarios
-const operarios=['-2146826246','AIRALA CESAR','ARCE ELIAS','ARMOA TAMARA','BRUN TOMAS','CACERES EDISON','CAÑETE FAVIO','CHOQUE LEANDRO','DEMARCHIS EMILIANO','FAVIO CAÑETE','LAURATO MARTINEZ','MARIN LAUTARO','OCAMPO BRIAN','ROMERO DAMIAN','ROMERO MELANIE','SANDOVAL TOMAS'];
+const operarios=['AIRALA CESAR','ARCE ELIAS','ARMOA TAMARA','BRUN TOMAS','CACERES EDISON','CAÑETE FAVIO','CHOQUE LEANDRO','DEMARCHIS EMILIANO','FAVIO CAÑETE','LAURATO MARTINEZ','MARIN LAUTARO','OCAMPO BRIAN','ROMERO DAMIAN','ROMERO MELANIE','SANDOVAL TOMAS'];
 const selOpEl=document.getElementById('selOp');
 operarios.forEach(function(op){var o=document.createElement('option');o.value=op;o.textContent=op;selOpEl.appendChild(o);});
 
@@ -406,7 +406,7 @@ function applyFilter(){
 
   // ===== PICKING: agregar datos segun filtro de operario =====
   var aggL=0,aggU=0,aggRC=0,aggOlas=0,aggSN=0,aggSA=0;
-  var aggOpsSum=0,aggLDSum=0,teamValidM=0;
+  var aggOpsSum=0,aggLDSum=0,teamValidM=0,aggActiveOps=0;
   var opLDSum=0,opValidM=0;
   var rankMap={};
 
@@ -415,6 +415,9 @@ function applyFilter(){
     if(!d) return;
     teamValidM++;
     aggOpsSum+=d.totOps; aggLDSum+=d.avgLD; aggSN+=d.staffNec; aggSA+=d.staffAct;
+    // Contar pickeadores regulares del mes (>= 5 dias, excluir errores de Excel)
+    var _mActivos=0; d.pickers.forEach(function(pk){if(pk.resp!=='-2146826246'&&pk.dias>=5)_mActivos++;});
+    aggActiveOps+=_mActivos;
     if(selOp==='all'){aggL+=d.totL;aggU+=d.totU;aggRC+=d.totRC;aggOlas+=d.totOlas;}
     d.pickers.forEach(function(pk){
       if(selOp!=='all'&&pk.resp!==selOp) return;
@@ -429,7 +432,7 @@ function applyFilter(){
   var dv=teamValidM||1;
   var mAvgLD=selOp==='all'?(teamValidM?Math.round(aggLDSum/dv*10)/10:0):(opValidM?Math.round(opLDSum/opValidM*10)/10:0);
   var mCumAv=Math.round(mAvgLD/TARGET*1000)/10;
-  var mOps=selOp==='all'?(teamValidM?Math.round(aggOpsSum/dv*10)/10:0):1;
+  var mOps=selOp==='all'?(teamValidM?Math.round(aggActiveOps/dv):0):1;
   var mRateG=aggL?Math.round(aggRC/(aggL/1000)*100)/100:0;
   var mSN=selOp==='all'?Math.round(aggSN/dv*10)/10:'-';
   var mSA=selOp==='all'?Math.round(aggSA/dv*10)/10:'-';
@@ -461,7 +464,7 @@ function applyFilter(){
   document.getElementById('rankChartTitle').textContent='Lineas/Dia por Operario — '+periodoLabel;
 
   // Ranking table
-  var pickers=Object.entries(rankMap).map(function(e){
+  var pickers=Object.entries(rankMap).filter(function(e){return e[0]!=='-2146826246';}).map(function(e){
     var resp=e[0],p=e[1];
     var ld=p.dias?Math.round(p.lineas/p.dias*10)/10:0;
     var cumpl=Math.round(ld/TARGET*1000)/10;
