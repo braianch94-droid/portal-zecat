@@ -522,7 +522,7 @@ years.forEach(function(y){var o=document.createElement('option');o.value=y;o.tex
 // Poblar selector de operarios
 const operarios=['-2146826246','ARCE ELIAS','ARMOA TAMARA','BRUN TOMAS','CACERES EDISON','CAÑETE FAVIO','CHOQUE LEANDRO','DEMARCHIS EMILIANO','FAVIO CAÑETE','LAURATO MARTINEZ','MARIN LAUTARO','OCAMPO BRIAN','ROMERO DAMIAN','ROMERO MELANIE','SANDOVAL TOMAS'];
 const selOpEl=document.getElementById('selOp');
-operarios.forEach(function(op){var o=document.createElement('option');o.value=op;o.textContent=op;selOpEl.appendChild(o);});
+operarios.forEach(function(op){if(/^\-?\d+$/.test(op))return;var o=document.createElement('option');o.value=op;o.textContent=op;selOpEl.appendChild(o);});
 
 // Colores de rendimiento (verde/naranja/rojo)
 function perfColor(v){return v>=TARGET?'#16a34a':v>=70?'#d97706':'#dc2626';}
@@ -573,6 +573,7 @@ function applyFilter(){
     aggOpsSum+=(d.pickeadores||d.totOps); aggLDSum+=d.avgLD; aggSN+=d.staffNec; aggSA+=(d.pickeadores||d.staffAct);
     if(selOp==='all'){aggL+=d.totL;aggU+=d.totU;aggRC+=d.totRC;aggOlas+=d.totOlas;}
     d.pickers.forEach(function(pk){
+      if(/^\-?\d+$/.test(pk.resp)) return; // filtrar errores Excel COM
       if(selOp!=='all'&&pk.resp!==selOp) return;
       if(!rankMap[pk.resp]) rankMap[pk.resp]={dias:0,olas:0,lineas:0,unidades:0,recCnt:0,trend:pk.trend};
       rankMap[pk.resp].dias+=pk.dias; rankMap[pk.resp].olas+=pk.olas;
@@ -943,7 +944,6 @@ const chartStaff=new Chart('chartStaff',{type:'bar',data:{
 
 const chartEvol=new Chart('chartEvol',{type:'line',data:{
   labels:['Enero 2026','Febrero 2026','Marzo 2026','Abril 2026','Mayo 2026'],datasets:[
-  {label:'-2146826246',data:[1.2,14.2,109.5,2.6,1.5],borderColor:'#2563eb',backgroundColor:'#2563eb22',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
   {label:'ARCE ELIAS',data:[8,9,null,null,null],borderColor:'#16a34a',backgroundColor:'#16a34a22',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
   {label:'ARMOA TAMARA',data:[60.6,77.2,83.7,99.8,113.5],borderColor:'#d97706',backgroundColor:'#d9770622',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
   {label:'BRUN TOMAS',data:[64,88.3,90.6,92.6,123.2],borderColor:'#dc2626',backgroundColor:'#dc262622',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
@@ -1157,6 +1157,7 @@ function buildResumen(){
     grps.forEach(function(g){
       if(!d[g]) return;
       d[g].forEach(function(op){
+        if(/^\-?\d+$/.test(op.resp)) return; // filtrar errores Excel COM (#N/A → número negativo)
         var k=op.resp+'||'+g;
         if(!byOp[k]) byOp[k]={resp:op.resp,grupo:g,dias:0,lineas:0,ldSum:0,ldN:0,recCnt:0};
         byOp[k].dias+=op.dias; byOp[k].lineas+=op.lineas;
