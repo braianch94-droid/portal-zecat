@@ -1335,41 +1335,66 @@ try {
 
     # ---- Construir datos para charts y monthlyData JS ----
     $allYears = @{}
-    # Leer pickeadores oficiales por mes desde estructura ARG - CHI.xlsx
+    # Leer pickeadores oficiales por mes desde estructura ARG - CHI.xlsx (col N)
     $pickeadoresByMon = @{}
     $estructuraPath = "C:\Users\bchevasco\OneDrive - Articulos Promocionales SA\Escritorio\Inteligencia Artificial\Personal\estructura ARG - CHI.xlsx"
     if(Test-Path $estructuraPath){
         try{
             $xtWb = $xl.Workbooks.Open($estructuraPath)
-            $xtWs = $xtWb.Sheets.Item("ARG")
+            # Buscar hoja "ARG" (case-insensitive); si no existe, usar la primera hoja
+            $xtWs = $null
+            foreach($sh in $xtWb.Sheets){ if("$($sh.Name)".Trim() -ieq "ARG"){ $xtWs=$sh; break } }
+            if(-not $xtWs){ $xtWs = $xtWb.Sheets.Item(1) }
             $xtArr = $xtWs.UsedRange.Value2
             $xtRows = $xtArr.GetUpperBound(0)
             $xtCols = $xtArr.GetUpperBound(1)
             $pkCol=$null; $mesCol=$null
             for($c=1;$c -le $xtCols;$c++){
                 $h="$($xtArr[1,$c])".Trim()
-                if($h -like "*Pickeadores*"){$pkCol=$c}
-                if($h -eq "Mes"){$mesCol=$c}
+                if($h -like "*Pickeadores*"){ $pkCol=$c }
+                if($h -ieq "Mes"){ $mesCol=$c }
             }
+            # Diccionario de abreviaturas de meses en español para parsear texto tipo "ene-25"
+            $MESES_ABR=@{"ene"=1;"feb"=2;"mar"=3;"abr"=4;"may"=5;"jun"=6;"jul"=7;"ago"=8;"sep"=9;"oct"=10;"nov"=11;"dic"=12}
             if($pkCol -and $mesCol){
                 for($r=2;$r -le $xtRows;$r++){
                     $mesVal=$xtArr[$r,$mesCol]; $pkVal=$xtArr[$r,$pkCol]
-                    if($mesVal -and $pkVal){
+                    if(-not $mesVal -or -not $pkVal){ continue }
+                    $ymx=$null
+                    # Opción 1: valor numérico OA date (fecha Excel normal)
+                    if($mesVal -is [double] -or $mesVal -is [int]){
                         try{
-                            $mesDate=[datetime]::FromOADate([double]$mesVal)
-                            $ymx="$($mesDate.Year)-$('{0:00}' -f $mesDate.Month)"
-                            $pkInt=[int]$pkVal
-                            if(-not $pickeadoresByMon[$ymx] -or $pickeadoresByMon[$ymx] -lt $pkInt){
-                                $pickeadoresByMon[$ymx]=$pkInt
-                            }
+                            $d=[datetime]::FromOADate([double]$mesVal)
+                            $ymx="$($d.Year)-$('{0:00}' -f $d.Month)"
                         }catch{}
                     }
+                    # Opción 2: texto "ene-25" / "ene-2025"
+                    if(-not $ymx){
+                        $ms="$mesVal".Trim().ToLower()
+                        if($ms -match "^([a-z]{3})-(\d{2,4})$"){
+                            $mn=$MESES_ABR[$matches[1]]
+                            if($mn){
+                                $fy=if($matches[2].Length -eq 2){"20$($matches[2])"}else{$matches[2]}
+                                $ymx="$fy-$('{0:00}' -f $mn)"
+                            }
+                        }
+                    }
+                    if(-not $ymx){ continue }
+                    try{
+                        $pkInt=[int]$pkVal
+                        if($pkInt -gt 0 -and (-not $pickeadoresByMon[$ymx] -or $pickeadoresByMon[$ymx] -lt $pkInt)){
+                            $pickeadoresByMon[$ymx]=$pkInt
+                        }
+                    }catch{}
                 }
+            } else {
+                Write-Host "  [WARN] Columna no encontrada — Mes:$mesCol Pickeadores:$pkCol (hoja '$($xtWs.Name)')"
             }
             $xtWb.Close($false)
-            Write-Host "[$($NOW.ToString('HH:mm:ss'))] Pickeadores cargados: $($pickeadoresByMon.Count) meses"
-        }catch{ Write-Host "  [WARN] No se pudo leer estructura: $_" }
-    }
+            $pkLog=($pickeadoresByMon.GetEnumerator()|Sort-Object Key|ForEach-Object{"$($_.Key)=$($_.Value)"}) -join ", "
+            Write-Host "[$($NOW.ToString('HH:mm:ss'))] Pickeadores OK: $($pickeadoresByMon.Count) meses -> $pkLog"
+        }catch{ Write-Host "  [WARN] Error leyendo estructura ARG-CHI: $_" }
+    } else { Write-Host "  [WARN] No se encontró: $estructuraPath" }
 
     $jsMonthlyDataParts = [System.Collections.Generic.List[string]]::new()
     $jsAllDataList = [System.Collections.Generic.List[string]]::new()

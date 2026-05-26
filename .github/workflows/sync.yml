@@ -27,11 +27,8 @@ jobs:
           git clone --depth 1 https://github.com/braianch94-droid/Logistica4.git Logistica4
           rm -rf Logistica4/.git
 
-      - name: Sync dashboard-productividad-zecat
-        run: |
-          rm -rf dashboard-productividad-zecat
-          git clone --depth 1 https://github.com/braianch94-droid/dashboard-productividad-zecat.git dashboard-productividad-zecat
-          rm -rf dashboard-productividad-zecat/.git
+      # dashboard-productividad-zecat se actualiza directamente via Actualizar-Dashboard.bat
+      # (NO sincronizar desde el repo fuente — el bat pushea index.html al portal directamente)
 
       - name: Sync reporte-personal-zecat
         run: |
