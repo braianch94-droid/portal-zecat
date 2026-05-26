@@ -7,19 +7,15 @@ on:
 
 permissions:
   contents: write
-  pages: write
-  id-token: write
+  deployments: write
 
 concurrency:
-  group: pages
+  group: deploy
   cancel-in-progress: true
 
 jobs:
   sync-and-deploy:
-    name: Sync + Deploy GitHub Pages
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+    name: Sync + Deploy Cloudflare Pages
     runs-on: ubuntu-latest
 
     steps:
@@ -59,26 +55,6 @@ jobs:
           git diff --staged --quiet && echo "Sin cambios" || git commit -m "sync: actualizar módulos [$(date +'%Y-%m-%d')]"
           git push
 
-      - uses: actions/configure-pages@v4
-        with:
-          enablement: true
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: .
-      - uses: actions/deploy-pages@v4
-        id: deployment
-
-  deploy-cloudflare:
-    name: Deploy to Cloudflare Pages
-    needs: sync-and-deploy
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      deployments: write
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: master
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/pages-action@v1
         with:
