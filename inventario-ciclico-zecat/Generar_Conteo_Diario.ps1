@@ -146,8 +146,8 @@ try {
         $sku   = $ws2.Cells.Item($r,39).Text.Trim()
         $fam   = $ws2.Cells.Item($r,42).Text.Trim()
         $sOrig = $ws2.Cells.Item($r,48).Text.Trim()
-        if ($art -eq "" -or $sw -eq $null) { continue }
-        $swN   = if ($sw -le 0) { 0.1 } else { $sw }
+        if ($art -eq "" -or $sw -eq $null -or $sw -le 0) { continue }
+        $swN   = $sw
         $dvN   = if ($null -eq $ddpV) { 0 } else { $ddpV }
         $boost = if ($swN -lt 200) { 3 } else { 1 }
         $score = ($dvN / $swN) * $boost
