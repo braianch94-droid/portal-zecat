@@ -1,0 +1,1716 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reporte de Capacidad Operativa — Ene 2025 a Abr 2026</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin:0; padding:0; }
+  body { font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+         background:#F0F4F8; color:#1A2332; font-size:14px;
+         overflow: auto !important; }
+
+  /* ── Layout ─────────────────────────────────────────────── */
+  .container { max-width:1440px; margin:0 auto; padding:0 24px 60px; }
+
+  /* ── Header ─────────────────────────────────────────────── */
+  .report-header {
+    background: linear-gradient(135deg, #0D2545 0%, #1B4080 60%, #1565C0 100%);
+    color:#fff; padding:48px 48px 40px; margin:0 -24px 36px;
+    border-bottom: 4px solid #FFA000;
+  }
+  .report-header h1 { font-size:2.2rem; font-weight:800; letter-spacing:-0.5px; }
+  .report-header .subtitle { font-size:1.1rem; opacity:.85; margin-top:6px; }
+  .params-strip {
+    display:flex; gap:32px; margin-top:24px; flex-wrap:wrap;
+  }
+  .param-chip {
+    background:rgba(255,255,255,.15); border:1px solid rgba(255,255,255,.3);
+    border-radius:8px; padding:10px 18px; font-size:0.95rem;
+  }
+  .param-chip strong { font-size:1.3rem; display:block; color:#FFD54F; }
+  .param-chip span { opacity:.8; font-size:0.82rem; }
+  .generated { margin-top:18px; opacity:.5; font-size:0.8rem; }
+
+  /* ── Section titles ─────────────────────────────────────── */
+  .section-title {
+    font-size:1.4rem; font-weight:700; color:#0D2545;
+    margin: 40px 0 16px; padding-bottom:8px;
+    border-bottom: 3px solid #1565C0;
+    display:flex; align-items:center; gap:10px;
+  }
+  .section-title .flag { font-size:1.6rem; }
+  .section-sub {
+    font-size:1.1rem; font-weight:700; color:#1A2332;
+    margin: 28px 0 10px; padding:8px 14px;
+    background:#E3F2FD; border-left:4px solid #1565C0; border-radius:0 6px 6px 0;
+  }
+  .section-sub.picking-hdr { background:#FFF3E0; border-left-color:#E65100; }
+  .section-sub.ctrl-hdr    { background:#E8F5E9; border-left-color:#2E7D32; }
+
+  /* ── KPI cards ───────────────────────────────────────────── */
+  .kpi-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:8px; }
+  .kpi-card {
+    background:#fff; border-radius:12px; padding:20px;
+    box-shadow:0 2px 8px rgba(0,0,0,.08); border-top:4px solid #1565C0;
+  }
+  .kpi-card.arg { border-top-color:#1565C0; }
+  .kpi-card.chi { border-top-color:#C62828; }
+  .kpi-label { font-size:.78rem; font-weight:600; color:#6B7280; text-transform:uppercase; letter-spacing:.5px; }
+  .kpi-value { font-size:1.9rem; font-weight:800; color:#0D2545; margin:4px 0 2px; }
+  .kpi-sub   { font-size:.8rem; color:#6B7280; }
+  .two-col { display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-bottom:8px; }
+
+  /* ── Coverage bars ───────────────────────────────────────── */
+  .coverage-block {
+    background:#fff; border-radius:12px; padding:24px 28px;
+    box-shadow:0 2px 8px rgba(0,0,0,.08); margin-bottom:28px;
+  }
+  .coverage-block h3 {
+    font-size:1rem; font-weight:700; color:#0D2545;
+    margin-bottom:18px; text-transform:uppercase; letter-spacing:.5px;
+  }
+  .cov-row { display:flex; align-items:center; gap:16px; margin-bottom:14px; }
+  .cov-label { width:220px; font-weight:600; font-size:.9rem; flex-shrink:0; }
+  .cov-bar-wrap { flex:1; height:20px; background:#E5E7EB; border-radius:10px; overflow:hidden; display:flex; }
+  .cov-seg { height:100%; transition:width .3s; }
+  .cov-ok  { background:#4CAF50; }
+  .cov-ex  { background:#FFC107; }
+  .cov-def { background:#F44336; }
+  .cov-nums { display:flex; gap:16px; font-size:.82rem; width:240px; flex-shrink:0; }
+  .cov-ok-txt  { color:#2E7D32; font-weight:700; }
+  .cov-def-txt { color:#C62828; font-weight:700; }
+  .cov-tot-txt { color:#6B7280; }
+
+  /* ── Charts ──────────────────────────────────────────────── */
+  .chart-wrap {
+    background:#fff; border-radius:12px; padding:20px 24px;
+    box-shadow:0 2px 8px rgba(0,0,0,.08); margin-bottom:20px;
+  }
+  .chart-title { font-size:.88rem; font-weight:700; color:#374151;
+                  margin-bottom:12px; text-transform:uppercase; letter-spacing:.4px; }
+  .chart-hint  { font-size:.78rem; color:#9CA3AF; margin-top:4px; }
+  .charts-row  { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:4px; }
+
+  /* ── Tables ──────────────────────────────────────────────── */
+  .table-wrap {
+    background:#fff; border-radius:12px; overflow:hidden;
+    box-shadow:0 2px 8px rgba(0,0,0,.08); margin-bottom:28px;
+  }
+  table { width:100%; border-collapse:collapse; font-size:.85rem; }
+  thead tr { background:#0D2545; color:#fff; }
+  thead.picking-head tr { background:#E65100; }
+  thead.ctrl-head    tr { background:#2E7D32; }
+  th { padding:10px 12px; text-align:center; font-weight:600; font-size:.8rem;
+        letter-spacing:.3px; white-space:nowrap; }
+  th.th-left { text-align:left; }
+  td { padding:9px 12px; border-bottom:1px solid #F3F4F6; vertical-align:middle; }
+  tr:last-child td { border-bottom:none; }
+  .num { text-align:right; font-variant-numeric:tabular-nums; }
+  .td-mes { font-weight:600; white-space:nowrap; }
+  .td-highlight { font-weight:700; color:#0D2545; }
+  .nec  { color:#1565C0; font-weight:700; }
+  .real { font-weight:700; }
+  .td-badge { text-align:center; }
+  .td-ok   { background:#D1FAE5; color:#065F46; font-weight:800; text-align:right; }
+  .td-exact{ background:#FEF3C7; color:#92400E; font-weight:800; text-align:right; }
+  .td-def  { background:#FEE2E2; color:#991B1B; font-weight:800; text-align:right; }
+  .tr-ok   { background:#F0FFF4; }
+  .tr-exact{ background:#FFFBEB; }
+  .tr-def  { background:#FFF5F5; }
+  tr.alt   { background:#F9FAFB !important; }
+  tr.alt.tr-def { background:#FFF0F0 !important; }
+  tr.alt.tr-ok  { background:#F0FFF4 !important; }
+
+  /* ── Badges ──────────────────────────────────────────────── */
+  .badge {
+    display:inline-flex; align-items:center; gap:4px;
+    padding:4px 10px; border-radius:20px; font-size:.78rem; font-weight:700;
+    white-space:nowrap;
+  }
+  .badge-ok    { background:#D1FAE5; color:#065F46; border:1px solid #6EE7B7; }
+  .badge-exact { background:#FEF3C7; color:#92400E; border:1px solid #FCD34D; }
+  .badge-def   { background:#FEE2E2; color:#991B1B; border:1px solid #FCA5A5; }
+  .badge-na    { background:#F3F4F6; color:#9CA3AF; border:1px solid #E5E7EB; }
+
+  /* ── Separator column in comparativo ────────────────────── */
+  .sep { width:12px; background:#E5E7EB !important; padding:0 !important; }
+  thead .sep-head { background:#6B7280 !important; }
+
+  /* ── Stat boxes for comparativo ─────────────────────────── */
+  .stat-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:24px; }
+  .stat-box {
+    background:#fff; border-radius:10px; padding:18px 20px;
+    box-shadow:0 2px 8px rgba(0,0,0,.08);
+  }
+  .stat-box .metric { font-size:.78rem; color:#6B7280; font-weight:600;
+                       text-transform:uppercase; letter-spacing:.4px; }
+  .stat-row { display:flex; justify-content:space-between; margin-top:8px; gap:8px; }
+  .stat-val { font-size:1.3rem; font-weight:800; }
+  .stat-val.arg { color:#1565C0; }
+  .stat-val.chi { color:#C62828; }
+  .stat-vs  { font-size:.75rem; color:#9CA3AF; align-self:flex-end; margin-bottom:2px; }
+
+  /* ── Summary alert box ───────────────────────────────────── */
+  .alert-box {
+    border-radius:10px; padding:16px 20px; margin-bottom:20px;
+    font-size:.92rem; line-height:1.6;
+  }
+  .alert-info  { background:#EFF6FF; border-left:4px solid #2563EB; color:#1E40AF; }
+  .alert-warn  { background:#FEF3C7; border-left:4px solid #D97706; color:#92400E; }
+  .alert-ok    { background:#ECFDF5; border-left:4px solid #10B981; color:#065F46; }
+
+  /* ── Footnote ────────────────────────────────────────────── */
+  .footnote { font-size:.78rem; color:#9CA3AF; text-align:center;
+               margin-top:40px; padding-top:16px; border-top:1px solid #E5E7EB; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- ══════════════════════════════════════════════════════════
+     HEADER
+═══════════════════════════════════════════════════════════ -->
+<div class="report-header">
+  <h1>📊 Reporte de Capacidad Operativa</h1>
+  <div class="subtitle">Argentina &amp; Chile &nbsp;·&nbsp; Ene 2025 – Abr 2026</div>
+  <div class="params-strip">
+    <div class="param-chip">
+      <strong>84</strong>
+      <span>líneas / picker / día</span>
+    </div>
+    <div class="param-chip">
+      <strong>3,000</strong>
+      <span>unidades sin impresión / controlador / día</span>
+    </div>
+  </div>
+  <div class="generated">Generado el 21/05/2026 14:39</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     RESUMEN EJECUTIVO
+═══════════════════════════════════════════════════════════ -->
+<div class="section-title">📌 Resumen Ejecutivo del Período</div>
+
+<div class="two-col">
+  <div>
+    <div class="section-sub">🇦🇷 Argentina — indicadores acumulados</div>
+    <div class="kpi-grid" style="grid-template-columns:repeat(2,1fr)">
+      <div class="kpi-card arg">
+        <div class="kpi-label">Unidades procesadas</div>
+        <div class="kpi-value">6.779.782</div>
+        <div class="kpi-sub">total del período</div>
+      </div>
+      <div class="kpi-card arg">
+        <div class="kpi-label">Líneas procesadas</div>
+        <div class="kpi-value">93.892</div>
+        <div class="kpi-sub">total del período</div>
+      </div>
+      <div class="kpi-card arg">
+        <div class="kpi-label">Prom. líneas / día</div>
+        <div class="kpi-value">284</div>
+        <div class="kpi-sub">promedio mensual</div>
+      </div>
+      <div class="kpi-card arg">
+        <div class="kpi-label">Prom. personal total</div>
+        <div class="kpi-value">13,2</div>
+        <div class="kpi-sub">operarios promedio</div>
+      </div>
+    </div>
+  </div>
+  <div>
+    <div class="section-sub" style="background:#FFEBEE;border-left-color:#C62828">🇨🇱 Chile — indicadores acumulados</div>
+    <div class="kpi-grid" style="grid-template-columns:repeat(2,1fr)">
+      <div class="kpi-card chi">
+        <div class="kpi-label">Unidades procesadas</div>
+        <div class="kpi-value">3.475.033</div>
+        <div class="kpi-sub">total del período</div>
+      </div>
+      <div class="kpi-card chi">
+        <div class="kpi-label">Líneas procesadas</div>
+        <div class="kpi-value">23.622</div>
+        <div class="kpi-sub">total del período</div>
+      </div>
+      <div class="kpi-card chi">
+        <div class="kpi-label">Prom. líneas / día</div>
+        <div class="kpi-value">71</div>
+        <div class="kpi-sub">promedio mensual</div>
+      </div>
+      <div class="kpi-card chi">
+        <div class="kpi-label">Prom. personal total</div>
+        <div class="kpi-value">4,8</div>
+        <div class="kpi-sub">operarios promedio</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     COBERTURA GLOBAL
+═══════════════════════════════════════════════════════════ -->
+<div class="section-title">🚦 Estado de Cobertura — ¿Cuándo tuvimos personal suficiente?</div>
+
+<div class="coverage-block">
+  <h3>Proporción de meses con cobertura adecuada vs déficit de personal</h3>
+  
+    <div class="cov-row">
+      <div class="cov-label">🇦🇷 ARG &nbsp; Picking</div>
+      <div class="cov-bar-wrap">
+        <div class="cov-seg cov-ok"  style="width:100.0%"  title="OK: 16 meses"></div>
+        <div class="cov-seg cov-ex"  style="width:0.0%"  title="Exacto: 0 meses"></div>
+        <div class="cov-seg cov-def" style="width:0.0%" title="Déficit: 0 meses"></div>
+      </div>
+      <div class="cov-nums">
+        <span class="cov-ok-txt">✅ 16 OK</span>
+        <span class="cov-def-txt">⛔ 0 con déficit</span>
+        <span class="cov-tot-txt">de 16 meses</span>
+      </div>
+    </div>
+  
+    <div class="cov-row">
+      <div class="cov-label">🇦🇷 ARG &nbsp; Control</div>
+      <div class="cov-bar-wrap">
+        <div class="cov-seg cov-ok"  style="width:31.2%"  title="OK: 5 meses"></div>
+        <div class="cov-seg cov-ex"  style="width:0.0%"  title="Exacto: 0 meses"></div>
+        <div class="cov-seg cov-def" style="width:68.8%" title="Déficit: 11 meses"></div>
+      </div>
+      <div class="cov-nums">
+        <span class="cov-ok-txt">✅ 5 OK</span>
+        <span class="cov-def-txt">⛔ 11 con déficit</span>
+        <span class="cov-tot-txt">de 16 meses</span>
+      </div>
+    </div>
+  
+    <div class="cov-row">
+      <div class="cov-label">🇨🇱 CHI &nbsp; Picking</div>
+      <div class="cov-bar-wrap">
+        <div class="cov-seg cov-ok"  style="width:100.0%"  title="OK: 16 meses"></div>
+        <div class="cov-seg cov-ex"  style="width:0.0%"  title="Exacto: 0 meses"></div>
+        <div class="cov-seg cov-def" style="width:0.0%" title="Déficit: 0 meses"></div>
+      </div>
+      <div class="cov-nums">
+        <span class="cov-ok-txt">✅ 16 OK</span>
+        <span class="cov-def-txt">⛔ 0 con déficit</span>
+        <span class="cov-tot-txt">de 16 meses</span>
+      </div>
+    </div>
+  
+    <div class="cov-row">
+      <div class="cov-label">🇨🇱 CHI &nbsp; Control</div>
+      <div class="cov-bar-wrap">
+        <div class="cov-seg cov-ok"  style="width:50.0%"  title="OK: 8 meses"></div>
+        <div class="cov-seg cov-ex"  style="width:0.0%"  title="Exacto: 0 meses"></div>
+        <div class="cov-seg cov-def" style="width:50.0%" title="Déficit: 8 meses"></div>
+      </div>
+      <div class="cov-nums">
+        <span class="cov-ok-txt">✅ 8 OK</span>
+        <span class="cov-def-txt">⛔ 8 con déficit</span>
+        <span class="cov-tot-txt">de 16 meses</span>
+      </div>
+    </div>
+  <p style="font-size:.8rem;color:#6B7280;margin-top:12px">
+    🟢 Verde = Personal real &ge; Necesario &nbsp;|&nbsp;
+    🟡 Amarillo = Personal exactamente igual al necesario &nbsp;|&nbsp;
+    🔴 Rojo = Personal real &lt; Necesario (déficit)
+  </p>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     ARGENTINA
+═══════════════════════════════════════════════════════════ -->
+<div class="section-title"><span class="flag">🇦🇷</span> Argentina — Análisis de Capacidad</div>
+
+<!-- Gráficos ARG -->
+<div class="charts-row">
+  <div class="chart-wrap">
+    <div class="chart-title">📦 Picking: Pickers necesarios vs reales por mes</div>
+    <canvas id="argPickChart" height="140"></canvas>
+    <div class="chart-hint">Barras verdes = cobertura OK · Barras rojas = falta personal · Línea = pickers necesarios</div>
+  </div>
+  <div class="chart-wrap">
+    <div class="chart-title">🎯 Control y Embalaje: Controladores necesarios vs reales por mes</div>
+    <canvas id="argCtrlChart" height="140"></canvas>
+    <div class="chart-hint">Barras verdes = cobertura OK · Barras rojas = falta personal · Línea = controladores necesarios</div>
+  </div>
+</div>
+
+<!-- Tabla PICKING ARG -->
+<div class="section-sub picking-hdr">📦 Picking — Detalle mensual &nbsp;(referencia: 84 líneas/picker/día)</div>
+<div class="alert-box alert-info">
+  <strong>¿Cómo se calcula?</strong>&nbsp;
+  Dividimos el total de líneas del mes por los días hábiles → obtenemos las líneas que se pickean por día.
+  Luego aplicamos: <strong>Necesario = CEIL( líneas/día ÷ 84 )</strong>.
+  El resultado es la cantidad mínima de pickers para cubrir la demanda.
+</div>
+<div class="table-wrap">
+  <table>
+    <thead class="picking-head">
+      <tr>
+        <th class="th-left">Mes</th>
+        <th>Líneas del mes</th>
+        <th>Días hábiles</th>
+        <th>Líneas / día</th>
+        <th>Pickers necesarios</th>
+        <th>Pickers reales</th>
+        <th>Delta (R−N)</th>
+        <th>Estado</th>
+      </tr>
+    </thead>
+    <tbody>
+      
+        <tr class="tr-ok">
+          <td class="td-mes">Ene 2025</td>
+          <td class="num">3.362</td>
+          <td class="num">22</td>
+          <td class="num td-highlight">152,8</td>
+          <td class="num nec">2</td>
+          <td class="num real">3</td>
+          <td class="num td-ok">+1</td>
+          <td class="td-badge"><span class="badge badge-ok">✅ Cubierto +1</span></td>
+        </tr>
+
+        <tr class="tr-exact">
+          <td class="td-mes">Feb 2025</td>
+          <td class="num">3.707</td>
+          <td class="num">20</td>
+          <td class="num td-highlight">185,3</td>
+          <td class="num nec">3</td>
+          <td class="num real">3</td>
+          <td class="num td-exact">0</td>
+          <td class="td-badge"><span class="badge badge-exact">⚖ Exacto</span></td>
+        </tr>
+
+        <tr class="tr-exact">
+          <td class="td-mes">Mar 2025</td>
+          <td class="num">4.519</td>
+          <td class="num">21</td>
+          <td class="num td-highlight">215,2</td>
+          <td class="num nec">3</td>
+          <td class="num real">3</td>
+          <td class="num td-exact">0</td>
+          <td class="td-badge"><span class="badge badge-exact">⚖ Exacto</span></td>
+        </tr>
+
+        <tr class="tr-exact">
+          <td class="td-mes">Abr 2025</td>
+          <td class="num">5.514</td>
+          <td class="num">20</td>
+          <td class="num td-highlight">275,7</td>
+          <td class="num nec">4</td>
+          <td class="num real">4</td>
+          <td class="num td-exact">0</td>
+          <td class="td-badge"><span class="badge badge-exact">⚖ Exacto</span></td>
+        </tr>
+
+        <tr class="tr-exact">
+          <td class="td-mes">May 2025</td>
+          <td class="num">5.552</td>
+          <td class="num">20</td>
+          <td class="num td-highlight">277,6</td>
+          <td class="num nec">4</td>
+          <td class="num real">4</td>
+          <td class="num td-exact">0</td>
+          <td class="td-badge"><span class="badge badge-exact">⚖ Exacto</span></td>
+        </tr>
+
+        <tr class="tr-exact">
+          <td class="td-mes">Jun 2025</td>
+          <td class="num">7.030</td>
+          <td class="num">20</td>
+          <td class="num td-highlight">351,5</td>
+          <td class="num nec">5</td>
+          <td class="num real">5</td>
+          <td class="num td-exact">0</td>
+          <td class="td-badge"><span class="badge badge-exact">⚖ Exacto</span></td>
+        </tr>
+
+        <tr class="tr-exact">
+          <td class="td-mes">Jul 2025</td>
+          <td class="num">6.475</td>
+          <td class="num">22</td>
+          <td class="num td-highlight">294,3</td>
+          <td class="num nec">4</td>
+          <td class="num real">4</td>
+          <td class="num td-exact">0</td>
+          <td class="td-badge"><span class="badge badge-exact">⚖ Exacto</span></td>
+        </tr>
+
+        <tr class="tr-exact">
+          <td class="td-mes">Ago 2025</td>
+          <td class="num">6.828</td>
+          <td class="num">22</td>
+          <td class="num td-highlight">310,4</td>
+          <td class="num nec">4</td>
+          <td class="num real">4</td>
+          <td class="num td-exact">0</td>
+          <td class="td-badge"><span class="badge badge-exact">⚖ Exacto</span></td>
+        </tr>
+
+        <tr class="tr-exact">
+          <td class="td-mes">Sep 2025</td>
+          <td class="num">7.886</td>
+          <td class="num">22</td>
+          <td class="num td-highlight">358,5</td>
+          <td class="num nec">5</td>
+          <td class="num real">5</td>
+          <td class="num td-exact">0</td>
+          <td class="td-badge"><span class="badge badge-exact">⚖ Exacto</span></td>
+        </tr>
+
+        <tr class="tr-exact">
+          <td class="td-mes">Oct 2025</td>
+          <td class="num">8.160</td>
+          <td class="num">22</td>
+          <td class="num td-highlight">370,9</td>
+          <td class="num nec">5</td>
+          <td class="num real">5</td>
+          <td class="num td-exact">0</td>
+          <td class="td-badge"><span class="badge badge-exact">⚖ Exacto</span></td>
+        </tr>
+
+        <tr class="tr-exact">
+          <td class="td-mes">Nov 2025</td>
+          <td class="num">7.644</td>
+          <td class="num">20</td>
+          <td class="num td-highlight">382,2</td>
+          <td class="num nec">5</td>
+          <td class="num real">5</td>
+          <td class="num td-exact">0</td>
+          <td class="td-badge"><span class="badge badge-exact">⚖ Exacto</span></td>
+        </tr>
+
+        <tr class="tr-exact">
+          <td class="td-mes">Dic 2025</td>
+          <td class="num">5.797</td>
+          <td class="num">21</td>
+          <td class="num td-highlight">276,0</td>
+          <td class="num nec">4</td>
+          <td class="num real">4</td>
+          <td class="num td-exact">0</td>
+          <td class="td-badge"><span class="badge badge-exact">⚖ Exacto</span></td>
+        </tr>
+
+        <tr class="tr-exact">
+          <td class="td-mes">Ene 2026</td>
+          <td class="num">4.419</td>
+          <td class="num">21</td>
+          <td class="num td-highlight">210,4</td>
+          <td class="num nec">3</td>
+          <td class="num real">3</td>
+          <td class="num td-exact">0</td>
+          <td class="td-badge"><span class="badge badge-exact">⚖ Exacto</span></td>
+        </tr>
+
+        <tr class="tr-exact">
+          <td class="td-mes">Feb 2026</td>
+          <td class="num">4.746</td>
+          <td class="num">18</td>
+          <td class="num td-highlight">263,7</td>
+          <td class="num nec">4</td>
+          <td class="num real">4</td>
+          <td class="num td-exact">0</td>
+          <td class="td-badge"><span class="badge badge-exact">⚖ Exacto</span></td>
+        </tr>
+
+        <tr class="tr-exact">
+          <td class="td-mes">Mar 2026</td>
+          <td class="num">5.619</td>
+          <td class="num">20</td>
+          <td class="num td-highlight">280,9</td>
+          <td class="num nec">4</td>
+          <td class="num real">4</td>
+          <td class="num td-exact">0</td>
+          <td class="td-badge"><span class="badge badge-exact">⚖ Exacto</span></td>
+        </tr>
+
+        <tr class="tr-exact">
+          <td class="td-mes">Abr 2026</td>
+          <td class="num">6.634</td>
+          <td class="num">20</td>
+          <td class="num td-highlight">331,7</td>
+          <td class="num nec">4</td>
+          <td class="num real">4</td>
+          <td class="num td-exact">0</td>
+          <td class="td-badge"><span class="badge badge-exact">⚖ Exacto</span></td>
+        </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- Tabla CONTROL ARG -->
+<div class="section-sub ctrl-hdr">🎯 Control y Embalaje — Detalle mensual &nbsp;(referencia: 3,000 unid.sin-imp./controlador/día)</div>
+<div class="alert-box alert-info">
+  <strong>¿Cómo se calcula?</strong>&nbsp;
+  Tomamos las unidades sin impresión del mes, las dividimos por los días hábiles y aplicamos:
+  <strong>Necesario = CEIL( unid.sin-imp./día ÷ 3,000 )</strong>.
+  Esas son las personas mínimas de control para procesar la mercadería.
+</div>
+<div class="table-wrap">
+  <table>
+    <thead class="ctrl-head">
+      <tr>
+        <th class="th-left">Mes</th>
+        <th>Unid. sin impresión</th>
+        <th>Días hábiles</th>
+        <th>Unid.sin-imp. / día</th>
+        <th>Controladores necesarios</th>
+        <th>Controladores reales</th>
+        <th>Delta (R−N)</th>
+        <th>Estado</th>
+      </tr>
+    </thead>
+    <tbody>
+      
+        <tr class="tr-exact">
+          <td class="td-mes">Ene 2025</td>
+          <td class="num">90.484</td>
+          <td class="num">22</td>
+          <td class="num td-highlight">4.112,9</td>
+          <td class="num nec">2</td>
+          <td class="num real">2</td>
+          <td class="num td-exact">0</td>
+          <td class="td-badge"><span class="badge badge-exact">⚖ Exacto</span></td>
+        </tr>
+
+        <tr class="tr-def">
+          <td class="td-mes">Feb 2025</td>
+          <td class="num">98.740</td>
+          <td class="num">20</td>
+          <td class="num td-highlight">4.937,0</td>
+          <td class="num nec">2</td>
+          <td class="num real">1</td>
+          <td class="num td-def">-1</td>
+          <td class="td-badge"><span class="badge badge-def">⛔ Falta 1</span></td>
+        </tr>
+
+        <tr class="tr-exact">
+          <td class="td-mes">Mar 2025</td>
+          <td class="num">83.140</td>
+          <td class="num">21</td>
+          <td class="num td-highlight">3.959,0</td>
+          <td class="num nec">2</td>
+          <td class="num real">2</td>
+          <td class="num td-exact">0</td>
+          <td class="td-badge"><span class="badge badge-exact">⚖ Exacto</span></td>
+        </tr>
+
+        <tr class="tr-def">
+          <td class="td-mes">Abr 2025</td>
+          <td class="num">98.936</td>
+          <td class="num">20</td>
+          <td class="num td-highlight">4.946,8</td>
+          <td class="num nec">2</td>
+          <td class="num real">1</td>
+          <td class="num td-def">-1</td>
+          <td class="td-badge"><span class="badge badge-def">⛔ Falta 1</span></td>
+        </tr>
+
+        <tr class="tr-exact">
+          <td class="td-mes">May 2025</td>
+          <td class="num">109.256</td>
+          <td class="num">20</td>
+          <td class="num td-highlight">5.462,8</td>
+          <td class="num nec">2</td>
+          <td class="num real">2</td>
+          <td class="num td-exact">0</td>
+          <td class="td-badge"><span class="badge badge-exact">⚖ Exacto</span></td>
+        </tr>
+
+        <tr class="tr-def">
+          <td class="td-mes">Jun 2025</td>
+          <td class="num">124.248</td>
+          <td class="num">20</td>
+          <td class="num td-highlight">6.212,4</td>
+          <td class="num nec">3</td>
+          <td class="num real">2</td>
+          <td class="num td-def">-1</td>
+          <td class="td-badge"><span class="badge badge-def">⛔ Falta 1</span></td>
+        </tr>
+
+        <tr class="tr-exact">
+          <td class="td-mes">Jul 2025</td>
+          <td class="num">113.325</td>
+          <td class="num">22</td>
+          <td class="num td-highlight">5.151,1</td>
+          <td class="num nec">2</td>
+          <td class="num real">2</td>
+          <td class="num td-exact">0</td>
+          <td class="td-badge"><span class="badge badge-exact">⚖ Exacto</span></td>
+        </tr>
+
+        <tr class="tr-def">
+          <td class="td-mes">Ago 2025</td>
+          <td class="num">193.181</td>
+          <td class="num">22</td>
+          <td class="num td-highlight">8.781,0</td>
+          <td class="num nec">3</td>
+          <td class="num real">2</td>
+          <td class="num td-def">-1</td>
+          <td class="td-badge"><span class="badge badge-def">⛔ Falta 1</span></td>
+        </tr>
+
+        <tr class="tr-def">
+          <td class="td-mes">Sep 2025</td>
+          <td class="num">195.052</td>
+          <td class="num">22</td>
+          <td class="num td-highlight">8.866,0</td>
+          <td class="num nec">3</td>
+          <td class="num real">2</td>
+          <td class="num td-def">-1</td>
+          <td class="td-badge"><span class="badge badge-def">⛔ Falta 1</span></td>
+        </tr>
+
+        <tr class="tr-def">
+          <td class="td-mes">Oct 2025</td>
+          <td class="num">147.884</td>
+          <td class="num">22</td>
+          <td class="num td-highlight">6.722,0</td>
+          <td class="num nec">3</td>
+          <td class="num real">2</td>
+          <td class="num td-def">-1</td>
+          <td class="td-badge"><span class="badge badge-def">⛔ Falta 1</span></td>
+        </tr>
+
+        <tr class="tr-def">
+          <td class="td-mes">Nov 2025</td>
+          <td class="num">190.147</td>
+          <td class="num">20</td>
+          <td class="num td-highlight">9.507,4</td>
+          <td class="num nec">4</td>
+          <td class="num real">2</td>
+          <td class="num td-def">-2</td>
+          <td class="td-badge"><span class="badge badge-def">⛔ Falta 2</span></td>
+        </tr>
+
+        <tr class="tr-def">
+          <td class="td-mes">Dic 2025</td>
+          <td class="num">126.988</td>
+          <td class="num">21</td>
+          <td class="num td-highlight">6.047,0</td>
+          <td class="num nec">3</td>
+          <td class="num real">2</td>
+          <td class="num td-def">-1</td>
+          <td class="td-badge"><span class="badge badge-def">⛔ Falta 1</span></td>
+        </tr>
+
+        <tr class="tr-exact">
+          <td class="td-mes">Ene 2026</td>
+          <td class="num">91.840</td>
+          <td class="num">21</td>
+          <td class="num td-highlight">4.373,3</td>
+          <td class="num nec">2</td>
+          <td class="num real">2</td>
+          <td class="num td-exact">0</td>
+          <td class="td-badge"><span class="badge badge-exact">⚖ Exacto</span></td>
+        </tr>
+
+        <tr class="tr-def">
+          <td class="td-mes">Feb 2026</td>
+          <td class="num">158.826</td>
+          <td class="num">18</td>
+          <td class="num td-highlight">8.823,7</td>
+          <td class="num nec">3</td>
+          <td class="num real">2</td>
+          <td class="num td-def">-1</td>
+          <td class="td-badge"><span class="badge badge-def">⛔ Falta 1</span></td>
+        </tr>
+
+        <tr class="tr-def">
+          <td class="td-mes">Mar 2026</td>
+          <td class="num">211.315</td>
+          <td class="num">20</td>
+          <td class="num td-highlight">10.565,8</td>
+          <td class="num nec">4</td>
+          <td class="num real">2</td>
+          <td class="num td-def">-2</td>
+          <td class="td-badge"><span class="badge badge-def">⛔ Falta 2</span></td>
+        </tr>
+
+        <tr class="tr-def">
+          <td class="td-mes">Abr 2026</td>
+          <td class="num">193.918</td>
+          <td class="num">20</td>
+          <td class="num td-highlight">9.695,9</td>
+          <td class="num nec">4</td>
+          <td class="num real">2</td>
+          <td class="num td-def">-2</td>
+          <td class="td-badge"><span class="badge badge-def">⛔ Falta 2</span></td>
+        </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     CHILE
+═══════════════════════════════════════════════════════════ -->
+<div class="section-title"><span class="flag">🇨🇱</span> Chile — Análisis de Capacidad</div>
+
+<div class="charts-row">
+  <div class="chart-wrap">
+    <div class="chart-title">📦 Picking: Pickers necesarios vs reales por mes</div>
+    <canvas id="chiPickChart" height="140"></canvas>
+    <div class="chart-hint">Barras verdes = cobertura OK · Barras rojas = falta personal · Línea = pickers necesarios</div>
+  </div>
+  <div class="chart-wrap">
+    <div class="chart-title">🎯 Control y Embalaje: Controladores necesarios vs reales por mes</div>
+    <canvas id="chiCtrlChart" height="140"></canvas>
+    <div class="chart-hint">Barras verdes = cobertura OK · Barras rojas = falta personal · Línea = controladores necesarios</div>
+  </div>
+</div>
+
+<div class="section-sub picking-hdr">📦 Picking — Detalle mensual &nbsp;(referencia: 74 líneas/picker/día)</div>
+<div class="table-wrap">
+  <table>
+    <thead class="picking-head">
+      <tr>
+        <th class="th-left">Mes</th>
+        <th>Líneas del mes</th>
+        <th>Días hábiles</th>
+        <th>Líneas / día</th>
+        <th>Pickers necesarios</th>
+        <th>Pickers reales</th>
+        <th>Delta (R−N)</th>
+        <th>Estado</th>
+      </tr>
+    </thead>
+    <tbody>
+      
+        <tr class="tr-exact">
+          <td class="td-mes">Ene 2025</td>
+          <td class="num">1.409</td>
+          <td class="num">21</td>
+          <td class="num td-highlight">67,1</td>
+          <td class="num nec">1</td>
+          <td class="num real">1</td>
+          <td class="num td-exact">0</td>
+          <td class="td-badge"><span class="badge badge-exact">⚖ Exacto</span></td>
+        </tr>
+
+        <tr class="tr-exact">
+          <td class="td-mes">Feb 2025</td>
+          <td class="num">1.211</td>
+          <td class="num">19</td>
+          <td class="num td-highlight">63,7</td>
+          <td class="num nec">1</td>
+          <td class="num real">1</td>
+          <td class="num td-exact">0</td>
+          <td class="td-badge"><span class="badge badge-exact">⚖ Exacto</span></td>
+        </tr>
+
+        <tr class="tr-ok">
+          <td class="td-mes">Mar 2025</td>
+          <td class="num">1.693</td>
+          <td class="num">21</td>
+          <td class="num td-highlight">80,6</td>
+          <td class="num nec">1</td>
+          <td class="num real">2</td>
+          <td class="num td-ok">+1</td>
+          <td class="td-badge"><span class="badge badge-ok">✅ Cubierto +1</span></td>
+        </tr>
+
+        <tr class="tr-ok">
+          <td class="td-mes">Abr 2025</td>
+          <td class="num">1.635</td>
+          <td class="num">22</td>
+          <td class="num td-highlight">74,3</td>
+          <td class="num nec">1</td>
+          <td class="num real">2</td>
+          <td class="num td-ok">+1</td>
+          <td class="td-badge"><span class="badge badge-ok">✅ Cubierto +1</span></td>
+        </tr>
+
+        <tr class="tr-exact">
+          <td class="td-mes">May 2025</td>
+          <td class="num">1.251</td>
+          <td class="num">23</td>
+          <td class="num td-highlight">54,4</td>
+          <td class="num nec">1</td>
+          <td class="num real">1</td>
+          <td class="num td-exact">0</td>
+          <td class="td-badge"><span class="badge badge-exact">⚖ Exacto</span></td>
+        </tr>
+
+        <tr class="tr-exact">
+          <td class="td-mes">Jun 2025</td>
+          <td class="num">1.241</td>
+          <td class="num">20</td>
+          <td class="num td-highlight">62,0</td>
+          <td class="num nec">1</td>
+          <td class="num real">1</td>
+          <td class="num td-exact">0</td>
+          <td class="td-badge"><span class="badge badge-exact">⚖ Exacto</span></td>
+        </tr>
+
+        <tr class="tr-exact">
+          <td class="td-mes">Jul 2025</td>
+          <td class="num">1.652</td>
+          <td class="num">22</td>
+          <td class="num td-highlight">75,1</td>
+          <td class="num nec">1</td>
+          <td class="num real">1</td>
+          <td class="num td-exact">0</td>
+          <td class="td-badge"><span class="badge badge-exact">⚖ Exacto</span></td>
+        </tr>
+
+        <tr class="tr-exact">
+          <td class="td-mes">Ago 2025</td>
+          <td class="num">1.410</td>
+          <td class="num">21</td>
+          <td class="num td-highlight">67,1</td>
+          <td class="num nec">1</td>
+          <td class="num real">1</td>
+          <td class="num td-exact">0</td>
+          <td class="td-badge"><span class="badge badge-exact">⚖ Exacto</span></td>
+        </tr>
+
+        <tr class="tr-exact">
+          <td class="td-mes">Sep 2025</td>
+          <td class="num">1.370</td>
+          <td class="num">21</td>
+          <td class="num td-highlight">65,2</td>
+          <td class="num nec">1</td>
+          <td class="num real">1</td>
+          <td class="num td-exact">0</td>
+          <td class="td-badge"><span class="badge badge-exact">⚖ Exacto</span></td>
+        </tr>
+
+        <tr class="tr-exact">
+          <td class="td-mes">Oct 2025</td>
+          <td class="num">1.831</td>
+          <td class="num">22</td>
+          <td class="num td-highlight">83,2</td>
+          <td class="num nec">1</td>
+          <td class="num real">1</td>
+          <td class="num td-exact">0</td>
+          <td class="td-badge"><span class="badge badge-exact">⚖ Exacto</span></td>
+        </tr>
+
+        <tr class="tr-exact">
+          <td class="td-mes">Nov 2025</td>
+          <td class="num">1.824</td>
+          <td class="num">18</td>
+          <td class="num td-highlight">101,3</td>
+          <td class="num nec">2</td>
+          <td class="num real">2</td>
+          <td class="num td-exact">0</td>
+          <td class="td-badge"><span class="badge badge-exact">⚖ Exacto</span></td>
+        </tr>
+
+        <tr class="tr-ok">
+          <td class="td-mes">Dic 2025</td>
+          <td class="num">1.591</td>
+          <td class="num">22</td>
+          <td class="num td-highlight">72,3</td>
+          <td class="num nec">1</td>
+          <td class="num real">2</td>
+          <td class="num td-ok">+1</td>
+          <td class="td-badge"><span class="badge badge-ok">✅ Cubierto +1</span></td>
+        </tr>
+
+        <tr class="tr-ok">
+          <td class="td-mes">Ene 2026</td>
+          <td class="num">1.330</td>
+          <td class="num">22</td>
+          <td class="num td-highlight">60,5</td>
+          <td class="num nec">1</td>
+          <td class="num real">2</td>
+          <td class="num td-ok">+1</td>
+          <td class="td-badge"><span class="badge badge-ok">✅ Cubierto +1</span></td>
+        </tr>
+
+        <tr class="tr-ok">
+          <td class="td-mes">Feb 2026</td>
+          <td class="num">1.212</td>
+          <td class="num">20</td>
+          <td class="num td-highlight">60,6</td>
+          <td class="num nec">1</td>
+          <td class="num real">2</td>
+          <td class="num td-ok">+1</td>
+          <td class="td-badge"><span class="badge badge-ok">✅ Cubierto +1</span></td>
+        </tr>
+
+        <tr class="tr-ok">
+          <td class="td-mes">Mar 2026</td>
+          <td class="num">1.534</td>
+          <td class="num">22</td>
+          <td class="num td-highlight">69,7</td>
+          <td class="num nec">1</td>
+          <td class="num real">2</td>
+          <td class="num td-ok">+1</td>
+          <td class="td-badge"><span class="badge badge-ok">✅ Cubierto +1</span></td>
+        </tr>
+
+        <tr class="tr-ok">
+          <td class="td-mes">Abr 2026</td>
+          <td class="num">1.428</td>
+          <td class="num">20</td>
+          <td class="num td-highlight">71,4</td>
+          <td class="num nec">1</td>
+          <td class="num real">2</td>
+          <td class="num td-ok">+1</td>
+          <td class="td-badge"><span class="badge badge-ok">✅ Cubierto +1</span></td>
+        </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="section-sub ctrl-hdr">🎯 Control y Embalaje — Detalle mensual &nbsp;(referencia: 3,000 unid.sin-imp./controlador/día)</div>
+<div class="table-wrap">
+  <table>
+    <thead class="ctrl-head">
+      <tr>
+        <th class="th-left">Mes</th>
+        <th>Unid. sin impresión</th>
+        <th>Días hábiles</th>
+        <th>Unid.sin-imp. / día</th>
+        <th>Controladores necesarios</th>
+        <th>Controladores reales</th>
+        <th>Delta (R−N)</th>
+        <th>Estado</th>
+      </tr>
+    </thead>
+    <tbody>
+      
+        <tr class="tr-exact">
+          <td class="td-mes">Ene 2025</td>
+          <td class="num">50.685</td>
+          <td class="num">21</td>
+          <td class="num td-highlight">2.413,6</td>
+          <td class="num nec">1</td>
+          <td class="num real">1</td>
+          <td class="num td-exact">0</td>
+          <td class="td-badge"><span class="badge badge-exact">⚖ Exacto</span></td>
+        </tr>
+
+        <tr class="tr-def">
+          <td class="td-mes">Feb 2025</td>
+          <td class="num">57.077</td>
+          <td class="num">19</td>
+          <td class="num td-highlight">3.004,1</td>
+          <td class="num nec">2</td>
+          <td class="num real">1</td>
+          <td class="num td-def">-1</td>
+          <td class="td-badge"><span class="badge badge-def">⛔ Falta 1</span></td>
+        </tr>
+
+        <tr class="tr-def">
+          <td class="td-mes">Mar 2025</td>
+          <td class="num">99.711</td>
+          <td class="num">21</td>
+          <td class="num td-highlight">4.748,1</td>
+          <td class="num nec">2</td>
+          <td class="num real">1</td>
+          <td class="num td-def">-1</td>
+          <td class="td-badge"><span class="badge badge-def">⛔ Falta 1</span></td>
+        </tr>
+
+        <tr class="tr-def">
+          <td class="td-mes">Abr 2025</td>
+          <td class="num">80.243</td>
+          <td class="num">22</td>
+          <td class="num td-highlight">3.647,4</td>
+          <td class="num nec">2</td>
+          <td class="num real">1</td>
+          <td class="num td-def">-1</td>
+          <td class="td-badge"><span class="badge badge-def">⛔ Falta 1</span></td>
+        </tr>
+
+        <tr class="tr-exact">
+          <td class="td-mes">May 2025</td>
+          <td class="num">60.045</td>
+          <td class="num">23</td>
+          <td class="num td-highlight">2.610,7</td>
+          <td class="num nec">1</td>
+          <td class="num real">1</td>
+          <td class="num td-exact">0</td>
+          <td class="td-badge"><span class="badge badge-exact">⚖ Exacto</span></td>
+        </tr>
+
+        <tr class="tr-exact">
+          <td class="td-mes">Jun 2025</td>
+          <td class="num">46.873</td>
+          <td class="num">20</td>
+          <td class="num td-highlight">2.343,7</td>
+          <td class="num nec">1</td>
+          <td class="num real">1</td>
+          <td class="num td-exact">0</td>
+          <td class="td-badge"><span class="badge badge-exact">⚖ Exacto</span></td>
+        </tr>
+
+        <tr class="tr-def">
+          <td class="td-mes">Jul 2025</td>
+          <td class="num">70.421</td>
+          <td class="num">22</td>
+          <td class="num td-highlight">3.201,0</td>
+          <td class="num nec">2</td>
+          <td class="num real">1</td>
+          <td class="num td-def">-1</td>
+          <td class="td-badge"><span class="badge badge-def">⛔ Falta 1</span></td>
+        </tr>
+
+        <tr class="tr-exact">
+          <td class="td-mes">Ago 2025</td>
+          <td class="num">46.530</td>
+          <td class="num">21</td>
+          <td class="num td-highlight">2.215,7</td>
+          <td class="num nec">1</td>
+          <td class="num real">1</td>
+          <td class="num td-exact">0</td>
+          <td class="td-badge"><span class="badge badge-exact">⚖ Exacto</span></td>
+        </tr>
+
+        <tr class="tr-exact">
+          <td class="td-mes">Sep 2025</td>
+          <td class="num">62.655</td>
+          <td class="num">21</td>
+          <td class="num td-highlight">2.983,6</td>
+          <td class="num nec">1</td>
+          <td class="num real">1</td>
+          <td class="num td-exact">0</td>
+          <td class="td-badge"><span class="badge badge-exact">⚖ Exacto</span></td>
+        </tr>
+
+        <tr class="tr-def">
+          <td class="td-mes">Oct 2025</td>
+          <td class="num">84.860</td>
+          <td class="num">22</td>
+          <td class="num td-highlight">3.857,3</td>
+          <td class="num nec">2</td>
+          <td class="num real">1</td>
+          <td class="num td-def">-1</td>
+          <td class="td-badge"><span class="badge badge-def">⛔ Falta 1</span></td>
+        </tr>
+
+        <tr class="tr-def">
+          <td class="td-mes">Nov 2025</td>
+          <td class="num">76.527</td>
+          <td class="num">18</td>
+          <td class="num td-highlight">4.251,5</td>
+          <td class="num nec">2</td>
+          <td class="num real">1</td>
+          <td class="num td-def">-1</td>
+          <td class="td-badge"><span class="badge badge-def">⛔ Falta 1</span></td>
+        </tr>
+
+        <tr class="tr-exact">
+          <td class="td-mes">Dic 2025</td>
+          <td class="num">47.882</td>
+          <td class="num">22</td>
+          <td class="num td-highlight">2.176,5</td>
+          <td class="num nec">1</td>
+          <td class="num real">1</td>
+          <td class="num td-exact">0</td>
+          <td class="td-badge"><span class="badge badge-exact">⚖ Exacto</span></td>
+        </tr>
+
+        <tr class="tr-exact">
+          <td class="td-mes">Ene 2026</td>
+          <td class="num">44.829</td>
+          <td class="num">22</td>
+          <td class="num td-highlight">2.037,7</td>
+          <td class="num nec">1</td>
+          <td class="num real">1</td>
+          <td class="num td-exact">0</td>
+          <td class="td-badge"><span class="badge badge-exact">⚖ Exacto</span></td>
+        </tr>
+
+        <tr class="tr-exact">
+          <td class="td-mes">Feb 2026</td>
+          <td class="num">41.837</td>
+          <td class="num">20</td>
+          <td class="num td-highlight">2.091,8</td>
+          <td class="num nec">1</td>
+          <td class="num real">1</td>
+          <td class="num td-exact">0</td>
+          <td class="td-badge"><span class="badge badge-exact">⚖ Exacto</span></td>
+        </tr>
+
+        <tr class="tr-def">
+          <td class="td-mes">Mar 2026</td>
+          <td class="num">129.562</td>
+          <td class="num">22</td>
+          <td class="num td-highlight">5.889,2</td>
+          <td class="num nec">2</td>
+          <td class="num real">1</td>
+          <td class="num td-def">-1</td>
+          <td class="td-badge"><span class="badge badge-def">⛔ Falta 1</span></td>
+        </tr>
+
+        <tr class="tr-def">
+          <td class="td-mes">Abr 2026</td>
+          <td class="num">71.901</td>
+          <td class="num">20</td>
+          <td class="num td-highlight">3.595,1</td>
+          <td class="num nec">2</td>
+          <td class="num real">1</td>
+          <td class="num td-def">-1</td>
+          <td class="td-badge"><span class="badge badge-def">⛔ Falta 1</span></td>
+        </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     COMPARATIVO ARG vs CHI
+═══════════════════════════════════════════════════════════ -->
+<div class="section-title">⚖️ Comparativo Argentina vs Chile</div>
+
+<div class="stat-grid">
+  <div class="stat-box">
+    <div class="metric">Prom. líneas / día</div>
+    <div class="stat-row">
+      <div><div style="font-size:.7rem;color:#6B7280">ARG</div><div class="stat-val arg">284</div></div>
+      <div class="stat-vs">vs</div>
+      <div><div style="font-size:.7rem;color:#6B7280">CHI</div><div class="stat-val chi">71</div></div>
+    </div>
+  </div>
+  <div class="stat-box">
+    <div class="metric">Prom. pickers necesarios</div>
+    <div class="stat-row">
+      <div><div style="font-size:.7rem;color:#6B7280">ARG</div><div class="stat-val arg">3,9</div></div>
+      <div class="stat-vs">vs</div>
+      <div><div style="font-size:.7rem;color:#6B7280">CHI</div><div class="stat-val chi">1,1</div></div>
+    </div>
+  </div>
+  <div class="stat-box">
+    <div class="metric">Prom. pickers reales</div>
+    <div class="stat-row">
+      <div><div style="font-size:.7rem;color:#6B7280">ARG</div><div class="stat-val arg">4,0</div></div>
+      <div class="stat-vs">vs</div>
+      <div><div style="font-size:.7rem;color:#6B7280">CHI</div><div class="stat-val chi">1,5</div></div>
+    </div>
+  </div>
+  <div class="stat-box">
+    <div class="metric">Prom. controladores necesarios</div>
+    <div class="stat-row">
+      <div><div style="font-size:.7rem;color:#6B7280">ARG</div><div class="stat-val arg">2,8</div></div>
+      <div class="stat-vs">vs</div>
+      <div><div style="font-size:.7rem;color:#6B7280">CHI</div><div class="stat-val chi">1,5</div></div>
+    </div>
+  </div>
+  <div class="stat-box">
+    <div class="metric">Prom. personal total</div>
+    <div class="stat-row">
+      <div><div style="font-size:.7rem;color:#6B7280">ARG</div><div class="stat-val arg">13,2</div></div>
+      <div class="stat-vs">vs</div>
+      <div><div style="font-size:.7rem;color:#6B7280">CHI</div><div class="stat-val chi">4,8</div></div>
+    </div>
+  </div>
+  <div class="stat-box">
+    <div class="metric">Meses con déficit picking</div>
+    <div class="stat-row">
+      <div><div style="font-size:.7rem;color:#6B7280">ARG</div><div class="stat-val" style="color:#991B1B">0 / 16</div></div>
+      <div class="stat-vs">vs</div>
+      <div><div style="font-size:.7rem;color:#6B7280">CHI</div><div class="stat-val" style="color:#991B1B">0 / 16</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Gráfico comparativo: líneas/día -->
+<div class="chart-wrap">
+  <div class="chart-title">📈 Evolución de Líneas Diarias — Argentina vs Chile (todos los meses)</div>
+  <canvas id="compChart" height="80"></canvas>
+  <div class="chart-hint">Muestra el crecimiento de la demanda operativa en el tiempo para ambos países</div>
+</div>
+
+<!-- Tabla comparativa mensual -->
+<div class="section-sub">Detalle mensual comparativo: Picking y Control por país</div>
+<div class="table-wrap" style="overflow-x:auto">
+  <table style="min-width:1100px">
+    <thead>
+      <tr>
+        <th rowspan="2" class="th-left">Mes</th>
+        <th colspan="4" style="background:#1565C0;text-align:center">🇦🇷 ARGENTINA — PICKING</th>
+        <th colspan="4" style="background:#2E7D32;text-align:center">🇦🇷 ARGENTINA — CONTROL</th>
+        <th class="sep-head" rowspan="2"></th>
+        <th colspan="4" style="background:#AD1457;text-align:center">🇨🇱 CHILE — PICKING</th>
+        <th colspan="4" style="background:#558B2F;text-align:center">🇨🇱 CHILE — CONTROL</th>
+      </tr>
+      <tr>
+        <th>Lín/día</th><th>Nec.</th><th>Real</th><th>Delta</th>
+        <th>U.s/imp/día</th><th>Nec.</th><th>Real</th><th>Delta</th>
+        <th class="sep-head"></th>
+        <th>Lín/día</th><th>Nec.</th><th>Real</th><th>Delta</th>
+        <th>U.s/imp/día</th><th>Nec.</th><th>Real</th><th>Delta</th>
+      </tr>
+    </thead>
+    <tbody>
+      
+        <tr>
+          <td class="td-mes">Ene 2025</td>
+          <td class="num">152,8</td>
+          <td class="num">2</td>
+          <td class="num">3</td>
+          <td class="num td-ok">+1</td>
+          <td class="num">4.113</td>
+          <td class="num">2</td>
+          <td class="num">2</td>
+          <td class="num td-exact">0</td>
+          <td class="sep"></td>
+          <td class="num">67,1</td>
+          <td class="num">1</td>
+          <td class="num">1</td>
+          <td class="num td-exact">0</td>
+          <td class="num">2.414</td>
+          <td class="num">1</td>
+          <td class="num">1</td>
+          <td class="num td-exact">0</td>
+        </tr>
+
+        <tr class="alt">
+          <td class="td-mes">Feb 2025</td>
+          <td class="num">185,3</td>
+          <td class="num">3</td>
+          <td class="num">3</td>
+          <td class="num td-exact">0</td>
+          <td class="num">4.937</td>
+          <td class="num">2</td>
+          <td class="num">1</td>
+          <td class="num td-def">-1</td>
+          <td class="sep"></td>
+          <td class="num">63,7</td>
+          <td class="num">1</td>
+          <td class="num">1</td>
+          <td class="num td-exact">0</td>
+          <td class="num">3.004</td>
+          <td class="num">2</td>
+          <td class="num">1</td>
+          <td class="num td-def">-1</td>
+        </tr>
+
+        <tr>
+          <td class="td-mes">Mar 2025</td>
+          <td class="num">215,2</td>
+          <td class="num">3</td>
+          <td class="num">3</td>
+          <td class="num td-exact">0</td>
+          <td class="num">3.959</td>
+          <td class="num">2</td>
+          <td class="num">2</td>
+          <td class="num td-exact">0</td>
+          <td class="sep"></td>
+          <td class="num">80,6</td>
+          <td class="num">1</td>
+          <td class="num">2</td>
+          <td class="num td-ok">+1</td>
+          <td class="num">4.748</td>
+          <td class="num">2</td>
+          <td class="num">1</td>
+          <td class="num td-def">-1</td>
+        </tr>
+
+        <tr class="alt">
+          <td class="td-mes">Abr 2025</td>
+          <td class="num">275,7</td>
+          <td class="num">4</td>
+          <td class="num">4</td>
+          <td class="num td-exact">0</td>
+          <td class="num">4.947</td>
+          <td class="num">2</td>
+          <td class="num">1</td>
+          <td class="num td-def">-1</td>
+          <td class="sep"></td>
+          <td class="num">74,3</td>
+          <td class="num">1</td>
+          <td class="num">2</td>
+          <td class="num td-ok">+1</td>
+          <td class="num">3.647</td>
+          <td class="num">2</td>
+          <td class="num">1</td>
+          <td class="num td-def">-1</td>
+        </tr>
+
+        <tr>
+          <td class="td-mes">May 2025</td>
+          <td class="num">277,6</td>
+          <td class="num">4</td>
+          <td class="num">4</td>
+          <td class="num td-exact">0</td>
+          <td class="num">5.463</td>
+          <td class="num">2</td>
+          <td class="num">2</td>
+          <td class="num td-exact">0</td>
+          <td class="sep"></td>
+          <td class="num">54,4</td>
+          <td class="num">1</td>
+          <td class="num">1</td>
+          <td class="num td-exact">0</td>
+          <td class="num">2.611</td>
+          <td class="num">1</td>
+          <td class="num">1</td>
+          <td class="num td-exact">0</td>
+        </tr>
+
+        <tr class="alt">
+          <td class="td-mes">Jun 2025</td>
+          <td class="num">351,5</td>
+          <td class="num">5</td>
+          <td class="num">5</td>
+          <td class="num td-exact">0</td>
+          <td class="num">6.212</td>
+          <td class="num">3</td>
+          <td class="num">2</td>
+          <td class="num td-def">-1</td>
+          <td class="sep"></td>
+          <td class="num">62,0</td>
+          <td class="num">1</td>
+          <td class="num">1</td>
+          <td class="num td-exact">0</td>
+          <td class="num">2.344</td>
+          <td class="num">1</td>
+          <td class="num">1</td>
+          <td class="num td-exact">0</td>
+        </tr>
+
+        <tr>
+          <td class="td-mes">Jul 2025</td>
+          <td class="num">294,3</td>
+          <td class="num">4</td>
+          <td class="num">4</td>
+          <td class="num td-exact">0</td>
+          <td class="num">5.151</td>
+          <td class="num">2</td>
+          <td class="num">2</td>
+          <td class="num td-exact">0</td>
+          <td class="sep"></td>
+          <td class="num">75,1</td>
+          <td class="num">1</td>
+          <td class="num">1</td>
+          <td class="num td-exact">0</td>
+          <td class="num">3.201</td>
+          <td class="num">2</td>
+          <td class="num">1</td>
+          <td class="num td-def">-1</td>
+        </tr>
+
+        <tr class="alt">
+          <td class="td-mes">Ago 2025</td>
+          <td class="num">310,4</td>
+          <td class="num">4</td>
+          <td class="num">4</td>
+          <td class="num td-exact">0</td>
+          <td class="num">8.781</td>
+          <td class="num">3</td>
+          <td class="num">2</td>
+          <td class="num td-def">-1</td>
+          <td class="sep"></td>
+          <td class="num">67,1</td>
+          <td class="num">1</td>
+          <td class="num">1</td>
+          <td class="num td-exact">0</td>
+          <td class="num">2.216</td>
+          <td class="num">1</td>
+          <td class="num">1</td>
+          <td class="num td-exact">0</td>
+        </tr>
+
+        <tr>
+          <td class="td-mes">Sep 2025</td>
+          <td class="num">358,5</td>
+          <td class="num">5</td>
+          <td class="num">5</td>
+          <td class="num td-exact">0</td>
+          <td class="num">8.866</td>
+          <td class="num">3</td>
+          <td class="num">2</td>
+          <td class="num td-def">-1</td>
+          <td class="sep"></td>
+          <td class="num">65,2</td>
+          <td class="num">1</td>
+          <td class="num">1</td>
+          <td class="num td-exact">0</td>
+          <td class="num">2.984</td>
+          <td class="num">1</td>
+          <td class="num">1</td>
+          <td class="num td-exact">0</td>
+        </tr>
+
+        <tr class="alt">
+          <td class="td-mes">Oct 2025</td>
+          <td class="num">370,9</td>
+          <td class="num">5</td>
+          <td class="num">5</td>
+          <td class="num td-exact">0</td>
+          <td class="num">6.722</td>
+          <td class="num">3</td>
+          <td class="num">2</td>
+          <td class="num td-def">-1</td>
+          <td class="sep"></td>
+          <td class="num">83,2</td>
+          <td class="num">1</td>
+          <td class="num">1</td>
+          <td class="num td-exact">0</td>
+          <td class="num">3.857</td>
+          <td class="num">2</td>
+          <td class="num">1</td>
+          <td class="num td-def">-1</td>
+        </tr>
+
+        <tr>
+          <td class="td-mes">Nov 2025</td>
+          <td class="num">382,2</td>
+          <td class="num">5</td>
+          <td class="num">5</td>
+          <td class="num td-exact">0</td>
+          <td class="num">9.507</td>
+          <td class="num">4</td>
+          <td class="num">2</td>
+          <td class="num td-def">-2</td>
+          <td class="sep"></td>
+          <td class="num">101,3</td>
+          <td class="num">2</td>
+          <td class="num">2</td>
+          <td class="num td-exact">0</td>
+          <td class="num">4.252</td>
+          <td class="num">2</td>
+          <td class="num">1</td>
+          <td class="num td-def">-1</td>
+        </tr>
+
+        <tr class="alt">
+          <td class="td-mes">Dic 2025</td>
+          <td class="num">276,0</td>
+          <td class="num">4</td>
+          <td class="num">4</td>
+          <td class="num td-exact">0</td>
+          <td class="num">6.047</td>
+          <td class="num">3</td>
+          <td class="num">2</td>
+          <td class="num td-def">-1</td>
+          <td class="sep"></td>
+          <td class="num">72,3</td>
+          <td class="num">1</td>
+          <td class="num">2</td>
+          <td class="num td-ok">+1</td>
+          <td class="num">2.176</td>
+          <td class="num">1</td>
+          <td class="num">1</td>
+          <td class="num td-exact">0</td>
+        </tr>
+
+        <tr>
+          <td class="td-mes">Ene 2026</td>
+          <td class="num">210,4</td>
+          <td class="num">3</td>
+          <td class="num">3</td>
+          <td class="num td-exact">0</td>
+          <td class="num">4.373</td>
+          <td class="num">2</td>
+          <td class="num">2</td>
+          <td class="num td-exact">0</td>
+          <td class="sep"></td>
+          <td class="num">60,5</td>
+          <td class="num">1</td>
+          <td class="num">2</td>
+          <td class="num td-ok">+1</td>
+          <td class="num">2.038</td>
+          <td class="num">1</td>
+          <td class="num">1</td>
+          <td class="num td-exact">0</td>
+        </tr>
+
+        <tr class="alt">
+          <td class="td-mes">Feb 2026</td>
+          <td class="num">263,7</td>
+          <td class="num">4</td>
+          <td class="num">4</td>
+          <td class="num td-exact">0</td>
+          <td class="num">8.824</td>
+          <td class="num">3</td>
+          <td class="num">2</td>
+          <td class="num td-def">-1</td>
+          <td class="sep"></td>
+          <td class="num">60,6</td>
+          <td class="num">1</td>
+          <td class="num">2</td>
+          <td class="num td-ok">+1</td>
+          <td class="num">2.092</td>
+          <td class="num">1</td>
+          <td class="num">1</td>
+          <td class="num td-exact">0</td>
+        </tr>
+
+        <tr>
+          <td class="td-mes">Mar 2026</td>
+          <td class="num">280,9</td>
+          <td class="num">4</td>
+          <td class="num">4</td>
+          <td class="num td-exact">0</td>
+          <td class="num">10.566</td>
+          <td class="num">4</td>
+          <td class="num">2</td>
+          <td class="num td-def">-2</td>
+          <td class="sep"></td>
+          <td class="num">69,7</td>
+          <td class="num">1</td>
+          <td class="num">2</td>
+          <td class="num td-ok">+1</td>
+          <td class="num">5.889</td>
+          <td class="num">2</td>
+          <td class="num">1</td>
+          <td class="num td-def">-1</td>
+        </tr>
+
+        <tr class="alt">
+          <td class="td-mes">Abr 2026</td>
+          <td class="num">331,7</td>
+          <td class="num">4</td>
+          <td class="num">4</td>
+          <td class="num td-exact">0</td>
+          <td class="num">9.696</td>
+          <td class="num">4</td>
+          <td class="num">2</td>
+          <td class="num td-def">-2</td>
+          <td class="sep"></td>
+          <td class="num">71,4</td>
+          <td class="num">1</td>
+          <td class="num">2</td>
+          <td class="num td-ok">+1</td>
+          <td class="num">3.595</td>
+          <td class="num">2</td>
+          <td class="num">1</td>
+          <td class="num td-def">-1</td>
+        </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="footnote">
+  Reporte generado automáticamente · Parámetros: Picking 84 lín/picker/día · Control 3,000 unid.s/imp./ctrl/día ·
+  Delta = Personal Real − Personal Necesario
+</div>
+
+</div><!-- /container -->
+
+<script>
+const argLabels   = ["Ene 2025", "Feb 2025", "Mar 2025", "Abr 2025", "May 2025", "Jun 2025", "Jul 2025", "Ago 2025", "Sep 2025", "Oct 2025", "Nov 2025", "Dic 2025", "Ene 2026", "Feb 2026", "Mar 2026", "Abr 2026"];
+const chiLabels   = ["Ene 2025", "Feb 2025", "Mar 2025", "Abr 2025", "May 2025", "Jun 2025", "Jul 2025", "Ago 2025", "Sep 2025", "Oct 2025", "Nov 2025", "Dic 2025", "Ene 2026", "Feb 2026", "Mar 2026", "Abr 2026"];
+
+// ── helper: necesarios vs reales → bar colors based on delta ──────────────
+function makeCapChart(canvasId, labels, nec, real, deltaColors, titleNec, titleReal) {
+  const ctx = document.getElementById(canvasId);
+  if (!ctx) return;
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: titleReal,
+          data: real,
+          backgroundColor: deltaColors,
+          borderColor: deltaColors,
+          borderRadius: 4,
+          order: 1,
+        },
+        {
+          label: titleNec + ' (necesario)',
+          data: nec,
+          type: 'line',
+          borderColor: '#374151',
+          borderWidth: 2,
+          borderDash: [5,3],
+          pointRadius: 3,
+          pointBackgroundColor: '#374151',
+          fill: false,
+          tension: 0.1,
+          order: 0,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { position: 'top', labels: { font: { size:11 }, boxWidth:14 } },
+        tooltip: {
+          callbacks: {
+            afterBody(items) {
+              const i = items[0].dataIndex;
+              const d = real[i] - nec[i];
+              if (d === null) return '';
+              return d > 0 ? `Delta: +${d} (superávit)` : d < 0 ? `Delta: ${d} ⛔ DÉFICIT` : `Delta: 0 (exacto)`;
+            }
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          title: { display: true, text: 'Personas', font: { size:11 } },
+          ticks: { stepSize: 1 }
+        },
+        x: { ticks: { font: { size: 10 }, maxRotation: 45 } }
+      }
+    }
+  });
+}
+
+// ── ARG Picking ───────────────────────────────────────────────────────────
+const argPickNec  = [2, 3, 3, 4, 4, 5, 4, 4, 5, 5, 5, 4, 3, 4, 4, 4];
+const argPickReal = [3, 3, 3, 4, 4, 5, 4, 4, 5, 5, 5, 4, 3, 4, 4, 4];
+const argPickCol  = ['#4CAF50','#4CAF50','#4CAF50','#4CAF50','#4CAF50','#4CAF50','#4CAF50','#4CAF50','#4CAF50','#4CAF50','#4CAF50','#4CAF50','#4CAF50','#4CAF50','#4CAF50','#4CAF50'];
+makeCapChart('argPickChart', argLabels, argPickNec, argPickReal, argPickCol, 'Necesario', 'Pickers reales');
+
+// ── ARG Control ───────────────────────────────────────────────────────────
+const argCtrlNec  = [2, 2, 2, 2, 2, 3, 2, 3, 3, 3, 4, 3, 2, 3, 4, 4];
+const argCtrlReal = [2, 1, 2, 1, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2];
+const argCtrlCol  = ['#4CAF50','#F44336','#4CAF50','#F44336','#4CAF50','#F44336','#4CAF50','#F44336','#F44336','#F44336','#F44336','#F44336','#4CAF50','#F44336','#F44336','#F44336'];
+makeCapChart('argCtrlChart', argLabels, argCtrlNec, argCtrlReal, argCtrlCol, 'Necesario', 'Ctrl reales');
+
+// ── CHI Picking ───────────────────────────────────────────────────────────
+const chiPickNec  = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1];
+const chiPickReal = [1, 1, 2, 2, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 2];
+const chiPickCol  = ['#4CAF50','#4CAF50','#4CAF50','#4CAF50','#4CAF50','#4CAF50','#4CAF50','#4CAF50','#4CAF50','#4CAF50','#4CAF50','#4CAF50','#4CAF50','#4CAF50','#4CAF50','#4CAF50'];
+makeCapChart('chiPickChart', chiLabels, chiPickNec, chiPickReal, chiPickCol, 'Necesario', 'Pickers reales');
+
+// ── CHI Control ───────────────────────────────────────────────────────────
+const chiCtrlNec  = [1, 2, 2, 2, 1, 1, 2, 1, 1, 2, 2, 1, 1, 1, 2, 2];
+const chiCtrlReal = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1];
+const chiCtrlCol  = ['#4CAF50','#F44336','#F44336','#F44336','#4CAF50','#4CAF50','#F44336','#4CAF50','#4CAF50','#F44336','#F44336','#4CAF50','#4CAF50','#4CAF50','#F44336','#F44336'];
+makeCapChart('chiCtrlChart', chiLabels, chiCtrlNec, chiCtrlReal, chiCtrlCol, 'Necesario', 'Ctrl reales');
+
+// ── Comparativo: líneas/día ARG vs CHI ───────────────────────────────────
+new Chart(document.getElementById('compChart'), {
+  type: 'line',
+  data: {
+    labels: argLabels,
+    datasets: [
+      {
+        label: '🇦🇷 ARG — Líneas/día',
+        data: [152.8, 185.3, 215.2, 275.7, 277.6, 351.5, 294.3, 310.4, 358.5, 370.9, 382.2, 276.0, 210.4, 263.7, 280.9, 331.7],
+        borderColor: '#1565C0',
+        backgroundColor: 'rgba(21,101,192,.08)',
+        borderWidth: 2.5,
+        fill: true,
+        tension: 0.3,
+        pointRadius: 3,
+      },
+      {
+        label: '🇨🇱 CHI — Líneas/día',
+        data: [67.1, 63.7, 80.6, 74.3, 54.4, 62.0, 75.1, 67.1, 65.2, 83.2, 101.3, 72.3, 60.5, 60.6, 69.7, 71.4],
+        borderColor: '#C62828',
+        backgroundColor: 'rgba(198,40,40,.08)',
+        borderWidth: 2.5,
+        fill: true,
+        tension: 0.3,
+        pointRadius: 3,
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { position: 'top', labels: { font: { size:12 }, boxWidth:16 } }
+    },
+    scales: {
+      y: { title: { display:true, text:'Líneas/día', font:{size:11} } },
+      x: { ticks: { font: { size:10 }, maxRotation:45 } }
+    }
+  }
+});
+</script>
+</body>
+</html>

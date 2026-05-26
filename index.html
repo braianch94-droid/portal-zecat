@@ -312,6 +312,54 @@ iframe {
   50%       { transform: scale(1.07); box-shadow: 0 6px 28px rgba(249,113,113,.55); }
 }
 .splash.hidden { opacity: 0; }
+
+/* ── COUNTRY GROUPS ── */
+.country-group { }
+.country-hdr {
+  display: flex; align-items: center;
+  padding: 10px 14px 4px; cursor: pointer;
+  gap: 7px; user-select: none;
+}
+.country-flag { font-size: 13px; line-height:1; }
+.country-name {
+  font-size: 9px; font-weight: 800;
+  text-transform: uppercase; letter-spacing: 1.3px;
+  color: var(--sb-text-dim); flex: 1;
+  transition: color .12s;
+}
+.country-chev {
+  font-size: 10px; color: var(--sb-text-dim);
+  transition: transform .2s, color .12s; line-height: 1;
+}
+.country-hdr:hover .country-name { color: var(--sb-text-mid); }
+.country-hdr:hover .country-chev { color: var(--sb-text-mid); }
+.country-hdr.open .country-chev { transform: rotate(90deg); color: var(--sb-text-mid); }
+.country-body {
+  overflow: hidden; max-height: 0;
+  transition: max-height .28s ease;
+}
+.country-hdr.open + .country-body { max-height: 1100px; }
+.nav-divider {
+  height: 1px; background: var(--sb-border);
+  margin: 5px 14px 5px;
+}
+/* Standalone nav item (sin sección padre) */
+.nav-solo {
+  display: flex; align-items: center;
+  padding: 8px 14px; cursor: pointer;
+  font-size: 11px; font-weight: 700;
+  text-transform: uppercase; letter-spacing: .8px;
+  color: var(--sb-text-mid);
+  transition: background .12s, color .12s;
+  gap: 8px; user-select: none;
+  margin: 4px 8px 4px 4px;
+  border-radius: 7px;
+  border-left: 2.5px solid transparent;
+}
+.nav-solo:hover { background: var(--sb-hover); color: var(--sb-text); border-left-color: rgba(249,113,113,.35); }
+.nav-solo.active { background: var(--sb-active); color: var(--sb-text); border-left-color: var(--sb-accent); }
+.nav-solo .sec-ico { width:14px; height:14px; fill:currentColor; opacity:.6; flex-shrink:0; }
+.nav-solo.active .sec-ico { opacity:1; fill: var(--sb-accent); }
 </style>
 </head>
 <body>
@@ -335,112 +383,113 @@ iframe {
   <!-- Navigation -->
   <nav class="nav">
 
-    <!-- ── PRODUCTIVIDAD ── -->
-    <div class="section">
-      <div class="sec-header open" onclick="toggleSection(this)">
-        <svg class="sec-ico" viewBox="0 0 24 24"><path d="M5 9.2h3V19H5V9.2zm5.6-4.2h2.8v14h-2.8V5zM16 13h3v6h-3v-6z"/></svg>
-        <span class="sec-label">Productividad</span>
-        <span class="chevron">›</span>
-      </div>
-      <div class="sec-items">
-        <div class="nav-item active" data-module="productividad" data-tab="picking" onclick="navigate(this)">
-          <span class="nav-dot"></span>Productividad Picking
-        </div>
-        <div class="nav-item" data-module="productividad" data-tab="pie" onclick="navigate(this)">
-          <span class="nav-dot"></span>Pie de Máquina
-        </div>
-        <div class="nav-item" data-module="productividad" data-tab="muestra" onclick="navigate(this)">
-          <span class="nav-dot"></span>Muestra Simple
-        </div>
-        <div class="nav-item" data-module="productividad" data-tab="reclamos" onclick="navigate(this)">
-          <span class="nav-dot"></span>Reclamos
-        </div>
-        <div class="nav-item" data-module="productividad" data-tab="control" onclick="navigate(this)">
-          <span class="nav-dot"></span>Control
-        </div>
-        <div class="nav-item" data-module="productividad" data-tab="resumen" onclick="navigate(this)">
-          <span class="nav-dot"></span>Resumen General
-        </div>
-      </div>
+  <!-- ── 🇦🇷 ZECAT ARGENTINA ── -->
+  <div class="country-group">
+    <div class="country-hdr open" onclick="toggleCountry(this)">
+      <span class="country-flag">🇦🇷</span>
+      <span class="country-name">Zecat Argentina</span>
+      <span class="country-chev">›</span>
     </div>
+    <div class="country-body">
 
-    <!-- ── ASISTENCIA ── -->
-    <div class="section">
-      <div class="sec-header" onclick="toggleSection(this)">
-        <svg class="sec-ico" viewBox="0 0 24 24"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg>
-        <span class="sec-label">Asistencia</span>
-        <span class="chevron">›</span>
-      </div>
-      <div class="sec-items">
-        <div class="nav-item" data-module="asistencia" data-tab="resumen" onclick="navigate(this)">
-          <span class="nav-dot"></span>Resumen
+      <!-- Productividad -->
+      <div class="section">
+        <div class="sec-header open" onclick="toggleSection(this)">
+          <svg class="sec-ico" viewBox="0 0 24 24"><path d="M5 9.2h3V19H5V9.2zm5.6-4.2h2.8v14h-2.8V5zM16 13h3v6h-3v-6z"/></svg>
+          <span class="sec-label">Productividad</span>
+          <span class="chevron">›</span>
         </div>
-        <div class="nav-item" data-module="asistencia" data-tab="asistencia" onclick="navigate(this)">
-          <span class="nav-dot"></span>Asistencia
-        </div>
-        <div class="nav-item" data-module="asistencia" data-tab="descansos" onclick="navigate(this)">
-          <span class="nav-dot"></span>Descansos y Almuerzo
-        </div>
-        <div class="nav-item" data-module="asistencia" data-tab="novedades" onclick="navigate(this)">
-          <span class="nav-dot"></span>Novedades e Inconsistencias
-        </div>
-        <div class="nav-item" data-module="asistencia" data-tab="horasextras" onclick="navigate(this)">
-          <span class="nav-dot"></span>Horas Extras
+        <div class="sec-items">
+          <div class="nav-item active" data-module="productividad" data-tab="picking" onclick="navigate(this)"><span class="nav-dot"></span>Productividad Picking</div>
+          <div class="nav-item" data-module="productividad" data-tab="pie" onclick="navigate(this)"><span class="nav-dot"></span>Pie de Máquina</div>
+          <div class="nav-item" data-module="productividad" data-tab="muestra" onclick="navigate(this)"><span class="nav-dot"></span>Muestra Simple</div>
+          <div class="nav-item" data-module="productividad" data-tab="reclamos" onclick="navigate(this)"><span class="nav-dot"></span>Reclamos</div>
+          <div class="nav-item" data-module="productividad" data-tab="control" onclick="navigate(this)"><span class="nav-dot"></span>Control</div>
+          <div class="nav-item" data-module="productividad" data-tab="resumen" onclick="navigate(this)"><span class="nav-dot"></span>Resumen General</div>
         </div>
       </div>
-    </div>
 
-    <!-- ── INVENTARIO CÍCLICO ── -->
-    <div class="section">
-      <div class="sec-header" onclick="toggleSection(this)">
-        <svg class="sec-ico" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 3c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm7 13H5v-.23c0-.62.28-1.2.76-1.58C7.47 15.82 9.64 15 12 15s4.53.82 6.24 2.19c.48.38.76.97.76 1.58V19z"/></svg>
-        <span class="sec-label">Inventario Cíclico</span>
-        <span class="chevron">›</span>
-      </div>
-      <div class="sec-items">
-        <div class="nav-item" data-module="ciclico" data-tab="" onclick="navigate(this)">
-          <span class="nav-dot"></span>Dashboard Cíclico
+      <!-- Asistencia -->
+      <div class="section">
+        <div class="sec-header" onclick="toggleSection(this)">
+          <svg class="sec-ico" viewBox="0 0 24 24"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg>
+          <span class="sec-label">Asistencia</span>
+          <span class="chevron">›</span>
+        </div>
+        <div class="sec-items">
+          <div class="nav-item" data-module="asistencia" data-tab="resumen" onclick="navigate(this)"><span class="nav-dot"></span>Resumen</div>
+          <div class="nav-item" data-module="asistencia" data-tab="asistencia" onclick="navigate(this)"><span class="nav-dot"></span>Asistencia</div>
+          <div class="nav-item" data-module="asistencia" data-tab="descansos" onclick="navigate(this)"><span class="nav-dot"></span>Descansos y Almuerzo</div>
+          <div class="nav-item" data-module="asistencia" data-tab="novedades" onclick="navigate(this)"><span class="nav-dot"></span>Novedades e Inconsistencias</div>
+          <div class="nav-item" data-module="asistencia" data-tab="horasextras" onclick="navigate(this)"><span class="nav-dot"></span>Horas Extras</div>
         </div>
       </div>
-    </div>
 
-    <!-- ── TRANSPORTE ── -->
-    <div class="section">
-      <div class="sec-header" onclick="toggleSection(this)">
-        <svg class="sec-ico" viewBox="0 0 24 24"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg>
-        <span class="sec-label">Transporte</span>
-        <span class="chevron">›</span>
+      <!-- Inventario Cíclico -->
+      <div class="section">
+        <div class="sec-header" onclick="toggleSection(this)">
+          <svg class="sec-ico" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 3c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm7 13H5v-.23c0-.62.28-1.2.76-1.58C7.47 15.82 9.64 15 12 15s4.53.82 6.24 2.19c.48.38.76.97.76 1.58V19z"/></svg>
+          <span class="sec-label">Inventario Cíclico</span>
+          <span class="chevron">›</span>
+        </div>
+        <div class="sec-items">
+          <div class="nav-item" data-module="ciclico" data-tab="" onclick="navigate(this)"><span class="nav-dot"></span>Dashboard Cíclico</div>
+        </div>
       </div>
-      <div class="sec-items">
-        <div class="nav-item" data-module="transporte" data-page="upload" onclick="navigate(this)">
-          <span class="nav-dot"></span>Cargar archivos
+
+      <!-- Transporte -->
+      <div class="section">
+        <div class="sec-header" onclick="toggleSection(this)">
+          <svg class="sec-ico" viewBox="0 0 24 24"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg>
+          <span class="sec-label">Transporte</span>
+          <span class="chevron">›</span>
         </div>
-        <div class="nav-item" data-module="transporte" data-page="resumen" onclick="navigate(this)">
-          <span class="nav-dot"></span>Resumen
+        <div class="sec-items">
+          <div class="nav-item" data-module="transporte" data-page="upload" onclick="navigate(this)"><span class="nav-dot"></span>Cargar archivos</div>
+          <div class="nav-item" data-module="transporte" data-page="resumen" onclick="navigate(this)"><span class="nav-dot"></span>Resumen</div>
+          <div class="nav-item" data-module="transporte" data-page="empresas" onclick="navigate(this)"><span class="nav-dot"></span>Empresas</div>
+          <div class="nav-item" data-module="transporte" data-page="conductores" onclick="navigate(this)"><span class="nav-dot"></span>Conductores</div>
+          <div class="nav-item" data-module="transporte" data-page="viajes" onclick="navigate(this)"><span class="nav-dot"></span>Viajes / Rutas</div>
+          <div class="nav-item" data-module="transporte" data-page="visitas" onclick="navigate(this)"><span class="nav-dot"></span>Visitas / Entregas</div>
+          <div class="nav-item" data-module="transporte" data-page="tarifas" onclick="navigate(this)"><span class="nav-dot"></span>Tarifas</div>
+          <div class="nav-item" data-module="transporte" data-page="zonas" onclick="navigate(this)"><span class="nav-dot"></span>Zonas</div>
+          <div class="nav-item" data-module="transporte" data-page="mejoras" onclick="navigate(this)"><span class="nav-dot"></span>Mejoras</div>
         </div>
-        <div class="nav-item" data-module="transporte" data-page="empresas" onclick="navigate(this)">
-          <span class="nav-dot"></span>Empresas
+      </div>
+
+    </div><!-- /country-body ARG -->
+  </div><!-- /country-group ARG -->
+
+  <div class="nav-divider"></div>
+
+  <!-- ── 🇨🇱 ZECAT CHILE ── -->
+  <div class="country-group">
+    <div class="country-hdr open" onclick="toggleCountry(this)">
+      <span class="country-flag">🇨🇱</span>
+      <span class="country-name">Zecat Chile</span>
+      <span class="country-chev">›</span>
+    </div>
+    <div class="country-body">
+      <div class="section">
+        <div class="sec-header open" onclick="toggleSection(this)">
+          <svg class="sec-ico" viewBox="0 0 24 24"><path d="M5 9.2h3V19H5V9.2zm5.6-4.2h2.8v14h-2.8V5zM16 13h3v6h-3v-6z"/></svg>
+          <span class="sec-label">Productividad</span>
+          <span class="chevron">›</span>
         </div>
-        <div class="nav-item" data-module="transporte" data-page="conductores" onclick="navigate(this)">
-          <span class="nav-dot"></span>Conductores
-        </div>
-        <div class="nav-item" data-module="transporte" data-page="viajes" onclick="navigate(this)">
-          <span class="nav-dot"></span>Viajes / Rutas
-        </div>
-        <div class="nav-item" data-module="transporte" data-page="visitas" onclick="navigate(this)">
-          <span class="nav-dot"></span>Visitas / Entregas
-        </div>
-        <div class="nav-item" data-module="transporte" data-page="tarifas" onclick="navigate(this)">
-          <span class="nav-dot"></span>Tarifas
-        </div>
-        <div class="nav-item" data-module="transporte" data-page="zonas" onclick="navigate(this)">
-          <span class="nav-dot"></span>Zonas
-        </div>
-        <div class="nav-item" data-module="transporte" data-page="mejoras" onclick="navigate(this)">
-          <span class="nav-dot"></span>Mejoras
+        <div class="sec-items">
+          <div class="nav-item" data-module="productividadchile" onclick="navigate(this)"><span class="nav-dot"></span>Productividad Picking</div>
         </div>
       </div>
     </div>
+  </div>
+
+  <div class="nav-divider"></div>
+
+  <!-- ── PERSONAL ARG/CH (standalone) ── -->
+  <div class="nav-solo" data-module="personal" onclick="navigateSolo(this)">
+    <svg class="sec-ico" viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+    Personal ARG/CH
+  </div>
 
   </nav>
 
@@ -504,6 +553,30 @@ iframe {
     </iframe>
   </div>
 
+  <!-- Personal ARG/CH frame -->
+  <div class="frame-wrap" id="fw-personal">
+    <div class="splash" id="splash-personal">
+      <div class="splash-icon">Z</div>
+      <span class="splash-label">Cargando Personal…</span>
+    </div>
+    <iframe id="ifr-personal"
+      src="./personal-zecat/index.html"
+      onload="onLoad('personal')">
+    </iframe>
+  </div>
+
+  <!-- Productividad Chile frame -->
+  <div class="frame-wrap" id="fw-productividadchile">
+    <div class="splash" id="splash-productividadchile">
+      <div class="splash-icon">Z</div>
+      <span class="splash-label">Cargando Productividad Chile…</span>
+    </div>
+    <iframe id="ifr-productividadchile"
+      src="./productividad-chile-zecat/index.html"
+      onload="onLoad('productividadchile')">
+    </iframe>
+  </div>
+
 </div>
 
 <script>
@@ -528,6 +601,14 @@ const INJECT = {
     .topbar  { display: none !important; }
     html, body { overflow: auto !important; height: auto !important; }
     .main { height: 100vh; }
+  `,
+  personal: `
+    body { overflow: auto !important; }
+  `,
+  productividadchile: `
+    .header { display: none !important; }
+    .filters { position: sticky !important; top: 0 !important; z-index: 10 !important; }
+    body { overflow: auto !important; }
   `
 };
 
@@ -540,7 +621,7 @@ const PAGE_ID = {
 
 let currentModule = 'productividad';
 let isDark = true;
-const loaded = { productividad: false, asistencia: false, ciclico: false, transporte: false };
+const loaded = { productividad: false, asistencia: false, ciclico: false, transporte: false, personal: false, productividadchile: false };
 // Queue: pending navigation calls waiting for iframe to finish loading
 const pending = {};
 
@@ -578,17 +659,25 @@ function toggleSection(header) {
 }
 
 function navigate(item) {
-  // Update active state
-  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-item, .nav-solo').forEach(el => el.classList.remove('active'));
   item.classList.add('active');
 
   const module = item.dataset.module;
   const tab    = item.dataset.tab;
   const page   = item.dataset.page;
 
-  // Expand section if collapsed
-  const secHeader = item.closest('.section').querySelector('.sec-header');
-  if (!secHeader.classList.contains('open')) secHeader.classList.add('open');
+  // Expand parent section if collapsed
+  const section = item.closest('.section');
+  if (section) {
+    const secHeader = section.querySelector('.sec-header');
+    if (secHeader && !secHeader.classList.contains('open')) secHeader.classList.add('open');
+  }
+  // Expand parent country group if collapsed
+  const countryBody = item.closest('.country-body');
+  if (countryBody) {
+    const countryHdr = countryBody.previousElementSibling;
+    if (countryHdr && !countryHdr.classList.contains('open')) countryHdr.classList.add('open');
+  }
 
   // Switch visible frame
   if (module !== currentModule) {
@@ -597,12 +686,18 @@ function navigate(item) {
     currentModule = module;
   }
 
-  const action = () => switchContent(module, tab, page);
-  if (loaded[module]) {
-    action();
-  } else {
-    pending[module] = action;
+  if (tab !== undefined || page !== undefined) {
+    const action = () => switchContent(module, tab, page);
+    if (loaded[module]) action();
+    else pending[module] = action;
   }
+}
+
+function navigateSolo(el) {
+  navigate(el);
+}
+function toggleCountry(hdr) {
+  hdr.classList.toggle('open');
 }
 
 function switchContent(module, tab, page) {

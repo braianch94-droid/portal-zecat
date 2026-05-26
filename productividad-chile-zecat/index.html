@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Productividad Picking — Chile</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans','Segoe UI',Arial,sans-serif;background:#080B15;color:#E2E8F0;min-height:100vh;overflow:auto !important;}
+.header{display:none}
+.filters{background:#0d1117;padding:16px 32px;border-bottom:1px solid #30363d;display:flex;gap:16px;align-items:center;flex-wrap:wrap;position:sticky;top:0;z-index:10;border-bottom: 1px solid #334155;}
+.filters label{font-size:12px;color:#94A3B8;margin-right:4px}
+.filters select{background:#0F172A;border:1px solid #334155;color:#E2E8F0;padding:6px 10px;border-radius:6px;font-size:13px;cursor:pointer}
+.filters select:focus{outline:none;border-color:#3B82F6}
+.content{padding:24px 32px;display:flex;flex-direction:column;gap:24px}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}
+.kpi{background:#0d1117;border:1px solid #30363d;border-radius:12px;padding:20px;position:relative;overflow:hidden}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--accent,#3B82F6)}
+.kpi .val{font-size:30px;font-weight:800;color:#fff;line-height:1}
+.kpi .lbl{font-size:12px;color:#94A3B8;margin-top:6px}
+.kpi .sub-val{font-size:12px;color:var(--accent,#3B82F6);margin-top:4px;font-weight:600}
+.grid-3{display:grid;grid-template-columns:2fr 1fr;gap:24px}
+.card{background:#0d1117;border:1px solid #30363d;border-radius:12px;padding:24px}
+.card h2{font-size:13px;font-weight:700;color:#94A3B8;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:20px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;padding:10px 12px;background:#0F172A;color:#64748B;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:0.4px;border-bottom:1px solid #334155;white-space:nowrap}
+td{padding:10px 12px;border-bottom:1px solid #1a2744}
+.hover-row:hover td{background:#1a2744}
+.scroll-x{overflow-x:auto}
+#filter-info{font-size:12px;color:#64748B;margin-left:auto}
+@media(max-width:768px){.grid-3{grid-template-columns:1fr}.content{padding:16px}}
+</style>
+</head>
+<body>
+<div class="header">
+  <div>
+    <h1>&#128230; Productividad Picking &mdash; Chile</h1>
+    <div class="sub">Enero &ndash; Mayo 2026 &nbsp;&#183;&nbsp; wmwhse2</div>
+  </div>
+  <span class="badge">Zecat CL</span>
+</div>
+
+<div class="filters">
+  <div><label>Mes:</label>
+    <select id="filterMes" onchange="applyFilters()">
+      <option value="todos">Todos</option>
+<option value="2026-01">2026-01</option><option value="2026-02">2026-02</option><option value="2026-03">2026-03</option><option value="2026-04">2026-04</option><option value="2026-05">2026-05</option>
+    </select>
+  </div>
+  <div><label>Picker:</label>
+    <select id="filterPicker" onchange="applyFilters()">
+      <option value="todos">Todos</option>
+<option value="Daritza">Daritza</option><option value="Mari">Mari</option><option value="Cristobal">Cristobal</option><option value="Isa">Isa</option><option value="Lili">Lili</option><option value="Camilo">Camilo</option><option value="Joaquin">Joaquin</option><option value="Hector">Hector</option><option value="Maca">Maca</option><option value="Jorge">Jorge</option>
+    </select>
+  </div>
+  <div><label>Tipo:</label>
+    <select id="filterTipo" onchange="applyFilters()">
+      <option value="todos">Todos</option>
+<option value="CON LOGO">CON LOGO</option><option value="MUESTRA SIMPLE">MUESTRA SIMPLE</option><option value="PEDIDO MERMA">PEDIDO MERMA</option><option value="SIN LOGO">SIN LOGO</option>
+    </select>
+  </div>
+  <div id="filter-info"></div>
+</div>
+
+<div class="content">
+
+  <div class="kpi-grid">
+    <div class="kpi" style="--accent:#3B82F6">
+      <div class="val" id="kpi-lineas">10,134</div>
+      <div class="lbl">Total L&iacute;neas Pickeadas</div>
+      <div class="sub-val">Ene&ndash;May 2026</div>
+    </div>
+    <div class="kpi" style="--accent:#10B981">
+      <div class="val" id="kpi-nps">4,299</div>
+      <div class="lbl">NPs Completadas</div>
+      <div class="sub-val">&#211;rdenes procesadas</div>
+    </div>
+    <div class="kpi" style="--accent:#F59E0B">
+      <div class="val" id="kpi-pickers">10</div>
+      <div class="lbl">Pickers Activos</div>
+      <div class="sub-val">Personas registradas</div>
+    </div>
+    <div class="kpi" style="--accent:#EF4444">
+      <div class="val" id="kpi-top">Daritza</div>
+      <div class="lbl">Picker L&iacute;der</div>
+      <div class="sub-val" id="kpi-top-sub">5,500 líneas</div>
+    </div>
+  </div>
+
+  <div class="grid-3">
+    <div class="card">
+      <h2>L&iacute;neas por Mes &middot; por Tipo</h2>
+      <div style="position:relative;height:300px"><canvas id="chartMes"></canvas></div>
+    </div>
+    <div class="card">
+      <h2>Distribuci&oacute;n por Tipo</h2>
+      <div style="position:relative;height:300px"><canvas id="chartPie"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Evoluci&oacute;n Diaria &mdash; Top Pickers</h2>
+    <div style="position:relative;height:300px"><canvas id="chartDia"></canvas></div>
+  </div>
+
+  <div class="card">
+    <h2>Ranking de Pickers</h2>
+    <div class="scroll-x">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:50px">#</th>
+            <th>Picker</th>
+            <th style="text-align:right">L&iacute;neas</th>
+            <th style="text-align:right">NPs</th>
+            <th style="text-align:right">D&iacute;as Trab.</th>
+            <th style="text-align:right">Prom. L&iacute;neas/D&iacute;a</th>
+            <th>Desglose por Tipo</th>
+          </tr>
+        </thead>
+        <tbody id="ranking-body">
+        <tr class="hover-row">
+          <td style="text-align:center;font-size:18px">🥇</td>
+          <td><strong>Daritza</strong></td>
+          <td style="text-align:right;color:#3B82F6;font-weight:700">5,500</td>
+          <td style="text-align:right;color:#10B981;font-weight:700">2,278</td>
+          <td style="text-align:right">94</td>
+          <td style="text-align:right;font-weight:600">58.5</td>
+          <td><span style="background:#10B98122;color:#10B981;border:1px solid #10B98155;padding:2px 7px;border-radius:10px;font-size:11px;margin:1px;display:inline-block">SIN LOGO: 5,369</span><span style="background:#3B82F622;color:#3B82F6;border:1px solid #3B82F655;padding:2px 7px;border-radius:10px;font-size:11px;margin:1px;display:inline-block">CON LOGO: 95</span><span style="background:#F59E0B22;color:#F59E0B;border:1px solid #F59E0B55;padding:2px 7px;border-radius:10px;font-size:11px;margin:1px;display:inline-block">PEDIDO MERMA: 35</span><span style="background:#8B5CF622;color:#8B5CF6;border:1px solid #8B5CF655;padding:2px 7px;border-radius:10px;font-size:11px;margin:1px;display:inline-block">MUESTRA SIMPLE: 1</span></td>
+        </tr>
+        <tr class="hover-row">
+          <td style="text-align:center;font-size:18px">🥈</td>
+          <td><strong>Mari</strong></td>
+          <td style="text-align:right;color:#3B82F6;font-weight:700">3,549</td>
+          <td style="text-align:right;color:#10B981;font-weight:700">1,535</td>
+          <td style="text-align:right">77</td>
+          <td style="text-align:right;font-weight:600">46.1</td>
+          <td><span style="background:#3B82F622;color:#3B82F6;border:1px solid #3B82F655;padding:2px 7px;border-radius:10px;font-size:11px;margin:1px;display:inline-block">CON LOGO: 3,507</span><span style="background:#F59E0B22;color:#F59E0B;border:1px solid #F59E0B55;padding:2px 7px;border-radius:10px;font-size:11px;margin:1px;display:inline-block">PEDIDO MERMA: 37</span><span style="background:#10B98122;color:#10B981;border:1px solid #10B98155;padding:2px 7px;border-radius:10px;font-size:11px;margin:1px;display:inline-block">SIN LOGO: 5</span></td>
+        </tr>
+        <tr class="hover-row">
+          <td style="text-align:center;font-size:18px">🥉</td>
+          <td><strong>Cristobal</strong></td>
+          <td style="text-align:right;color:#3B82F6;font-weight:700">549</td>
+          <td style="text-align:right;color:#10B981;font-weight:700">253</td>
+          <td style="text-align:right">12</td>
+          <td style="text-align:right;font-weight:600">45.8</td>
+          <td><span style="background:#3B82F622;color:#3B82F6;border:1px solid #3B82F655;padding:2px 7px;border-radius:10px;font-size:11px;margin:1px;display:inline-block">CON LOGO: 546</span><span style="background:#10B98122;color:#10B981;border:1px solid #10B98155;padding:2px 7px;border-radius:10px;font-size:11px;margin:1px;display:inline-block">SIN LOGO: 3</span></td>
+        </tr>
+        <tr class="hover-row">
+          <td style="text-align:center;font-size:18px">#4</td>
+          <td><strong>Isa</strong></td>
+          <td style="text-align:right;color:#3B82F6;font-weight:700">153</td>
+          <td style="text-align:right;color:#10B981;font-weight:700">70</td>
+          <td style="text-align:right">2</td>
+          <td style="text-align:right;font-weight:600">76.5</td>
+          <td><span style="background:#3B82F622;color:#3B82F6;border:1px solid #3B82F655;padding:2px 7px;border-radius:10px;font-size:11px;margin:1px;display:inline-block">CON LOGO: 90</span><span style="background:#10B98122;color:#10B981;border:1px solid #10B98155;padding:2px 7px;border-radius:10px;font-size:11px;margin:1px;display:inline-block">SIN LOGO: 63</span></td>
+        </tr>
+        <tr class="hover-row">
+          <td style="text-align:center;font-size:18px">#5</td>
+          <td><strong>Lili</strong></td>
+          <td style="text-align:right;color:#3B82F6;font-weight:700">141</td>
+          <td style="text-align:right;color:#10B981;font-weight:700">53</td>
+          <td style="text-align:right">3</td>
+          <td style="text-align:right;font-weight:600">47.0</td>
+          <td><span style="background:#3B82F622;color:#3B82F6;border:1px solid #3B82F655;padding:2px 7px;border-radius:10px;font-size:11px;margin:1px;display:inline-block">CON LOGO: 141</span></td>
+        </tr>
+        <tr class="hover-row">
+          <td style="text-align:center;font-size:18px">#6</td>
+          <td><strong>Camilo</strong></td>
+          <td style="text-align:right;color:#3B82F6;font-weight:700">127</td>
+          <td style="text-align:right;color:#10B981;font-weight:700">65</td>
+          <td style="text-align:right">2</td>
+          <td style="text-align:right;font-weight:600">63.5</td>
+          <td><span style="background:#3B82F622;color:#3B82F6;border:1px solid #3B82F655;padding:2px 7px;border-radius:10px;font-size:11px;margin:1px;display:inline-block">CON LOGO: 127</span></td>
+        </tr>
+        <tr class="hover-row">
+          <td style="text-align:center;font-size:18px">#7</td>
+          <td><strong>Joaquin</strong></td>
+          <td style="text-align:right;color:#3B82F6;font-weight:700">65</td>
+          <td style="text-align:right;color:#10B981;font-weight:700">26</td>
+          <td style="text-align:right">2</td>
+          <td style="text-align:right;font-weight:600">32.5</td>
+          <td><span style="background:#3B82F622;color:#3B82F6;border:1px solid #3B82F655;padding:2px 7px;border-radius:10px;font-size:11px;margin:1px;display:inline-block">CON LOGO: 65</span></td>
+        </tr>
+        <tr class="hover-row">
+          <td style="text-align:center;font-size:18px">#8</td>
+          <td><strong>Hector</strong></td>
+          <td style="text-align:right;color:#3B82F6;font-weight:700">28</td>
+          <td style="text-align:right;color:#10B981;font-weight:700">12</td>
+          <td style="text-align:right">1</td>
+          <td style="text-align:right;font-weight:600">28.0</td>
+          <td><span style="background:#3B82F622;color:#3B82F6;border:1px solid #3B82F655;padding:2px 7px;border-radius:10px;font-size:11px;margin:1px;display:inline-block">CON LOGO: 28</span></td>
+        </tr>
+        <tr class="hover-row">
+          <td style="text-align:center;font-size:18px">#9</td>
+          <td><strong>Maca</strong></td>
+          <td style="text-align:right;color:#3B82F6;font-weight:700">21</td>
+          <td style="text-align:right;color:#10B981;font-weight:700">6</td>
+          <td style="text-align:right">1</td>
+          <td style="text-align:right;font-weight:600">21.0</td>
+          <td><span style="background:#10B98122;color:#10B981;border:1px solid #10B98155;padding:2px 7px;border-radius:10px;font-size:11px;margin:1px;display:inline-block">SIN LOGO: 21</span></td>
+        </tr>
+        <tr class="hover-row">
+          <td style="text-align:center;font-size:18px">#10</td>
+          <td><strong>Jorge</strong></td>
+          <td style="text-align:right;color:#3B82F6;font-weight:700">1</td>
+          <td style="text-align:right;color:#10B981;font-weight:700">1</td>
+          <td style="text-align:right">1</td>
+          <td style="text-align:right;font-weight:600">1.0</td>
+          <td><span style="background:#10B98122;color:#10B981;border:1px solid #10B98155;padding:2px 7px;border-radius:10px;font-size:11px;margin:1px;display:inline-block">SIN LOGO: 1</span></td>
+        </tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>L&iacute;neas por Picker &middot; por Mes</h2>
+    <div class="scroll-x">
+      <table>
+        <thead id="monthly-head">
+          <tr>
+            <th>Picker</th>
+<th>2026-01</th><th>2026-02</th><th>2026-03</th><th>2026-04</th><th>2026-05</th>
+            <th style="text-align:right">Total</th>
+          </tr>
+        </thead>
+        <tbody id="monthly-body"><tr><td><strong>Camilo</strong></td><td style='text-align:right'>0</td><td style='text-align:right'>0</td><td style='text-align:right'>0</td><td style='text-align:right'>0</td><td style='text-align:right'>127</td><td style='text-align:right;font-weight:700;color:#3B82F6'>127</td></tr><tr><td><strong>Cristobal</strong></td><td style='text-align:right'>0</td><td style='text-align:right'>0</td><td style='text-align:right'>0</td><td style='text-align:right'>13</td><td style='text-align:right'>536</td><td style='text-align:right;font-weight:700;color:#3B82F6'>549</td></tr><tr><td><strong>Daritza</strong></td><td style='text-align:right'>751</td><td style='text-align:right'>966</td><td style='text-align:right'>1,685</td><td style='text-align:right'>1,376</td><td style='text-align:right'>722</td><td style='text-align:right;font-weight:700;color:#3B82F6'>5,500</td></tr><tr><td><strong>Hector</strong></td><td style='text-align:right'>28</td><td style='text-align:right'>0</td><td style='text-align:right'>0</td><td style='text-align:right'>0</td><td style='text-align:right'>0</td><td style='text-align:right;font-weight:700;color:#3B82F6'>28</td></tr><tr><td><strong>Isa</strong></td><td style='text-align:right'>0</td><td style='text-align:right'>0</td><td style='text-align:right'>0</td><td style='text-align:right'>0</td><td style='text-align:right'>153</td><td style='text-align:right;font-weight:700;color:#3B82F6'>153</td></tr><tr><td><strong>Joaquin</strong></td><td style='text-align:right'>65</td><td style='text-align:right'>0</td><td style='text-align:right'>0</td><td style='text-align:right'>0</td><td style='text-align:right'>0</td><td style='text-align:right;font-weight:700;color:#3B82F6'>65</td></tr><tr><td><strong>Jorge</strong></td><td style='text-align:right'>0</td><td style='text-align:right'>0</td><td style='text-align:right'>0</td><td style='text-align:right'>1</td><td style='text-align:right'>0</td><td style='text-align:right;font-weight:700;color:#3B82F6'>1</td></tr><tr><td><strong>Lili</strong></td><td style='text-align:right'>0</td><td style='text-align:right'>52</td><td style='text-align:right'>46</td><td style='text-align:right'>43</td><td style='text-align:right'>0</td><td style='text-align:right;font-weight:700;color:#3B82F6'>141</td></tr><tr><td><strong>Maca</strong></td><td style='text-align:right'>0</td><td style='text-align:right'>0</td><td style='text-align:right'>21</td><td style='text-align:right'>0</td><td style='text-align:right'>0</td><td style='text-align:right;font-weight:700;color:#3B82F6'>21</td></tr><tr><td><strong>Mari</strong></td><td style='text-align:right'>746</td><td style='text-align:right'>771</td><td style='text-align:right'>894</td><td style='text-align:right'>1,082</td><td style='text-align:right'>56</td><td style='text-align:right;font-weight:700;color:#3B82F6'>3,549</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const RAW = {"ranking": [{"Picker": "Daritza", "total_lineas": 5500, "total_nps": 2278, "dias_trabajados": 94, "promedio_lineas_dia": 58.5}, {"Picker": "Mari", "total_lineas": 3549, "total_nps": 1535, "dias_trabajados": 77, "promedio_lineas_dia": 46.1}, {"Picker": "Cristobal", "total_lineas": 549, "total_nps": 253, "dias_trabajados": 12, "promedio_lineas_dia": 45.8}, {"Picker": "Isa", "total_lineas": 153, "total_nps": 70, "dias_trabajados": 2, "promedio_lineas_dia": 76.5}, {"Picker": "Lili", "total_lineas": 141, "total_nps": 53, "dias_trabajados": 3, "promedio_lineas_dia": 47.0}, {"Picker": "Camilo", "total_lineas": 127, "total_nps": 65, "dias_trabajados": 2, "promedio_lineas_dia": 63.5}, {"Picker": "Joaquin", "total_lineas": 65, "total_nps": 26, "dias_trabajados": 2, "promedio_lineas_dia": 32.5}, {"Picker": "Hector", "total_lineas": 28, "total_nps": 12, "dias_trabajados": 1, "promedio_lineas_dia": 28.0}, {"Picker": "Maca", "total_lineas": 21, "total_nps": 6, "dias_trabajados": 1, "promedio_lineas_dia": 21.0}, {"Picker": "Jorge", "total_lineas": 1, "total_nps": 1, "dias_trabajados": 1, "promedio_lineas_dia": 1.0}], "meses": ["2026-01", "2026-02", "2026-03", "2026-04", "2026-05"], "tipos": ["CON LOGO", "MUESTRA SIMPLE", "PEDIDO MERMA", "SIN LOGO"], "dias": ["2026-01-02", "2026-01-09", "2026-01-12", "2026-01-13", "2026-01-14", "2026-01-15", "2026-01-16", "2026-01-19", "2026-01-20", "2026-01-21", "2026-01-22", "2026-01-23", "2026-01-26", "2026-01-27", "2026-01-28", "2026-01-29", "2026-01-30", "2026-02-02", "2026-02-03", "2026-02-04", "2026-02-05", "2026-02-06", "2026-02-09", "2026-02-10", "2026-02-11", "2026-02-12", "2026-02-13", "2026-02-16", "2026-02-17", "2026-02-18", "2026-02-19", "2026-02-20", "2026-02-23", "2026-02-24", "2026-02-25", "2026-02-26", "2026-02-27", "2026-03-02", "2026-03-03", "2026-03-04", "2026-03-05", "2026-03-06", "2026-03-09", "2026-03-10", "2026-03-11", "2026-03-12", "2026-03-13", "2026-03-16", "2026-03-17", "2026-03-18", "2026-03-19", "2026-03-20", "2026-03-23", "2026-03-24", "2026-03-25", "2026-03-26", "2026-03-27", "2026-03-30", "2026-03-31", "2026-04-01", "2026-04-02", "2026-04-06", "2026-04-07", "2026-04-08", "2026-04-09", "2026-04-10", "2026-04-13", "2026-04-14", "2026-04-15", "2026-04-16", "2026-04-17", "2026-04-20", "2026-04-21", "2026-04-22", "2026-04-23", "2026-04-24", "2026-04-27", "2026-04-28", "2026-04-29", "2026-04-30", "2026-05-04", "2026-05-05", "2026-05-06", "2026-05-07", "2026-05-08", "2026-05-11", "2026-05-12", "2026-05-13", "2026-05-14", "2026-05-15", "2026-05-18", "2026-05-19", "2026-05-20", "2026-05-22", "2026-05-25"], "tabla_mes": {"pickers": ["Camilo", "Cristobal", "Daritza", "Hector", "Isa", "Joaquin", "Jorge", "Lili", "Maca", "Mari"], "meses": ["2026-01", "2026-02", "2026-03", "2026-04", "2026-05"], "data": [[0.0, 0.0, 0.0, 0.0, 127.0], [0.0, 0.0, 0.0, 13.0, 536.0], [751.0, 966.0, 1685.0, 1376.0, 722.0], [28.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0, 153.0], [65.0, 0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 1.0, 0.0], [0.0, 52.0, 46.0, 43.0, 0.0], [0.0, 0.0, 21.0, 0.0, 0.0], [746.0, 771.0, 894.0, 1082.0, 56.0]]}, "evo_data": {"Daritza": {"2026-01-02": 14, "2026-01-09": 31, "2026-01-12": 65, "2026-01-13": 54, "2026-01-14": 46, "2026-01-15": 19, "2026-01-16": 63, "2026-01-19": 46, "2026-01-20": 77, "2026-01-21": 31, "2026-01-22": 41, "2026-01-23": 34, "2026-01-26": 67, "2026-01-27": 41, "2026-01-28": 23, "2026-01-29": 81, "2026-01-30": 18, "2026-02-02": 58, "2026-02-03": 37, "2026-02-04": 39, "2026-02-05": 61, "2026-02-06": 26, "2026-02-09": 40, "2026-02-10": 49, "2026-02-11": 28, "2026-02-12": 59, "2026-02-13": 32, "2026-02-16": 83, "2026-02-17": 49, "2026-02-18": 65, "2026-02-19": 45, "2026-02-20": 19, "2026-02-23": 35, "2026-02-24": 74, "2026-02-25": 64, "2026-02-26": 66, "2026-02-27": 37, "2026-03-02": 77, "2026-03-03": 61, "2026-03-04": 47, "2026-03-05": 64, "2026-03-06": 173, "2026-03-09": 128, "2026-03-10": 55, "2026-03-11": 52, "2026-03-12": 51, "2026-03-13": 32, "2026-03-16": 61, "2026-03-17": 92, "2026-03-18": 72, "2026-03-19": 44, "2026-03-20": 39, "2026-03-23": 93, "2026-03-24": 38, "2026-03-25": 50, "2026-03-26": 226, "2026-03-27": 22, "2026-03-30": 178, "2026-03-31": 30, "2026-04-01": 43, "2026-04-02": 133, "2026-04-06": 144, "2026-04-07": 43, "2026-04-08": 61, "2026-04-09": 53, "2026-04-10": 33, "2026-04-13": 57, "2026-04-14": 48, "2026-04-15": 75, "2026-04-16": 57, "2026-04-17": 14, "2026-04-20": 87, "2026-04-21": 64, "2026-04-22": 95, "2026-04-23": 58, "2026-04-24": 80, "2026-04-27": 67, "2026-04-28": 17, "2026-04-29": 77, "2026-04-30": 70, "2026-05-04": 42, "2026-05-05": 61, "2026-05-06": 33, "2026-05-07": 21, "2026-05-08": 41, "2026-05-12": 84, "2026-05-13": 25, "2026-05-14": 29, "2026-05-15": 24, "2026-05-18": 45, "2026-05-19": 52, "2026-05-20": 69, "2026-05-22": 66, "2026-05-25": 130}, "Mari": {"2026-01-12": 17, "2026-01-13": 49, "2026-01-14": 38, "2026-01-15": 45, "2026-01-16": 22, "2026-01-19": 125, "2026-01-20": 21, "2026-01-21": 72, "2026-01-22": 30, "2026-01-23": 39, "2026-01-26": 57, "2026-01-27": 58, "2026-01-28": 76, "2026-01-29": 83, "2026-01-30": 14, "2026-02-02": 78, "2026-02-03": 51, "2026-02-04": 10, "2026-02-05": 50, "2026-02-06": 33, "2026-02-09": 13, "2026-02-10": 29, "2026-02-11": 28, "2026-02-12": 20, "2026-02-13": 91, "2026-02-16": 43, "2026-02-17": 24, "2026-02-18": 62, "2026-02-19": 43, "2026-02-20": 41, "2026-02-23": 23, "2026-02-24": 49, "2026-02-25": 13, "2026-02-26": 50, "2026-02-27": 20, "2026-03-02": 61, "2026-03-03": 33, "2026-03-04": 63, "2026-03-05": 81, "2026-03-06": 27, "2026-03-10": 13, "2026-03-11": 42, "2026-03-12": 32, "2026-03-13": 23, "2026-03-16": 31, "2026-03-17": 70, "2026-03-18": 50, "2026-03-19": 33, "2026-03-20": 67, "2026-03-23": 25, "2026-03-24": 23, "2026-03-25": 59, "2026-03-26": 43, "2026-03-27": 20, "2026-03-30": 57, "2026-03-31": 41, "2026-04-01": 68, "2026-04-02": 67, "2026-04-06": 77, "2026-04-07": 34, "2026-04-08": 62, "2026-04-09": 40, "2026-04-10": 51, "2026-04-13": 29, "2026-04-14": 50, "2026-04-15": 53, "2026-04-16": 50, "2026-04-17": 71, "2026-04-20": 180, "2026-04-21": 35, "2026-04-22": 57, "2026-04-23": 39, "2026-04-24": 26, "2026-04-27": 64, "2026-04-28": 5, "2026-04-30": 24, "2026-05-07": 56}, "Cristobal": {"2026-04-28": 3, "2026-04-29": 10, "2026-05-04": 79, "2026-05-05": 44, "2026-05-06": 66, "2026-05-08": 31, "2026-05-11": 40, "2026-05-12": 101, "2026-05-13": 15, "2026-05-14": 47, "2026-05-15": 32, "2026-05-18": 81}, "Isa": {"2026-05-11": 63, "2026-05-25": 90}, "Lili": {"2026-02-17": 52, "2026-03-09": 46, "2026-04-16": 43}, "Camilo": {"2026-05-20": 76, "2026-05-22": 51}}, "top_pickers": ["Daritza", "Mari", "Cristobal", "Isa", "Lili", "Camilo"], "tipo_picker": {"Daritza": {"CON LOGO": 95, "MUESTRA SIMPLE": 1, "PEDIDO MERMA": 35, "SIN LOGO": 5369}, "Mari": {"CON LOGO": 3507, "PEDIDO MERMA": 37, "SIN LOGO": 5}, "Cristobal": {"CON LOGO": 546, "SIN LOGO": 3}, "Isa": {"CON LOGO": 90, "SIN LOGO": 63}, "Lili": {"CON LOGO": 141}, "Camilo": {"CON LOGO": 127}, "Joaquin": {"CON LOGO": 65}, "Hector": {"CON LOGO": 28}, "Maca": {"SIN LOGO": 21}, "Jorge": {"SIN LOGO": 1}}, "by_tipo": [{"TIPO": "CON LOGO", "lineas": 4599, "nps": 2008, "pickers": 8}, {"TIPO": "MUESTRA SIMPLE", "lineas": 1, "nps": 1, "pickers": 1}, {"TIPO": "PEDIDO MERMA", "lineas": 72, "nps": 22, "pickers": 2}, {"TIPO": "SIN LOGO", "lineas": 5462, "nps": 2265, "pickers": 6}], "prom_mes": [{"MES": "2026-01", "lineas": 1590, "nps": 711, "pickers_activos": 4}, {"MES": "2026-02", "lineas": 1789, "nps": 815, "pickers_activos": 3}, {"MES": "2026-03", "lineas": 2646, "nps": 1035, "pickers_activos": 4}, {"MES": "2026-04", "lineas": 2515, "nps": 1005, "pickers_activos": 5}, {"MES": "2026-05", "lineas": 1594, "nps": 701, "pickers_activos": 5}], "by_mes_global": [{"MES": "2026-01", "TIPO": "CON LOGO", "lineas": 839}, {"MES": "2026-01", "TIPO": "SIN LOGO", "lineas": 751}, {"MES": "2026-02", "TIPO": "CON LOGO", "lineas": 812}, {"MES": "2026-02", "TIPO": "MUESTRA SIMPLE", "lineas": 1}, {"MES": "2026-02", "TIPO": "PEDIDO MERMA", "lineas": 47}, {"MES": "2026-02", "TIPO": "SIN LOGO", "lineas": 929}, {"MES": "2026-03", "TIPO": "CON LOGO", "lineas": 953}, {"MES": "2026-03", "TIPO": "SIN LOGO", "lineas": 1693}, {"MES": "2026-04", "TIPO": "CON LOGO", "lineas": 1186}, {"MES": "2026-04", "TIPO": "PEDIDO MERMA", "lineas": 25}, {"MES": "2026-04", "TIPO": "SIN LOGO", "lineas": 1304}, {"MES": "2026-05", "TIPO": "CON LOGO", "lineas": 809}, {"MES": "2026-05", "TIPO": "SIN LOGO", "lineas": 785}], "by_mes_picker": [{"Picker": "Camilo", "MES": "2026-05", "lineas": 127, "nps": 65, "dias": 2, "prom_dia": 63.5}, {"Picker": "Cristobal", "MES": "2026-04", "lineas": 13, "nps": 8, "dias": 2, "prom_dia": 6.5}, {"Picker": "Cristobal", "MES": "2026-05", "lineas": 536, "nps": 245, "dias": 10, "prom_dia": 53.6}, {"Picker": "Daritza", "MES": "2026-01", "lineas": 751, "nps": 370, "dias": 17, "prom_dia": 44.2}, {"Picker": "Daritza", "MES": "2026-02", "lineas": 966, "nps": 437, "dias": 20, "prom_dia": 48.3}, {"Picker": "Daritza", "MES": "2026-03", "lineas": 1685, "nps": 634, "dias": 22, "prom_dia": 76.6}, {"Picker": "Daritza", "MES": "2026-04", "lineas": 1376, "nps": 540, "dias": 21, "prom_dia": 65.5}, {"Picker": "Daritza", "MES": "2026-05", "lineas": 722, "nps": 297, "dias": 14, "prom_dia": 51.6}, {"Picker": "Hector", "MES": "2026-01", "lineas": 28, "nps": 12, "dias": 1, "prom_dia": 28.0}, {"Picker": "Isa", "MES": "2026-05", "lineas": 153, "nps": 70, "dias": 2, "prom_dia": 76.5}, {"Picker": "Joaquin", "MES": "2026-01", "lineas": 65, "nps": 26, "dias": 2, "prom_dia": 32.5}, {"Picker": "Jorge", "MES": "2026-04", "lineas": 1, "nps": 1, "dias": 1, "prom_dia": 1.0}, {"Picker": "Lili", "MES": "2026-02", "lineas": 52, "nps": 19, "dias": 1, "prom_dia": 52.0}, {"Picker": "Lili", "MES": "2026-03", "lineas": 46, "nps": 17, "dias": 1, "prom_dia": 46.0}, {"Picker": "Lili", "MES": "2026-04", "lineas": 43, "nps": 17, "dias": 1, "prom_dia": 43.0}, {"Picker": "Maca", "MES": "2026-03", "lineas": 21, "nps": 6, "dias": 1, "prom_dia": 21.0}, {"Picker": "Mari", "MES": "2026-01", "lineas": 746, "nps": 311, "dias": 15, "prom_dia": 49.7}, {"Picker": "Mari", "MES": "2026-02", "lineas": 771, "nps": 360, "dias": 20, "prom_dia": 38.6}, {"Picker": "Mari", "MES": "2026-03", "lineas": 894, "nps": 383, "dias": 21, "prom_dia": 42.6}, {"Picker": "Mari", "MES": "2026-04", "lineas": 1082, "nps": 452, "dias": 20, "prom_dia": 54.1}, {"Picker": "Mari", "MES": "2026-05", "lineas": 56, "nps": 29, "dias": 1, "prom_dia": 56.0}], "by_day": [{"Picker": "Camilo", "DIA_STR": "2026-05-20", "TIPO": "CON LOGO", "lineas": 76, "nps": 35}, {"Picker": "Camilo", "DIA_STR": "2026-05-22", "TIPO": "CON LOGO", "lineas": 51, "nps": 30}, {"Picker": "Cristobal", "DIA_STR": "2026-04-28", "TIPO": "SIN LOGO", "lineas": 3, "nps": 3}, {"Picker": "Cristobal", "DIA_STR": "2026-04-29", "TIPO": "CON LOGO", "lineas": 10, "nps": 5}, {"Picker": "Cristobal", "DIA_STR": "2026-05-04", "TIPO": "CON LOGO", "lineas": 79, "nps": 35}, {"Picker": "Cristobal", "DIA_STR": "2026-05-05", "TIPO": "CON LOGO", "lineas": 44, "nps": 19}, {"Picker": "Cristobal", "DIA_STR": "2026-05-06", "TIPO": "CON LOGO", "lineas": 66, "nps": 24}, {"Picker": "Cristobal", "DIA_STR": "2026-05-08", "TIPO": "CON LOGO", "lineas": 31, "nps": 18}, {"Picker": "Cristobal", "DIA_STR": "2026-05-11", "TIPO": "CON LOGO", "lineas": 40, "nps": 19}, {"Picker": "Cristobal", "DIA_STR": "2026-05-12", "TIPO": "CON LOGO", "lineas": 101, "nps": 54}, {"Picker": "Cristobal", "DIA_STR": "2026-05-13", "TIPO": "CON LOGO", "lineas": 15, "nps": 10}, {"Picker": "Cristobal", "DIA_STR": "2026-05-14", "TIPO": "CON LOGO", "lineas": 47, "nps": 18}, {"Picker": "Cristobal", "DIA_STR": "2026-05-15", "TIPO": "CON LOGO", "lineas": 32, "nps": 14}, {"Picker": "Cristobal", "DIA_STR": "2026-05-18", "TIPO": "CON LOGO", "lineas": 81, "nps": 34}, {"Picker": "Daritza", "DIA_STR": "2026-01-02", "TIPO": "SIN LOGO", "lineas": 14, "nps": 10}, {"Picker": "Daritza", "DIA_STR": "2026-01-09", "TIPO": "SIN LOGO", "lineas": 31, "nps": 17}, {"Picker": "Daritza", "DIA_STR": "2026-01-12", "TIPO": "SIN LOGO", "lineas": 65, "nps": 29}, {"Picker": "Daritza", "DIA_STR": "2026-01-13", "TIPO": "SIN LOGO", "lineas": 54, "nps": 15}, {"Picker": "Daritza", "DIA_STR": "2026-01-14", "TIPO": "SIN LOGO", "lineas": 46, "nps": 27}, {"Picker": "Daritza", "DIA_STR": "2026-01-15", "TIPO": "SIN LOGO", "lineas": 19, "nps": 15}, {"Picker": "Daritza", "DIA_STR": "2026-01-16", "TIPO": "SIN LOGO", "lineas": 63, "nps": 26}, {"Picker": "Daritza", "DIA_STR": "2026-01-19", "TIPO": "SIN LOGO", "lineas": 46, "nps": 25}, {"Picker": "Daritza", "DIA_STR": "2026-01-20", "TIPO": "SIN LOGO", "lineas": 77, "nps": 44}, {"Picker": "Daritza", "DIA_STR": "2026-01-21", "TIPO": "SIN LOGO", "lineas": 31, "nps": 18}, {"Picker": "Daritza", "DIA_STR": "2026-01-22", "TIPO": "SIN LOGO", "lineas": 41, "nps": 28}, {"Picker": "Daritza", "DIA_STR": "2026-01-23", "TIPO": "SIN LOGO", "lineas": 34, "nps": 19}, {"Picker": "Daritza", "DIA_STR": "2026-01-26", "TIPO": "SIN LOGO", "lineas": 67, "nps": 30}, {"Picker": "Daritza", "DIA_STR": "2026-01-27", "TIPO": "SIN LOGO", "lineas": 41, "nps": 19}, {"Picker": "Daritza", "DIA_STR": "2026-01-28", "TIPO": "SIN LOGO", "lineas": 23, "nps": 15}, {"Picker": "Daritza", "DIA_STR": "2026-01-29", "TIPO": "SIN LOGO", "lineas": 81, "nps": 22}, {"Picker": "Daritza", "DIA_STR": "2026-01-30", "TIPO": "SIN LOGO", "lineas": 18, "nps": 11}, {"Picker": "Daritza", "DIA_STR": "2026-02-02", "TIPO": "SIN LOGO", "lineas": 58, "nps": 29}, {"Picker": "Daritza", "DIA_STR": "2026-02-03", "TIPO": "SIN LOGO", "lineas": 37, "nps": 18}, {"Picker": "Daritza", "DIA_STR": "2026-02-04", "TIPO": "SIN LOGO", "lineas": 39, "nps": 18}, {"Picker": "Daritza", "DIA_STR": "2026-02-05", "TIPO": "SIN LOGO", "lineas": 61, "nps": 22}, {"Picker": "Daritza", "DIA_STR": "2026-02-06", "TIPO": "SIN LOGO", "lineas": 26, "nps": 15}, {"Picker": "Daritza", "DIA_STR": "2026-02-09", "TIPO": "SIN LOGO", "lineas": 40, "nps": 21}, {"Picker": "Daritza", "DIA_STR": "2026-02-10", "TIPO": "SIN LOGO", "lineas": 49, "nps": 23}, {"Picker": "Daritza", "DIA_STR": "2026-02-11", "TIPO": "SIN LOGO", "lineas": 28, "nps": 15}, {"Picker": "Daritza", "DIA_STR": "2026-02-12", "TIPO": "MUESTRA SIMPLE", "lineas": 1, "nps": 1}, {"Picker": "Daritza", "DIA_STR": "2026-02-12", "TIPO": "SIN LOGO", "lineas": 58, "nps": 21}, {"Picker": "Daritza", "DIA_STR": "2026-02-13", "TIPO": "SIN LOGO", "lineas": 32, "nps": 17}, {"Picker": "Daritza", "DIA_STR": "2026-02-16", "TIPO": "SIN LOGO", "lineas": 83, "nps": 21}, {"Picker": "Daritza", "DIA_STR": "2026-02-17", "TIPO": "SIN LOGO", "lineas": 49, "nps": 22}, {"Picker": "Daritza", "DIA_STR": "2026-02-18", "TIPO": "SIN LOGO", "lineas": 65, "nps": 34}, {"Picker": "Daritza", "DIA_STR": "2026-02-19", "TIPO": "PEDIDO MERMA", "lineas": 10, "nps": 6}, {"Picker": "Daritza", "DIA_STR": "2026-02-19", "TIPO": "SIN LOGO", "lineas": 35, "nps": 24}, {"Picker": "Daritza", "DIA_STR": "2026-02-20", "TIPO": "SIN LOGO", "lineas": 19, "nps": 15}, {"Picker": "Daritza", "DIA_STR": "2026-02-23", "TIPO": "SIN LOGO", "lineas": 35, "nps": 15}, {"Picker": "Daritza", "DIA_STR": "2026-02-24", "TIPO": "SIN LOGO", "lineas": 74, "nps": 30}, {"Picker": "Daritza", "DIA_STR": "2026-02-25", "TIPO": "CON LOGO", "lineas": 26, "nps": 11}, {"Picker": "Daritza", "DIA_STR": "2026-02-25", "TIPO": "SIN LOGO", "lineas": 38, "nps": 15}, {"Picker": "Daritza", "DIA_STR": "2026-02-26", "TIPO": "SIN LOGO", "lineas": 66, "nps": 29}, {"Picker": "Daritza", "DIA_STR": "2026-02-27", "TIPO": "SIN LOGO", "lineas": 37, "nps": 15}, {"Picker": "Daritza", "DIA_STR": "2026-03-02", "TIPO": "SIN LOGO", "lineas": 77, "nps": 33}, {"Picker": "Daritza", "DIA_STR": "2026-03-03", "TIPO": "SIN LOGO", "lineas": 61, "nps": 30}, {"Picker": "Daritza", "DIA_STR": "2026-03-04", "TIPO": "SIN LOGO", "lineas": 47, "nps": 25}, {"Picker": "Daritza", "DIA_STR": "2026-03-05", "TIPO": "SIN LOGO", "lineas": 64, "nps": 24}, {"Picker": "Daritza", "DIA_STR": "2026-03-06", "TIPO": "SIN LOGO", "lineas": 173, "nps": 36}, {"Picker": "Daritza", "DIA_STR": "2026-03-09", "TIPO": "CON LOGO", "lineas": 13, "nps": 10}, {"Picker": "Daritza", "DIA_STR": "2026-03-09", "TIPO": "SIN LOGO", "lineas": 115, "nps": 35}, {"Picker": "Daritza", "DIA_STR": "2026-03-10", "TIPO": "SIN LOGO", "lineas": 55, "nps": 31}, {"Picker": "Daritza", "DIA_STR": "2026-03-11", "TIPO": "SIN LOGO", "lineas": 52, "nps": 25}, {"Picker": "Daritza", "DIA_STR": "2026-03-12", "TIPO": "SIN LOGO", "lineas": 51, "nps": 31}, {"Picker": "Daritza", "DIA_STR": "2026-03-13", "TIPO": "SIN LOGO", "lineas": 32, "nps": 13}, {"Picker": "Daritza", "DIA_STR": "2026-03-16", "TIPO": "SIN LOGO", "lineas": 61, "nps": 29}, {"Picker": "Daritza", "DIA_STR": "2026-03-17", "TIPO": "SIN LOGO", "lineas": 92, "nps": 46}, {"Picker": "Daritza", "DIA_STR": "2026-03-18", "TIPO": "SIN LOGO", "lineas": 72, "nps": 32}, {"Picker": "Daritza", "DIA_STR": "2026-03-19", "TIPO": "SIN LOGO", "lineas": 44, "nps": 27}, {"Picker": "Daritza", "DIA_STR": "2026-03-20", "TIPO": "SIN LOGO", "lineas": 39, "nps": 23}, {"Picker": "Daritza", "DIA_STR": "2026-03-23", "TIPO": "SIN LOGO", "lineas": 93, "nps": 56}, {"Picker": "Daritza", "DIA_STR": "2026-03-24", "TIPO": "SIN LOGO", "lineas": 38, "nps": 21}, {"Picker": "Daritza", "DIA_STR": "2026-03-25", "TIPO": "SIN LOGO", "lineas": 50, "nps": 24}, {"Picker": "Daritza", "DIA_STR": "2026-03-26", "TIPO": "SIN LOGO", "lineas": 226, "nps": 36}, {"Picker": "Daritza", "DIA_STR": "2026-03-27", "TIPO": "SIN LOGO", "lineas": 22, "nps": 9}, {"Picker": "Daritza", "DIA_STR": "2026-03-30", "TIPO": "SIN LOGO", "lineas": 178, "nps": 22}, {"Picker": "Daritza", "DIA_STR": "2026-03-31", "TIPO": "SIN LOGO", "lineas": 30, "nps": 16}, {"Picker": "Daritza", "DIA_STR": "2026-04-01", "TIPO": "SIN LOGO", "lineas": 43, "nps": 25}, {"Picker": "Daritza", "DIA_STR": "2026-04-02", "TIPO": "SIN LOGO", "lineas": 133, "nps": 22}, {"Picker": "Daritza", "DIA_STR": "2026-04-06", "TIPO": "SIN LOGO", "lineas": 144, "nps": 24}, {"Picker": "Daritza", "DIA_STR": "2026-04-07", "TIPO": "SIN LOGO", "lineas": 43, "nps": 24}, {"Picker": "Daritza", "DIA_STR": "2026-04-08", "TIPO": "SIN LOGO", "lineas": 61, "nps": 28}, {"Picker": "Daritza", "DIA_STR": "2026-04-09", "TIPO": "SIN LOGO", "lineas": 53, "nps": 29}, {"Picker": "Daritza", "DIA_STR": "2026-04-10", "TIPO": "SIN LOGO", "lineas": 33, "nps": 22}, {"Picker": "Daritza", "DIA_STR": "2026-04-13", "TIPO": "CON LOGO", "lineas": 20, "nps": 11}, {"Picker": "Daritza", "DIA_STR": "2026-04-13", "TIPO": "SIN LOGO", "lineas": 37, "nps": 23}, {"Picker": "Daritza", "DIA_STR": "2026-04-14", "TIPO": "SIN LOGO", "lineas": 48, "nps": 31}, {"Picker": "Daritza", "DIA_STR": "2026-04-15", "TIPO": "SIN LOGO", "lineas": 75, "nps": 22}, {"Picker": "Daritza", "DIA_STR": "2026-04-16", "TIPO": "SIN LOGO", "lineas": 57, "nps": 20}, {"Picker": "Daritza", "DIA_STR": "2026-04-17", "TIPO": "SIN LOGO", "lineas": 14, "nps": 7}, {"Picker": "Daritza", "DIA_STR": "2026-04-20", "TIPO": "SIN LOGO", "lineas": 87, "nps": 28}, {"Picker": "Daritza", "DIA_STR": "2026-04-21", "TIPO": "SIN LOGO", "lineas": 64, "nps": 33}, {"Picker": "Daritza", "DIA_STR": "2026-04-22", "TIPO": "SIN LOGO", "lineas": 95, "nps": 29}, {"Picker": "Daritza", "DIA_STR": "2026-04-23", "TIPO": "SIN LOGO", "lineas": 58, "nps": 30}, {"Picker": "Daritza", "DIA_STR": "2026-04-24", "TIPO": "PEDIDO MERMA", "lineas": 25, "nps": 2}, {"Picker": "Daritza", "DIA_STR": "2026-04-24", "TIPO": "SIN LOGO", "lineas": 55, "nps": 24}, {"Picker": "Daritza", "DIA_STR": "2026-04-27", "TIPO": "SIN LOGO", "lineas": 67, "nps": 33}, {"Picker": "Daritza", "DIA_STR": "2026-04-28", "TIPO": "CON LOGO", "lineas": 2, "nps": 1}, {"Picker": "Daritza", "DIA_STR": "2026-04-28", "TIPO": "SIN LOGO", "lineas": 15, "nps": 8}, {"Picker": "Daritza", "DIA_STR": "2026-04-29", "TIPO": "CON LOGO", "lineas": 34, "nps": 17}, {"Picker": "Daritza", "DIA_STR": "2026-04-29", "TIPO": "SIN LOGO", "lineas": 43, "nps": 19}, {"Picker": "Daritza", "DIA_STR": "2026-04-30", "TIPO": "SIN LOGO", "lineas": 70, "nps": 28}, {"Picker": "Daritza", "DIA_STR": "2026-05-04", "TIPO": "SIN LOGO", "lineas": 42, "nps": 22}, {"Picker": "Daritza", "DIA_STR": "2026-05-05", "TIPO": "SIN LOGO", "lineas": 61, "nps": 30}, {"Picker": "Daritza", "DIA_STR": "2026-05-06", "TIPO": "SIN LOGO", "lineas": 33, "nps": 24}, {"Picker": "Daritza", "DIA_STR": "2026-05-07", "TIPO": "SIN LOGO", "lineas": 21, "nps": 16}, {"Picker": "Daritza", "DIA_STR": "2026-05-08", "TIPO": "SIN LOGO", "lineas": 41, "nps": 14}, {"Picker": "Daritza", "DIA_STR": "2026-05-12", "TIPO": "SIN LOGO", "lineas": 84, "nps": 31}, {"Picker": "Daritza", "DIA_STR": "2026-05-13", "TIPO": "SIN LOGO", "lineas": 25, "nps": 17}, {"Picker": "Daritza", "DIA_STR": "2026-05-14", "TIPO": "SIN LOGO", "lineas": 29, "nps": 13}, {"Picker": "Daritza", "DIA_STR": "2026-05-15", "TIPO": "SIN LOGO", "lineas": 24, "nps": 15}, {"Picker": "Daritza", "DIA_STR": "2026-05-18", "TIPO": "SIN LOGO", "lineas": 45, "nps": 25}, {"Picker": "Daritza", "DIA_STR": "2026-05-19", "TIPO": "SIN LOGO", "lineas": 52, "nps": 26}, {"Picker": "Daritza", "DIA_STR": "2026-05-20", "TIPO": "SIN LOGO", "lineas": 69, "nps": 30}, {"Picker": "Daritza", "DIA_STR": "2026-05-22", "TIPO": "SIN LOGO", "lineas": 66, "nps": 26}, {"Picker": "Daritza", "DIA_STR": "2026-05-25", "TIPO": "SIN LOGO", "lineas": 130, "nps": 8}, {"Picker": "Hector", "DIA_STR": "2026-01-02", "TIPO": "CON LOGO", "lineas": 28, "nps": 12}, {"Picker": "Isa", "DIA_STR": "2026-05-11", "TIPO": "SIN LOGO", "lineas": 63, "nps": 36}, {"Picker": "Isa", "DIA_STR": "2026-05-25", "TIPO": "CON LOGO", "lineas": 90, "nps": 34}, {"Picker": "Joaquin", "DIA_STR": "2026-01-09", "TIPO": "CON LOGO", "lineas": 16, "nps": 10}, {"Picker": "Joaquin", "DIA_STR": "2026-01-12", "TIPO": "CON LOGO", "lineas": 49, "nps": 16}, {"Picker": "Jorge", "DIA_STR": "2026-04-15", "TIPO": "SIN LOGO", "lineas": 1, "nps": 1}, {"Picker": "Lili", "DIA_STR": "2026-02-17", "TIPO": "CON LOGO", "lineas": 52, "nps": 19}, {"Picker": "Lili", "DIA_STR": "2026-03-09", "TIPO": "CON LOGO", "lineas": 46, "nps": 17}, {"Picker": "Lili", "DIA_STR": "2026-04-16", "TIPO": "CON LOGO", "lineas": 43, "nps": 17}, {"Picker": "Maca", "DIA_STR": "2026-03-13", "TIPO": "SIN LOGO", "lineas": 21, "nps": 6}, {"Picker": "Mari", "DIA_STR": "2026-01-12", "TIPO": "CON LOGO", "lineas": 17, "nps": 8}, {"Picker": "Mari", "DIA_STR": "2026-01-13", "TIPO": "CON LOGO", "lineas": 49, "nps": 29}, {"Picker": "Mari", "DIA_STR": "2026-01-14", "TIPO": "CON LOGO", "lineas": 38, "nps": 18}, {"Picker": "Mari", "DIA_STR": "2026-01-15", "TIPO": "CON LOGO", "lineas": 45, "nps": 19}, {"Picker": "Mari", "DIA_STR": "2026-01-16", "TIPO": "CON LOGO", "lineas": 22, "nps": 11}, {"Picker": "Mari", "DIA_STR": "2026-01-19", "TIPO": "CON LOGO", "lineas": 125, "nps": 47}, {"Picker": "Mari", "DIA_STR": "2026-01-20", "TIPO": "CON LOGO", "lineas": 21, "nps": 12}, {"Picker": "Mari", "DIA_STR": "2026-01-21", "TIPO": "CON LOGO", "lineas": 72, "nps": 28}, {"Picker": "Mari", "DIA_STR": "2026-01-22", "TIPO": "CON LOGO", "lineas": 30, "nps": 19}, {"Picker": "Mari", "DIA_STR": "2026-01-23", "TIPO": "CON LOGO", "lineas": 39, "nps": 17}, {"Picker": "Mari", "DIA_STR": "2026-01-26", "TIPO": "CON LOGO", "lineas": 57, "nps": 25}, {"Picker": "Mari", "DIA_STR": "2026-01-27", "TIPO": "CON LOGO", "lineas": 58, "nps": 26}, {"Picker": "Mari", "DIA_STR": "2026-01-28", "TIPO": "CON LOGO", "lineas": 76, "nps": 22}, {"Picker": "Mari", "DIA_STR": "2026-01-29", "TIPO": "CON LOGO", "lineas": 83, "nps": 23}, {"Picker": "Mari", "DIA_STR": "2026-01-30", "TIPO": "CON LOGO", "lineas": 14, "nps": 7}, {"Picker": "Mari", "DIA_STR": "2026-02-02", "TIPO": "CON LOGO", "lineas": 78, "nps": 28}, {"Picker": "Mari", "DIA_STR": "2026-02-03", "TIPO": "CON LOGO", "lineas": 14, "nps": 9}, {"Picker": "Mari", "DIA_STR": "2026-02-03", "TIPO": "PEDIDO MERMA", "lineas": 37, "nps": 14}, {"Picker": "Mari", "DIA_STR": "2026-02-04", "TIPO": "CON LOGO", "lineas": 10, "nps": 6}, {"Picker": "Mari", "DIA_STR": "2026-02-05", "TIPO": "CON LOGO", "lineas": 50, "nps": 28}, {"Picker": "Mari", "DIA_STR": "2026-02-06", "TIPO": "CON LOGO", "lineas": 33, "nps": 18}, {"Picker": "Mari", "DIA_STR": "2026-02-09", "TIPO": "CON LOGO", "lineas": 13, "nps": 7}, {"Picker": "Mari", "DIA_STR": "2026-02-10", "TIPO": "CON LOGO", "lineas": 29, "nps": 6}, {"Picker": "Mari", "DIA_STR": "2026-02-11", "TIPO": "CON LOGO", "lineas": 28, "nps": 13}, {"Picker": "Mari", "DIA_STR": "2026-02-12", "TIPO": "CON LOGO", "lineas": 20, "nps": 8}, {"Picker": "Mari", "DIA_STR": "2026-02-13", "TIPO": "CON LOGO", "lineas": 91, "nps": 28}, {"Picker": "Mari", "DIA_STR": "2026-02-16", "TIPO": "CON LOGO", "lineas": 43, "nps": 22}, {"Picker": "Mari", "DIA_STR": "2026-02-17", "TIPO": "CON LOGO", "lineas": 24, "nps": 8}, {"Picker": "Mari", "DIA_STR": "2026-02-18", "TIPO": "CON LOGO", "lineas": 62, "nps": 28}, {"Picker": "Mari", "DIA_STR": "2026-02-19", "TIPO": "CON LOGO", "lineas": 43, "nps": 27}, {"Picker": "Mari", "DIA_STR": "2026-02-20", "TIPO": "CON LOGO", "lineas": 41, "nps": 23}, {"Picker": "Mari", "DIA_STR": "2026-02-23", "TIPO": "CON LOGO", "lineas": 23, "nps": 11}, {"Picker": "Mari", "DIA_STR": "2026-02-24", "TIPO": "CON LOGO", "lineas": 49, "nps": 24}, {"Picker": "Mari", "DIA_STR": "2026-02-25", "TIPO": "CON LOGO", "lineas": 13, "nps": 8}, {"Picker": "Mari", "DIA_STR": "2026-02-26", "TIPO": "CON LOGO", "lineas": 50, "nps": 30}, {"Picker": "Mari", "DIA_STR": "2026-02-27", "TIPO": "CON LOGO", "lineas": 20, "nps": 14}, {"Picker": "Mari", "DIA_STR": "2026-03-02", "TIPO": "CON LOGO", "lineas": 61, "nps": 19}, {"Picker": "Mari", "DIA_STR": "2026-03-03", "TIPO": "CON LOGO", "lineas": 33, "nps": 14}, {"Picker": "Mari", "DIA_STR": "2026-03-04", "TIPO": "CON LOGO", "lineas": 63, "nps": 18}, {"Picker": "Mari", "DIA_STR": "2026-03-05", "TIPO": "CON LOGO", "lineas": 81, "nps": 27}, {"Picker": "Mari", "DIA_STR": "2026-03-06", "TIPO": "CON LOGO", "lineas": 27, "nps": 6}, {"Picker": "Mari", "DIA_STR": "2026-03-10", "TIPO": "CON LOGO", "lineas": 13, "nps": 8}, {"Picker": "Mari", "DIA_STR": "2026-03-11", "TIPO": "CON LOGO", "lineas": 42, "nps": 22}, {"Picker": "Mari", "DIA_STR": "2026-03-12", "TIPO": "CON LOGO", "lineas": 32, "nps": 14}, {"Picker": "Mari", "DIA_STR": "2026-03-13", "TIPO": "CON LOGO", "lineas": 23, "nps": 13}, {"Picker": "Mari", "DIA_STR": "2026-03-16", "TIPO": "CON LOGO", "lineas": 31, "nps": 17}, {"Picker": "Mari", "DIA_STR": "2026-03-17", "TIPO": "CON LOGO", "lineas": 70, "nps": 32}, {"Picker": "Mari", "DIA_STR": "2026-03-18", "TIPO": "CON LOGO", "lineas": 50, "nps": 24}, {"Picker": "Mari", "DIA_STR": "2026-03-19", "TIPO": "CON LOGO", "lineas": 33, "nps": 18}, {"Picker": "Mari", "DIA_STR": "2026-03-20", "TIPO": "CON LOGO", "lineas": 67, "nps": 30}, {"Picker": "Mari", "DIA_STR": "2026-03-23", "TIPO": "CON LOGO", "lineas": 25, "nps": 13}, {"Picker": "Mari", "DIA_STR": "2026-03-24", "TIPO": "CON LOGO", "lineas": 23, "nps": 10}, {"Picker": "Mari", "DIA_STR": "2026-03-25", "TIPO": "CON LOGO", "lineas": 59, "nps": 31}, {"Picker": "Mari", "DIA_STR": "2026-03-26", "TIPO": "CON LOGO", "lineas": 43, "nps": 16}, {"Picker": "Mari", "DIA_STR": "2026-03-27", "TIPO": "CON LOGO", "lineas": 20, "nps": 10}, {"Picker": "Mari", "DIA_STR": "2026-03-30", "TIPO": "CON LOGO", "lineas": 57, "nps": 16}, {"Picker": "Mari", "DIA_STR": "2026-03-31", "TIPO": "CON LOGO", "lineas": 41, "nps": 25}, {"Picker": "Mari", "DIA_STR": "2026-04-01", "TIPO": "CON LOGO", "lineas": 68, "nps": 27}, {"Picker": "Mari", "DIA_STR": "2026-04-02", "TIPO": "CON LOGO", "lineas": 67, "nps": 30}, {"Picker": "Mari", "DIA_STR": "2026-04-06", "TIPO": "CON LOGO", "lineas": 77, "nps": 31}, {"Picker": "Mari", "DIA_STR": "2026-04-07", "TIPO": "CON LOGO", "lineas": 34, "nps": 14}, {"Picker": "Mari", "DIA_STR": "2026-04-08", "TIPO": "CON LOGO", "lineas": 62, "nps": 31}, {"Picker": "Mari", "DIA_STR": "2026-04-09", "TIPO": "CON LOGO", "lineas": 40, "nps": 20}, {"Picker": "Mari", "DIA_STR": "2026-04-10", "TIPO": "CON LOGO", "lineas": 51, "nps": 15}, {"Picker": "Mari", "DIA_STR": "2026-04-13", "TIPO": "CON LOGO", "lineas": 29, "nps": 17}, {"Picker": "Mari", "DIA_STR": "2026-04-14", "TIPO": "CON LOGO", "lineas": 50, "nps": 19}, {"Picker": "Mari", "DIA_STR": "2026-04-15", "TIPO": "CON LOGO", "lineas": 53, "nps": 24}, {"Picker": "Mari", "DIA_STR": "2026-04-16", "TIPO": "CON LOGO", "lineas": 50, "nps": 28}, {"Picker": "Mari", "DIA_STR": "2026-04-17", "TIPO": "CON LOGO", "lineas": 71, "nps": 30}, {"Picker": "Mari", "DIA_STR": "2026-04-20", "TIPO": "CON LOGO", "lineas": 180, "nps": 37}, {"Picker": "Mari", "DIA_STR": "2026-04-21", "TIPO": "CON LOGO", "lineas": 35, "nps": 20}, {"Picker": "Mari", "DIA_STR": "2026-04-22", "TIPO": "CON LOGO", "lineas": 57, "nps": 26}, {"Picker": "Mari", "DIA_STR": "2026-04-23", "TIPO": "CON LOGO", "lineas": 39, "nps": 24}, {"Picker": "Mari", "DIA_STR": "2026-04-24", "TIPO": "CON LOGO", "lineas": 26, "nps": 12}, {"Picker": "Mari", "DIA_STR": "2026-04-27", "TIPO": "CON LOGO", "lineas": 60, "nps": 31}, {"Picker": "Mari", "DIA_STR": "2026-04-27", "TIPO": "SIN LOGO", "lineas": 4, "nps": 2}, {"Picker": "Mari", "DIA_STR": "2026-04-28", "TIPO": "CON LOGO", "lineas": 4, "nps": 3}, {"Picker": "Mari", "DIA_STR": "2026-04-28", "TIPO": "SIN LOGO", "lineas": 1, "nps": 1}, {"Picker": "Mari", "DIA_STR": "2026-04-30", "TIPO": "CON LOGO", "lineas": 24, "nps": 10}, {"Picker": "Mari", "DIA_STR": "2026-05-07", "TIPO": "CON LOGO", "lineas": 56, "nps": 29}]};
+const TYPE_COLORS  = {"CON LOGO": "#3B82F6", "SIN LOGO": "#10B981", "PEDIDO MERMA": "#F59E0B", "MUESTRA SIMPLE": "#8B5CF6", "SIN DATO": "#9CA3AF"};
+const PICKER_COLORS= ["#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#EC4899", "#06B6D4", "#84CC16"];
+
+const chartMes = new Chart(document.getElementById('chartMes'), {
+  type:'bar',
+  data:{
+    labels:["2026-01", "2026-02", "2026-03", "2026-04", "2026-05"],
+    datasets:[{"label": "CON LOGO", "data": [839, 812, 953, 1186, 809], "backgroundColor": "#3B82F6", "borderRadius": 4}, {"label": "SIN LOGO", "data": [751, 929, 1693, 1304, 785], "backgroundColor": "#10B981", "borderRadius": 4}, {"label": "PEDIDO MERMA", "data": [0, 47, 0, 25, 0], "backgroundColor": "#F59E0B", "borderRadius": 4}, {"label": "MUESTRA SIMPLE", "data": [0, 1, 0, 0, 0], "backgroundColor": "#8B5CF6", "borderRadius": 4}]
+  },
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{labels:{color:'#94A3B8',boxWidth:12}},tooltip:{mode:'index'}},
+    scales:{
+      x:{stacked:true,ticks:{color:'#64748B'},grid:{color:'#1E293B'}},
+      y:{stacked:true,ticks:{color:'#64748B'},grid:{color:'#334155'}}
+    }}
+});
+
+const chartPie = new Chart(document.getElementById('chartPie'), {
+  type:'doughnut',
+  data:{
+    labels:["CON LOGO", "MUESTRA SIMPLE", "PEDIDO MERMA", "SIN LOGO"],
+    datasets:[{data:[4599, 1, 72, 5462],backgroundColor:["#3B82F6", "#8B5CF6", "#F59E0B", "#10B981"],borderWidth:0,hoverOffset:8}]
+  },
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{
+      legend:{position:'bottom',labels:{color:'#94A3B8',boxWidth:12,padding:12}},
+      tooltip:{callbacks:{label:ctx=>' '+ctx.label+': '+ctx.parsed.toLocaleString()+' lineas'}}
+    }}
+});
+
+const DIAS_15 = ["2026-05-04", "2026-05-05", "2026-05-06", "2026-05-07", "2026-05-08", "2026-05-11", "2026-05-12", "2026-05-13", "2026-05-14", "2026-05-15", "2026-05-18", "2026-05-19", "2026-05-20", "2026-05-22", "2026-05-25"];
+const evo15   = [{"label": "Daritza", "data": [14, 31, 65, 54, 46, 19, 63, 46, 77, 31, 41, 34, 67, 41, 23, 81, 18, 58, 37, 39, 61, 26, 40, 49, 28, 59, 32, 83, 49, 65, 45, 19, 35, 74, 64, 66, 37, 77, 61, 47, 64, 173, 128, 55, 52, 51, 32, 61, 92, 72, 44, 39, 93, 38, 50, 226, 22, 178, 30, 43, 133, 144, 43, 61, 53, 33, 57, 48, 75, 57, 14, 87, 64, 95, 58, 80, 67, 17, 77, 70, 42, 61, 33, 21, 41, 0, 84, 25, 29, 24, 45, 52, 69, 66, 130], "borderColor": "#3B82F6", "backgroundColor": "#3B82F633", "tension": 0.3, "fill": false, "pointRadius": 2, "borderWidth": 2}, {"label": "Mari", "data": [0, 0, 17, 49, 38, 45, 22, 125, 21, 72, 30, 39, 57, 58, 76, 83, 14, 78, 51, 10, 50, 33, 13, 29, 28, 20, 91, 43, 24, 62, 43, 41, 23, 49, 13, 50, 20, 61, 33, 63, 81, 27, 0, 13, 42, 32, 23, 31, 70, 50, 33, 67, 25, 23, 59, 43, 20, 57, 41, 68, 67, 77, 34, 62, 40, 51, 29, 50, 53, 50, 71, 180, 35, 57, 39, 26, 64, 5, 0, 24, 0, 0, 0, 56, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "borderColor": "#10B981", "backgroundColor": "#10B98133", "tension": 0.3, "fill": false, "pointRadius": 2, "borderWidth": 2}, {"label": "Cristobal", "data": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 10, 0, 79, 44, 66, 0, 31, 40, 101, 15, 47, 32, 81, 0, 0, 0, 0], "borderColor": "#F59E0B", "backgroundColor": "#F59E0B33", "tension": 0.3, "fill": false, "pointRadius": 2, "borderWidth": 2}, {"label": "Isa", "data": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 63, 0, 0, 0, 0, 0, 0, 0, 0, 90], "borderColor": "#EF4444", "backgroundColor": "#EF444433", "tension": 0.3, "fill": false, "pointRadius": 2, "borderWidth": 2}, {"label": "Lili", "data": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 52, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 46, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 43, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], "borderColor": "#8B5CF6", "backgroundColor": "#8B5CF633", "tension": 0.3, "fill": false, "pointRadius": 2, "borderWidth": 2}, {"label": "Camilo", "data": [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 76, 51, 0], "borderColor": "#EC4899", "backgroundColor": "#EC489933", "tension": 0.3, "fill": false, "pointRadius": 2, "borderWidth": 2}].map(ds => ({
+  ...ds, data: ds.data.slice(-15)
+}));
+const chartDia = new Chart(document.getElementById('chartDia'), {
+  type:'line',
+  data:{labels: DIAS_15, datasets: evo15},
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{labels:{color:'#94A3B8',boxWidth:12}}},
+    scales:{
+      x:{ticks:{color:'#64748B',maxRotation:45,maxTicksLimit:15},grid:{color:'#1E293B'}},
+      y:{ticks:{color:'#64748B'},grid:{color:'#334155'}}
+    }}
+});
+
+function applyFilters() {
+  const mes    = document.getElementById('filterMes').value;
+  const picker = document.getElementById('filterPicker').value;
+  const tipo   = document.getElementById('filterTipo').value;
+
+  let rows = RAW.by_day.filter(r =>
+    (mes    === 'todos' || r.DIA_STR.startsWith(mes)) &&
+    (picker === 'todos' || r.Picker === picker) &&
+    (tipo   === 'todos' || r.TIPO   === tipo)
+  );
+
+  const agg = {};
+  rows.forEach(r => {
+    if(!agg[r.Picker]) agg[r.Picker] = {lineas:0, nps:0, dias:new Set(), tipos:{}};
+    agg[r.Picker].lineas += r.lineas;
+    agg[r.Picker].nps    += r.nps;
+    agg[r.Picker].dias.add(r.DIA_STR);
+    agg[r.Picker].tipos[r.TIPO] = (agg[r.Picker].tipos[r.TIPO]||0) + r.lineas;
+  });
+  const sorted = Object.entries(agg).sort((a,b) => b[1].lineas - a[1].lineas);
+
+  const totL = sorted.reduce((s,[,v])=>s+v.lineas,0);
+  const totN = sorted.reduce((s,[,v])=>s+v.nps,0);
+  document.getElementById('kpi-lineas').textContent = totL.toLocaleString();
+  document.getElementById('kpi-nps').textContent    = totN.toLocaleString();
+  document.getElementById('kpi-pickers').textContent= sorted.length;
+  if(sorted.length) {
+    document.getElementById('kpi-top').textContent     = sorted[0][0];
+    document.getElementById('kpi-top-sub').textContent = sorted[0][1].lineas.toLocaleString()+' lineas';
+  }
+  document.getElementById('filter-info').textContent =
+    (mes!=='todos'||picker!=='todos'||tipo!=='todos') ? 'Filtrado: '+totL.toLocaleString()+' lineas' : '';
+
+  const medals = ['\u{1F947}','\u{1F948}','\u{1F949}'];
+  document.getElementById('ranking-body').innerHTML = sorted.map(([p,v],i) => {
+    const medal = i < 3 ? medals[i] : '#'+(i+1);
+    const prom  = v.dias.size > 0 ? (v.lineas/v.dias.size).toFixed(1) : '0';
+    const pills = Object.entries(v.tipos).sort((a,b)=>b[1]-a[1]).map(([t,c]) => {
+      const col = TYPE_COLORS[t]||'#9CA3AF';
+      return '<span style="background:'+col+'22;color:'+col+';border:1px solid '+col+'55;padding:2px 7px;border-radius:10px;font-size:11px;margin:1px;display:inline-block">'+t+': '+c.toLocaleString()+'</span>';
+    }).join('');
+    return '<tr class="hover-row"><td style="text-align:center;font-size:18px">'+medal+'</td><td><strong>'+p+'</strong></td><td style="text-align:right;color:#3B82F6;font-weight:700">'+v.lineas.toLocaleString()+'</td><td style="text-align:right;color:#10B981;font-weight:700">'+v.nps.toLocaleString()+'</td><td style="text-align:right">'+v.dias.size+'</td><td style="text-align:right;font-weight:600">'+prom+'</td><td>'+pills+'</td></tr>';
+  }).join('');
+
+  const mesSet = mes==='todos' ? RAW.meses : RAW.meses.filter(m=>m.startsWith(mes));
+  const aggMes = {};
+  RAW.by_mes_picker.filter(r =>
+    (mes==='todos'||r.MES.startsWith(mes)) && (picker==='todos'||r.Picker===picker)
+  ).forEach(r => {
+    if(!aggMes[r.Picker]) aggMes[r.Picker] = {};
+    aggMes[r.Picker][r.MES] = (aggMes[r.Picker][r.MES]||0) + r.lineas;
+  });
+
+  document.getElementById('monthly-head').innerHTML = '<tr><th>Picker</th>'+mesSet.map(m=>'<th>'+m+'</th>').join('')+'<th style="text-align:right">Total</th></tr>';
+  document.getElementById('monthly-body').innerHTML = Object.entries(aggMes)
+    .sort((a,b)=>Object.values(b[1]).reduce((s,v)=>s+v,0)-Object.values(a[1]).reduce((s,v)=>s+v,0))
+    .map(([p,mv]) => {
+      const tot = mesSet.reduce((s,m)=>s+(mv[m]||0),0);
+      return '<tr><td><strong>'+p+'</strong></td>'+mesSet.map(m=>'<td style="text-align:right">'+(mv[m]||0).toLocaleString()+'</td>').join('')+'<td style="text-align:right;font-weight:700;color:#3B82F6">'+tot.toLocaleString()+'</td></tr>';
+    }).join('');
+
+  const filtPickers = picker==='todos' ? RAW.top_pickers : [picker];
+  const diasBase = mes==='todos' ? RAW.dias.slice(-15) : RAW.dias.filter(d=>d.startsWith(mes));
+  const diasFilt = diasBase;
+  const aggDia = {};
+  RAW.by_day.filter(r =>
+    diasFilt.includes(r.DIA_STR) &&
+    (tipo==='todos'||r.TIPO===tipo) &&
+    filtPickers.includes(r.Picker)
+  ).forEach(r => {
+    if(!aggDia[r.Picker]) aggDia[r.Picker] = {};
+    aggDia[r.Picker][r.DIA_STR] = (aggDia[r.Picker][r.DIA_STR]||0) + r.lineas;
+  });
+  chartDia.data.labels = diasFilt;
+  chartDia.data.datasets = filtPickers.filter(p=>aggDia[p]).map((p,i) => ({
+    label:p, data:diasFilt.map(d=>(aggDia[p]&&aggDia[p][d])||0),
+    borderColor:PICKER_COLORS[i%PICKER_COLORS.length],
+    backgroundColor:PICKER_COLORS[i%PICKER_COLORS.length]+'33',
+    tension:0.3, fill:false, pointRadius:2, borderWidth:2
+  }));
+  chartDia.update();
+
+  const aggMesGl = {};
+  RAW.by_mes_global.filter(r =>
+    (mes==='todos'||r.MES.startsWith(mes)) && (tipo==='todos'||r.TIPO===tipo)
+  ).forEach(r => {
+    if(!aggMesGl[r.TIPO]) aggMesGl[r.TIPO]={};
+    aggMesGl[r.TIPO][r.MES]=(aggMesGl[r.TIPO][r.MES]||0)+r.lineas;
+  });
+  chartMes.data.labels = mesSet;
+  chartMes.data.datasets = ['CON LOGO','SIN LOGO','PEDIDO MERMA','MUESTRA SIMPLE']
+    .filter(t=>aggMesGl[t])
+    .map(t => ({
+      label:t, data:mesSet.map(m=>(aggMesGl[t]&&aggMesGl[t][m])||0),
+      backgroundColor:TYPE_COLORS[t], borderRadius:4
+    }));
+  chartMes.update();
+}
+</script>
+</body>
+</html>
