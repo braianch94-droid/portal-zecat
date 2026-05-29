@@ -840,12 +840,13 @@ async function generarListaHoy(fechaStr) {
   const f1 = stock.filter(s=>activo(s)&&(s.stock_web||0)>0&&(s.stock_web||0)<300).sort((a,b)=>(b.ddp||0)-(a.ddp||0));
   const f2 = stock.filter(s=>activo(s)&&(s.stock_web||0)>=300).sort((a,b)=>(b.ddp||0)-(a.ddp||0));
   let disp = [...f1.filter(s=>!excluidos.has(s.articulo)),...f2.filter(s=>!excluidos.has(s.articulo))];
-  if (disp.length < 20) {
+  // Solo reiniciar el ciclo cuando NO quedan más ítems (no cuando quedan < 20)
+  if (disp.length === 0) {
     disp = [...f1,...f2];
     const nuevoNum = ciclo.ciclo_numero + 1;
     await idbPut('ciclo',{...ciclo,ciclo_numero:nuevoNum,ya_recomendados:[],fecha_inicio:fechaStr});
   }
-  const sel = disp.slice(0,20);
+  const sel = disp.slice(0, Math.min(20, disp.length));
   const items = sel.map(s=>({articulo:s.articulo,sku:s.sku||'',familia:familiaLimpia(s.familia),stockWeb:s.stock_web||0,ddpVal:Math.round((s.stock_web||0)*(s.ddp||0)*100)/100,ddp:s.ddp||0,tier:(s.stock_web||0)<50?1:(s.stock_web||0)<100?2:(s.stock_web||0)<200?3:4}));
   await idbPut('recomendaciones',{fecha:fechaStr,items});
   const cicloFresh = await getCiclo();
