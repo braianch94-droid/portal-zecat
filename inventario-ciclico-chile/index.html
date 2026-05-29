@@ -584,6 +584,9 @@ th.center, td.center { text-align: center; }
        SECCIÓN: DASHBOARD
        ============================================================ -->
   <div id="section-dashboard" class="section">
+    <div style="display:flex; justify-content:flex-end; margin-bottom:8px;">
+      <button class="btn btn-sm btn-success" onclick="exportarDashboardExcel()" title="Exportar todos los conteos a Excel">⬇️ Exportar Excel</button>
+    </div>
     <div id="dashboard-content">
       <div class="section-loading"><span class="spinner"></span> Cargando dashboard...</div>
     </div>
@@ -593,6 +596,9 @@ th.center, td.center { text-align: center; }
        SECCIÓN: HOY
        ============================================================ -->
   <div id="section-hoy" class="section">
+    <div style="display:flex; justify-content:flex-end; margin-bottom:8px;">
+      <button class="btn btn-sm btn-success" onclick="exportarHoyExcel()" title="Exportar lista de hoy a Excel">⬇️ Exportar Excel</button>
+    </div>
     <div id="hoy-content">
       <div class="section-loading"><span class="spinner"></span> Cargando lista del día...</div>
     </div>
@@ -1043,9 +1049,6 @@ function renderDashboard(d) {
   const exactColor = exactitudColor(k.exactitud_pct);
 
   let html = `
-  <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
-    <button class="btn btn-sm" onclick="exportarDashboardExcel()" style="background:rgba(74,222,128,.12); color:var(--green);" title="Exportar todos los conteos a Excel">⬇️ Exportar Excel</button>
-  </div>
   <!-- KPIs fila 1 -->
   <div class="kpi-grid kpi-grid-5">
     <div class="kpi-card accent-blue">
@@ -1455,7 +1458,6 @@ function renderHoy(d) {
         ? '<span class="badge badge-green">Día laborable</span>'
         : '<span class="badge badge-gray">No laborable</span>'}
       <button class="btn btn-sm" onclick="loadHoy()">↻ Actualizar</button>
-      <button class="btn btn-sm" onclick="exportarHoyExcel()" style="background:rgba(74,222,128,.12); color:var(--green);" title="Exportar lista de hoy a Excel">⬇️ Excel</button>
     </div>
   </div>`;
 
