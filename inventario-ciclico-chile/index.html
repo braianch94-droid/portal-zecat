@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Inventario Cíclico — Zecat</title>
+<title>Inventario Cíclico — Zecat Chile 🇨🇱</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <style>
@@ -743,7 +743,7 @@ th.center, td.center { text-align: center; }
 /* ================================================================
    LOCAL DB — IndexedDB (sin backend, datos persistidos en el browser)
    ================================================================ */
-const DB_NAME = 'ciclico_arg_v1';
+const DB_NAME = 'ciclico_cl_v1';
 const DB_VERSION = 1;
 
 function openDB() {
@@ -761,6 +761,8 @@ function openDB() {
         db.createObjectStore('ciclo', {keyPath:'id'});
       if (!db.objectStoreNames.contains('recomendaciones'))
         db.createObjectStore('recomendaciones', {keyPath:'fecha'});
+      if (!db.objectStoreNames.contains('prioridad'))
+        db.createObjectStore('prioridad', {keyPath:'articulo'});
     };
     req.onsuccess = e => resolve(e.target.result);
     req.onerror   = e => reject(e.target.error);
@@ -801,7 +803,7 @@ async function idbBulkPut(st, items) {
 
 /* -- Business logic -- */
 const MESES_ES_ARR = ['','enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-const FERIADOS_SET = new Set(['2025-01-01','2025-03-03','2025-03-04','2025-03-24','2025-04-02','2025-04-18','2025-05-01','2025-05-25','2025-06-16','2025-06-20','2025-07-09','2025-08-18','2025-10-13','2025-11-24','2025-12-08','2025-12-25','2026-01-01','2026-02-16','2026-02-17','2026-03-24','2026-04-02','2026-04-03','2026-05-01','2026-05-25','2026-06-15','2026-06-20','2026-07-09','2026-08-17','2026-10-12','2026-11-23','2026-12-08','2026-12-25']);
+const FERIADOS_SET = new Set(['2025-01-01','2025-04-18','2025-04-19','2025-05-01','2025-05-21','2025-06-29','2025-07-16','2025-08-15','2025-09-18','2025-09-19','2025-10-12','2025-10-31','2025-11-01','2025-12-08','2025-12-25','2026-01-01','2026-04-03','2026-04-04','2026-05-01','2026-05-21','2026-06-29','2026-07-16','2026-08-15','2026-09-18','2026-09-19','2026-10-12','2026-10-31','2026-11-01','2026-12-08','2026-12-25']);
 function familiaLimpia(f) { return (f||'').replace(/^[A-Z]-\d+ - /,''); }
 function calcularCampos(sistema,fisico,ms,ddp) {
   const total=(fisico||0)+(ms||0), difCont=total-(sistema||0);
@@ -829,21 +831,26 @@ async function generarListaHoy(fechaStr) {
   const contadosCiclo = new Set(conteos.filter(c=>c.dia>=fechaInicio).map(c=>c.articulo));
   const excluidos = new Set([...yaRec,...contadosCiclo]);
   const stock = await idbGetAll('stock');
-  const activo = s => s.situacion && s.situacion.toLowerCase().includes('activo en web') && !s.situacion.toLowerCase().includes('inactivo');
-  const f1 = stock.filter(s=>activo(s)&&(s.stock_web||0)>0&&(s.stock_web||0)<300).sort((a,b)=>(b.ddp||0)-(a.ddp||0));
-  const f2 = stock.filter(s=>activo(s)&&(s.stock_web||0)>=300).sort((a,b)=>(b.ddp||0)-(a.ddp||0));
-  let disp = [...f1.filter(s=>!excluidos.has(s.articulo)),...f2.filter(s=>!excluidos.has(s.articulo))];
-  if (disp.length < 20) {
-    disp = [...f1,...f2];
-    const nuevoNum = ciclo.ciclo_numero + 1;
-    await idbPut('ciclo',{...ciclo,ciclo_numero:nuevoNum,ya_recomendados:[],fecha_inicio:fechaStr});
+  const stockMap = {}; stock.forEach(s=>{ stockMap[s.articulo.trim()]=s; });
+  // CL: Priority list first
+  const prioridad = await idbGetAll('prioridad');
+  const priDisp = prioridad.filter(p=>!excluidos.has(p.articulo)).sort((a,b)=>a.orden-b.orden);
+  let sel, resetCiclo = false;
+  if (priDisp.length > 0) {
+    sel = priDisp.slice(0,20).map(p=>{ const s=stockMap[p.articulo.trim()]||{}; return {articulo:p.articulo,sku:s.sku||'',familia:familiaLimpia(s.familia||''),stockWeb:s.stock_web||0,ddpVal:Math.round((s.stock_web||0)*(s.ddp||0)*100)/100,ddp:s.ddp||0,tier:(s.stock_web||0)<30?1:(s.stock_web||0)<60?2:(s.stock_web||0)<100?3:4}; });
+  } else {
+    // DDP normal: stock 1-150
+    const activo=s=>s.situacion&&s.situacion.toLowerCase().includes('activo en web')&&!s.situacion.toLowerCase().includes('inactivo');
+    const elegibles=stock.filter(s=>activo(s)&&(s.stock_web||0)>1&&(s.stock_web||0)<150).sort((a,b)=>(b.ddp||0)-(a.ddp||0));
+    let disp=elegibles.filter(s=>!excluidos.has(s.articulo));
+    if (disp.length<20){ disp=[...elegibles]; resetCiclo=true; }
+    if (resetCiclo){ const n=ciclo.ciclo_numero+1; await idbPut('ciclo',{...ciclo,ciclo_numero:n,ya_recomendados:[],fecha_inicio:fechaStr}); }
+    sel=disp.slice(0,20).map(s=>({articulo:s.articulo,sku:s.sku||'',familia:familiaLimpia(s.familia),stockWeb:s.stock_web||0,ddpVal:Math.round((s.stock_web||0)*(s.ddp||0)*100)/100,ddp:s.ddp||0,tier:(s.stock_web||0)<30?1:(s.stock_web||0)<60?2:(s.stock_web||0)<100?3:4}));
   }
-  const sel = disp.slice(0,20);
-  const items = sel.map(s=>({articulo:s.articulo,sku:s.sku||'',familia:familiaLimpia(s.familia),stockWeb:s.stock_web||0,ddpVal:Math.round((s.stock_web||0)*(s.ddp||0)*100)/100,ddp:s.ddp||0,tier:(s.stock_web||0)<50?1:(s.stock_web||0)<100?2:(s.stock_web||0)<200?3:4}));
-  await idbPut('recomendaciones',{fecha:fechaStr,items});
-  const cicloFresh = await getCiclo();
-  await idbPut('ciclo',{...cicloFresh,ya_recomendados:[...new Set([...(cicloFresh.ya_recomendados||[]),...items.map(i=>i.articulo)])]});
-  return items;
+  await idbPut('recomendaciones',{fecha:fechaStr,items:sel});
+  const cicloFresh=await getCiclo();
+  await idbPut('ciclo',{...cicloFresh,ya_recomendados:[...new Set([...(cicloFresh.ya_recomendados||[]),...sel.map(i=>i.articulo)])]});
+  return sel;
 }
 
 async function apiGetHoy() {
@@ -969,9 +976,9 @@ async function apiUploadStock(file) {
 }
 
 async function exportarDatos() {
-  const [conteos,stock,ciclo,recs]=await Promise.all([idbGetAll('conteos'),idbGetAll('stock'),getCiclo(),idbGetAll('recomendaciones')]);
-  const blob=new Blob([JSON.stringify({conteos,stock,ciclo,recomendaciones:recs,exportado:new Date().toISOString()})],{type:'application/json'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`ciclico_arg_backup_${isoHoyStr()}.json`; a.click();
+  const [conteos,stock,ciclo,recs,pri]=await Promise.all([idbGetAll('conteos'),idbGetAll('stock'),getCiclo(),idbGetAll('recomendaciones'),idbGetAll('prioridad')]);
+  const blob=new Blob([JSON.stringify({conteos,stock,ciclo,recomendaciones:recs,prioridad:pri,exportado:new Date().toISOString()})],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`ciclico_cl_backup_${isoHoyStr()}.json`; a.click();
 }
 async function importarDatos(file) {
   const data=JSON.parse(await file.text());
@@ -979,6 +986,7 @@ async function importarDatos(file) {
   if (data.stock){await idbClear('stock');await idbBulkPut('stock',data.stock);}
   if (data.ciclo) await idbPut('ciclo',data.ciclo);
   if (data.recomendaciones){await idbClear('recomendaciones');await idbBulkPut('recomendaciones',data.recomendaciones);}
+  if (data.prioridad){await idbClear('prioridad');await idbBulkPut('prioridad',data.prioridad);}
   alert('✅ Datos importados correctamente. Recargá la página para ver los cambios.');
 }
 
@@ -1134,6 +1142,7 @@ function renderDashboard(d) {
     </div>
   </div>
 
+  <!-- Fila 5: Top faltantes / sobrantes -->
   <div class="charts-grid-2" style="margin-top:16px;">
     <div class="chart-card">
       <h3>📉 Top 10 Faltantes — mayor diferencia negativa (unidades)</h3>
@@ -1145,6 +1154,7 @@ function renderDashboard(d) {
     </div>
   </div>
 
+  <!-- Fila 6: Reincidentes + Motivos -->
   <div class="charts-grid-2" style="margin-top:16px;">
     <div class="chart-card">
       <h3>🔁 Artículos problemáticos — múltiples conteos con diferencia</h3>
@@ -1152,9 +1162,7 @@ function renderDashboard(d) {
     </div>
     <div class="chart-card">
       <h3>📋 Motivos de diferencia</h3>
-      ${d.motivos?.length
-        ? `<canvas id="chart-motivos" style="max-height:220px;"></canvas>`
-        : `<div class="empty-state"><div class="icon">📋</div>Sin datos de motivos</div>`}
+      ${d.motivos?.length ? `<canvas id="chart-motivos" style="max-height:220px;"></canvas>` : `<div class="empty-state"><div class="icon">📋</div>Sin datos de motivos</div>`}
     </div>
   </div>
 
@@ -1174,59 +1182,6 @@ function renderDashboard(d) {
     buildChartImpactoFamilia(d.familias);
     buildChartActividadDiaria(d.diario);
     buildChartMotivos(d.motivos);
-  });
-}
-
-function renderTablaTopUnidades(items, tipo) {
-  if (!items?.length) return '<div class="empty-state"><div class="icon">📊</div>Sin datos</div>';
-  const clr = tipo === 'neg' ? '#dc2626' : '#16a34a';
-  const rows = items.map(i => `
-    <tr>
-      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${i.articulo}">${i.articulo}</td>
-      <td class="text-muted" style="font-size:11px;">${i.familia||'—'}</td>
-      <td class="right" style="color:${clr};font-weight:700;">${i.dif_cont>=0?'+':''}${fmt(i.dif_cont)}</td>
-      <td class="right" style="font-size:11px;color:${clr};">${fmtU(i.dif_ddp)}</td>
-      <td class="text-muted" style="font-size:11px;">${fmtFecha(i.dia)}</td>
-    </tr>`).join('');
-  return `<table><thead><tr><th>Artículo</th><th>Familia</th><th class="right">Dif Unid.</th><th class="right">Dif U$</th><th>Último conteo</th></tr></thead><tbody>${rows}</tbody></table>`;
-}
-
-function renderTablaReincidentes(items) {
-  if (!items?.length) return '<div class="empty-state"><div class="icon">✅</div>Sin artículos problemáticos</div>';
-  const rows = items.map(i => `
-    <tr>
-      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${i.articulo}">${i.articulo}</td>
-      <td class="text-muted" style="font-size:11px;">${i.familia||'—'}</td>
-      <td class="center"><span style="background:#dc2626;color:#fff;border-radius:12px;padding:2px 8px;font-size:12px;font-weight:700;">${i.con_dif}x</span></td>
-      <td class="center text-muted">${i.total}</td>
-      <td class="right" style="font-size:11px;color:#dc2626;">${fmtU(i.impacto_acum)}</td>
-    </tr>`).join('');
-  return `<table><thead><tr><th>Artículo</th><th>Familia</th><th class="center">Veces c/dif</th><th class="center">Total conteos</th><th class="right">Impacto acum U$</th></tr></thead><tbody>${rows}</tbody></table>`;
-}
-
-function buildChartMotivos(motivos) {
-  const ctx = document.getElementById('chart-motivos');
-  if (!ctx || !motivos?.length) return;
-  const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
-  const tickClr = isDark ? '#8b949e' : '#636c76';
-  const gridClr = isDark ? '#30363d' : '#d0d7de';
-  new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: motivos.map(m => m.motivo),
-      datasets: [{ data: motivos.map(m => m.count),
-        backgroundColor: ['#dc2626','#f97316','#eab308','#8b5cf6','#06b6d4','#10b981'],
-        borderRadius: 6 }]
-    },
-    options: {
-      indexAxis: 'y', responsive: true,
-      plugins: { legend: { display: false },
-        tooltip: { callbacks: { label: ctx => ` ${ctx.raw} conteos con diferencia` } } },
-      scales: {
-        x: { beginAtZero: true, ticks: { color: tickClr, stepSize: 1 }, grid: { color: gridClr } },
-        y: { ticks: { color: tickClr }, grid: { display: false } }
-      }
-    }
   });
 }
 
@@ -1418,22 +1373,63 @@ function buildChartActividadDiaria(diario) {
   });
 }
 
+function renderTablaTopUnidades(items, tipo) {
+  if (!items?.length) return '<div class="empty-state"><div class="icon">📊</div>Sin datos</div>';
+  const color = tipo === 'neg' ? 'var(--red)' : 'var(--green)';
+  const rows = items.map(i => `
+    <tr>
+      <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${i.articulo}">${i.articulo}</td>
+      <td style="color:${color};font-weight:600;text-align:right;">${i.diff_unidades > 0 ? '+' : ''}${fmt(i.diff_unidades)}</td>
+      <td style="text-align:right;">${fmt(i.stock_sistema ?? 0)}</td>
+      <td style="color:var(--text-muted);font-size:11px;">${i.familia || '—'}</td>
+    </tr>`).join('');
+  return `<table class="tbl"><thead><tr><th>Artículo</th><th style="text-align:right;">Dif. Uds</th><th style="text-align:right;">Sistema</th><th>Familia</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function renderTablaReincidentes(items) {
+  if (!items?.length) return '<div class="empty-state"><div class="icon">✅</div>Sin reincidencias</div>';
+  const rows = items.map(i => `
+    <tr>
+      <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${i.articulo}">${i.articulo}</td>
+      <td style="text-align:center;font-weight:600;color:var(--orange);">${i.conteos_con_diff}</td>
+      <td style="text-align:right;color:var(--red);">${i.diff_total > 0 ? '+' : ''}${fmt(i.diff_total)}</td>
+      <td style="color:var(--text-muted);font-size:11px;">${i.familia || '—'}</td>
+    </tr>`).join('');
+  return `<table class="tbl"><thead><tr><th>Artículo</th><th style="text-align:center;">Veces</th><th style="text-align:right;">Dif. Total</th><th>Familia</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+function buildChartMotivos(motivos) {
+  const ctx = document.getElementById('chart-motivos');
+  if (!ctx || !motivos?.length) return;
+  const colors = ['rgba(96,165,250,.85)','rgba(74,222,128,.85)','rgba(251,146,60,.85)',
+                  'rgba(249,113,113,.85)','rgba(192,132,252,.85)','rgba(250,204,21,.85)'];
+  chartObjs['motivos'] = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: motivos.map(m => m.motivo || 'Sin motivo'),
+      datasets: [{ data: motivos.map(m => m.cantidad),
+        backgroundColor: colors.slice(0, motivos.length),
+        borderWidth: 1, borderColor: 'var(--card)' }]
+    },
+    options: { responsive: true, plugins: {
+      legend: { position: 'right', labels: { color: 'var(--text)', font: { size: 11 }, boxWidth: 14 } },
+      tooltip: { callbacks: { label: ctx2 => ` ${ctx2.label}: ${fmt(ctx2.raw)}` } }
+    }}
+  });
+}
+
 /* ================================================================
    SECCIÓN HOY
    ================================================================ */
-async function loadHoy(preserveContent) {
+async function loadHoy() {
   const el = document.getElementById('hoy-content');
-  if (!preserveContent) {
-    el.innerHTML = `<div class="section-loading"><span class="spinner"></span> Cargando lista del día...</div>`;
-  }
+  el.innerHTML = `<div class="section-loading"><span class="spinner"></span> Cargando lista del día...</div>`;
   try {
-    // Cache-busting: timestamp para evitar respuesta cacheada del browser
     const d = await apiGetHoy();
-    console.log('[HOY] API response — contados:', d.items.filter(i=>i.contado).length, '/', d.items.length,
-      ' | items[0]:', d.items[0]);
+    console.log('[HOY-CL] contados:', d.items.filter(i=>i.contado).length, '/', d.items.length);
     renderHoy(d);
   } catch(e) {
-    console.error('[HOY] Error al cargar:', e);
+    console.error('[HOY-CL] Error:', e);
     el.innerHTML = `<div class="alert alert-error">Error al cargar: ${e.message}</div>`;
   }
 }
@@ -1524,7 +1520,7 @@ function renderHoy(d) {
       const uvFmt = i.ultima_vez ? fmtFecha(i.ultima_vez) : null;
 
       if (i.contado) {
-        // Fila ya contada — mostrar valores guardados (fisico puede ser 0)
+        // Fila ya contada — mostrar valores guardados
         const fv  = i.fisico_contado != null ? fmt(i.fisico_contado) : '—';
         const dv  = i.fisico_contado != null ? (i.fisico_contado - i.stock_web) : null;
         const difClr = dv == null ? 'color:var(--text-muted)' : dv < 0 ? 'color:#dc2626' : dv > 0 ? 'color:#16a34a' : 'color:var(--text-muted)';
@@ -1555,7 +1551,7 @@ function renderHoy(d) {
             <option value="Sin Identificar">Sin Identificar</option>
           </select>
         </td>`;
-        // Obs pending: muestra fecha último conteo como info referencia
+        // Obs pending: muestra fecha último conteo como placeholder info
         obsCel = `<td>
           <input type="text" class="obs-input" placeholder="Opcional…" maxlength="200"
             style="width:160px;padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--card);color:var(--text);">
@@ -1946,7 +1942,7 @@ function resetForm() {
   document.getElementById('f-ddp').value        = '';
   document.getElementById('f-ddp-unit').value   = '';
   document.getElementById('f-ajustado').value   = 'NO';
-  document.getElementById('f-fecha').value    = isoHoy();
+  document.getElementById('f-fecha').value      = isoHoy();
   document.getElementById('form-titulo').textContent    = 'Nuevo conteo';
   document.getElementById('btn-guardar-txt').textContent = 'Guardar conteo';
   document.getElementById('prev-total').textContent     = '—';

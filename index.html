@@ -433,7 +433,8 @@ iframe {
           <span class="chevron">›</span>
         </div>
         <div class="sec-items">
-          <div class="nav-item" data-module="ciclico" data-tab="" onclick="navigate(this)"><span class="nav-dot"></span>Dashboard Cíclico</div>
+          <div class="nav-item" data-module="ciclico" data-tab="" onclick="navigate(this)"><span class="nav-dot"></span>🇦🇷 Cíclico Argentina</div>
+          <div class="nav-item" data-module="ciclicochile" data-tab="" onclick="navigate(this)"><span class="nav-dot"></span>🇨🇱 Cíclico Chile</div>
         </div>
       </div>
 
@@ -529,15 +530,27 @@ iframe {
     </iframe>
   </div>
 
-  <!-- Inventario Cíclico frame -->
+  <!-- Inventario Cíclico ARG frame -->
   <div class="frame-wrap" id="fw-ciclico">
     <div class="splash" id="splash-ciclico">
-      <div class="splash-icon">Z</div>
-      <span class="splash-label">Cargando Inventario Cíclico…</span>
+      <div class="splash-icon">🇦🇷</div>
+      <span class="splash-label">Cargando Inventario Cíclico Argentina…</span>
     </div>
     <iframe id="ifr-ciclico"
       src="./inventario-ciclico-zecat/index.html"
       onload="onLoad('ciclico')">
+    </iframe>
+  </div>
+
+  <!-- Inventario Cíclico Chile frame -->
+  <div class="frame-wrap" id="fw-ciclicochile">
+    <div class="splash" id="splash-ciclicochile">
+      <div class="splash-icon">🇨🇱</div>
+      <span class="splash-label">Cargando Inventario Cíclico Chile…</span>
+    </div>
+    <iframe id="ifr-ciclicochile"
+      src="./inventario-ciclico-chile/index.html"
+      onload="onLoad('ciclicochile')">
     </iframe>
   </div>
 
@@ -596,6 +609,10 @@ const INJECT = {
     #themeBtn { display: none !important; }
     body { overflow: auto !important; }
   `,
+  ciclicochile: `
+    #themeBtn { display: none !important; }
+    body { overflow: auto !important; }
+  `,
   transporte: `
     .sidebar { display: none !important; }
     .topbar  { display: none !important; }
@@ -621,7 +638,7 @@ const PAGE_ID = {
 
 let currentModule = 'productividad';
 let isDark = true;
-const loaded = { productividad: false, asistencia: false, ciclico: false, transporte: false, personal: false, productividadchile: false };
+const loaded = { productividad: false, asistencia: false, ciclico: false, ciclicochile: false, transporte: false, personal: false, productividadchile: false };
 // Queue: pending navigation calls waiting for iframe to finish loading
 const pending = {};
 
