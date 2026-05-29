@@ -809,6 +809,7 @@ function calcularCampos(sistema,fisico,ms,ddp) {
   return {total,difCont,diferencia,stockDdp:(sistema||0)*(ddp||0),difDdp:difCont*(ddp||0)};
 }
 function isoHoyStr() { return new Date().toISOString().slice(0,10); }
+const isoHoy = isoHoyStr; // alias para compatibilidad
 function esLaborable(s) { const d=new Date(s+'T12:00:00'),dow=d.getDay(); return dow!==0&&dow!==6&&!FERIADOS_SET.has(s); }
 function diaLaborableAnterior(s) {
   let d=new Date(s+'T12:00:00'); d.setDate(d.getDate()-1);
@@ -1034,6 +1035,9 @@ function renderDashboard(d) {
   const exactColor = exactitudColor(k.exactitud_pct);
 
   let html = `
+  <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
+    <button class="btn btn-sm" onclick="exportarDashboardExcel()" style="background:rgba(74,222,128,.12); color:var(--green);" title="Exportar todos los conteos a Excel">⬇️ Exportar Excel</button>
+  </div>
   <!-- KPIs fila 1 -->
   <div class="kpi-grid kpi-grid-5">
     <div class="kpi-card accent-blue">
@@ -1455,6 +1459,7 @@ function renderHoy(d) {
         ? '<span class="badge badge-green">Día laborable</span>'
         : '<span class="badge badge-gray">No laborable</span>'}
       <button class="btn btn-sm" onclick="loadHoy()">↻ Actualizar</button>
+      <button class="btn btn-sm" onclick="exportarHoyExcel()" style="background:rgba(74,222,128,.12); color:var(--green);" title="Exportar lista de hoy a Excel">⬇️ Excel</button>
     </div>
   </div>`;
 
@@ -2061,6 +2066,50 @@ async function subirStock(file) {
     progressEl.style.display = 'none';
     resultEl.innerHTML = `<div class="alert alert-error">Error inesperado: ${e.message}</div>`;
   }
+}
+
+/* ================================================================
+   EXPORTAR EXCEL
+   ================================================================ */
+async function exportarHoyExcel() {
+  const d = await apiGetHoy();
+  if (!d.items?.length) { alert('No hay artículos en la lista de hoy.'); return; }
+  const header = ['#','Artículo','SKU WMS','Familia','Stock Sistema','Valor DDP (U$)','Estado','Físico','Dif Uds','Tipo Diferencia','Motivo'];
+  const filas = d.items.map((it, i) => [
+    i+1, it.articulo, it.sku||'', it.familia||'',
+    it.stockWeb||0, it.ddpVal||0,
+    it.contado ? 'Contado' : 'Pendiente',
+    it.fisico != null ? it.fisico : '',
+    it.dif_cont != null ? it.dif_cont : '',
+    it.diferencia||'', it.motivo||''
+  ]);
+  const ws = XLSX.utils.aoa_to_sheet([header, ...filas]);
+  ws['!cols'] = [{wch:4},{wch:42},{wch:14},{wch:22},{wch:14},{wch:16},{wch:12},{wch:10},{wch:10},{wch:16},{wch:22}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Conteo Hoy');
+  XLSX.writeFile(wb, `conteo_hoy_ARG_${isoHoyStr()}.xlsx`);
+}
+
+async function exportarDashboardExcel() {
+  const rows = await idbGetAll('conteos');
+  if (!rows.length) { alert('No hay conteos registrados para exportar.'); return; }
+  const header = ['ID','Fecha','Artículo','SKU WMS','Familia','Sistema','Físico','MS','Total','Dif Conteo','Diferencia','Motivo','Observación','DDP Unit (U$)','Stock DDP (U$)','Dif DDP (U$)','Ajustado','Fecha Ingreso'];
+  const filas = rows
+    .sort((a,b)=>(b.dia||'').localeCompare(a.dia||''))
+    .map(r => [
+      r.id, r.dia||'', r.articulo||'', r.sku_wms||'', familiaLimpia(r.familia)||'',
+      r.sistema??'', r.fisico??'', r.ms??0, r.total??'',
+      r.dif_cont??'', r.diferencia||'', r.motivo||'', r.observacion||'',
+      r.ddp||0,
+      Math.round((r.stock_ddp||0)*100)/100,
+      Math.round((r.dif_ddp||0)*100)/100,
+      r.ajustado||'', r.fecha_ingreso||''
+    ]);
+  const ws = XLSX.utils.aoa_to_sheet([header, ...filas]);
+  ws['!cols'] = [{wch:6},{wch:12},{wch:42},{wch:14},{wch:22},{wch:10},{wch:10},{wch:6},{wch:10},{wch:12},{wch:14},{wch:22},{wch:28},{wch:14},{wch:16},{wch:14},{wch:10},{wch:20}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Conteos ARG');
+  XLSX.writeFile(wb, `ciclico_ARG_conteos_${isoHoyStr()}.xlsx`);
 }
 
 /* ================================================================
