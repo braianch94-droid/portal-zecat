@@ -562,6 +562,21 @@ th.center, td.center { text-align: center; }
 .modal h3 { margin-bottom: 8px; }
 .modal p  { color: var(--text-muted); margin-bottom: 20px; font-size: 13px; }
 .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+
+/* ============================================================
+   NAV INTERNO
+   ============================================================ */
+.spa-nav {
+  display: flex; gap: 6px; padding: 4px 0 16px 0;
+  margin-bottom: 4px; overflow-x: auto; flex-wrap: wrap;
+}
+.spa-nav-btn {
+  padding: 7px 16px; background: var(--card2); border: 1px solid var(--border);
+  border-radius: 6px; color: var(--text-muted); cursor: pointer;
+  font-size: 12px; font-weight: 600; transition: all .15s; white-space: nowrap;
+}
+.spa-nav-btn:hover { background: var(--hover); color: var(--text); }
+.spa-nav-btn.active { background: var(--blue); border-color: var(--blue); color: #fff; }
 </style>
 </head>
 <body>
@@ -579,6 +594,15 @@ th.center, td.center { text-align: center; }
 </div>
 
 <div class="spa-root">
+
+  <!-- NAV INTERNO -->
+  <div class="spa-nav" id="spa-nav">
+    <button class="spa-nav-btn" id="nav-dashboard" onclick="window.switchTab('dashboard')">&#128202; Dashboard</button>
+    <button class="spa-nav-btn" id="nav-hoy" onclick="window.switchTab('hoy')">&#128203; Hoy</button>
+    <button class="spa-nav-btn" id="nav-conteos" onclick="window.switchTab('conteos')">&#128197; Conteos</button>
+    <button class="spa-nav-btn" id="nav-carga" onclick="window.switchTab('carga')">&#128394; Carga</button>
+    <button class="spa-nav-btn" id="nav-stock" onclick="window.switchTab('stock')">&#128230; Stock</button>
+  </div>
 
   <!-- ============================================================
        SECCIÓN: DASHBOARD
@@ -740,6 +764,24 @@ th.center, td.center { text-align: center; }
     <div id="backup-section"></div>
   </div>
 
+  <!-- ============================================================
+       SECCIÓN: CONTEOS POR FECHA
+       ============================================================ -->
+  <div id="section-conteos" class="section">
+    <h2>&#128197; Historial de Conteos</h2>
+
+    <div class="card mb-16" style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+      <label style="font-weight:600; font-size:13px; white-space:nowrap;">Seleccioná una fecha:</label>
+      <input type="date" id="conteos-fecha-input"
+        style="background:var(--input-bg); border:1px solid var(--border); border-radius:6px; padding:6px 10px; color:var(--text); font-size:13px;">
+      <button class="btn btn-primary" onclick="loadConteosDia()">&#128269; Ver conteo</button>
+    </div>
+
+    <div id="conteos-resumen"></div>
+    <div id="conteos-tabla"></div>
+  </div>
+
+
 </div><!-- /spa-root -->
 
 <script>
@@ -811,6 +853,7 @@ async function idbBulkPut(st, items) {
 const MESES_ES_ARR = ['','enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 const FERIADOS_SET = new Set(['2025-01-01','2025-04-18','2025-04-19','2025-05-01','2025-05-21','2025-06-29','2025-07-16','2025-08-15','2025-09-18','2025-09-19','2025-10-12','2025-10-31','2025-11-01','2025-12-08','2025-12-25','2026-01-01','2026-04-03','2026-04-04','2026-05-01','2026-05-21','2026-06-29','2026-07-16','2026-08-15','2026-09-18','2026-09-19','2026-10-12','2026-10-31','2026-11-01','2026-12-08','2026-12-25']);
 function familiaLimpia(f) { return (f||'').replace(/^[A-Z]-\d+ - /,''); }
+function fmtFecha(iso) { if (!iso) return '—'; var p = iso.split('-'); return p[2]+'/'+p[1]+'/'+p[0]; }
 function calcularCampos(sistema,fisico,ms,ddp) {
   const total=(fisico||0)+(ms||0), difCont=total-(sistema||0);
   const diferencia=difCont===0?'Sin Dif':difCont>0?'Dif Positiva':'Dif Negativa';
@@ -2133,6 +2176,132 @@ function cargarBotonesBackup() {
         </label>
       </div>
     </div>`;
+}
+
+/* ================================================================
+   NAVEGACIÓN INTERNA — switchTab
+   ================================================================ */
+let activeTab = '';
+window.switchTab = function(name) {
+  activeTab = name;
+  document.querySelectorAll('.section').forEach(function(s){ s.classList.remove('active'); });
+  var sec = document.getElementById('section-' + name);
+  if (sec) sec.classList.add('active');
+  document.querySelectorAll('.spa-nav-btn').forEach(function(b){ b.classList.remove('active'); });
+  var btn = document.getElementById('nav-' + name);
+  if (btn) btn.classList.add('active');
+  if (name === 'dashboard') loadDashboard();
+  else if (name === 'hoy') loadHoy();
+  else if (name === 'carga') loadCarga();
+  else if (name === 'stock') loadStock();
+  else if (name === 'conteos') initConteos();
+};
+
+function initConteos() {
+  var input = document.getElementById('conteos-fecha-input');
+  if (input && !input.value) input.value = isoHoyStr();
+  loadConteosDia();
+}
+
+async function loadConteosDia() {
+  var input = document.getElementById('conteos-fecha-input');
+  var fecha = input ? input.value : isoHoyStr();
+  if (!fecha) return;
+
+  var resEl = document.getElementById('conteos-resumen');
+  var tabEl = document.getElementById('conteos-tabla');
+  resEl.innerHTML = '<div class="section-loading"><span class="spinner"></span> Cargando...</div>';
+  tabEl.innerHTML = '';
+
+  var allRows = await idbGetAll('conteos');
+  var rows = allRows.filter(function(r){ return r.dia === fecha; });
+
+  if (!rows.length) {
+    var fechaFmt = fmtFecha ? fmtFecha(fecha) : fecha;
+    resEl.innerHTML = '<div class="empty-state"><div class="icon">&#128505;</div><div>No hay conteos registrados para el ' + fechaFmt + '.</div></div>';
+    return;
+  }
+
+  var total    = rows.length;
+  var conDif   = rows.filter(function(r){ return r.diferencia !== 'Sin Dif'; }).length;
+  var exactitud = total > 0 ? Math.round((total - conDif) / total * 100) : 100;
+  var impacto  = rows.reduce(function(acc,r){ return acc + Math.abs(r.dif_ddp||0); }, 0);
+  var impPos   = rows.reduce(function(acc,r){ return acc + (r.dif_ddp > 0 ? r.dif_ddp : 0); }, 0);
+  var impNeg   = rows.reduce(function(acc,r){ return acc + (r.dif_ddp < 0 ? Math.abs(r.dif_ddp) : 0); }, 0);
+  var exactColor = exactitud >= 95 ? 'var(--green)' : exactitud >= 80 ? 'var(--orange)' : 'var(--red)';
+  var fechaFmt = fmtFecha ? fmtFecha(fecha) : fecha;
+
+  resEl.innerHTML =
+    '<div class="kpi-grid kpi-grid-4 mb-16">' +
+    '<div class="kpi-card accent-blue">' +
+      '<div class="kpi-label">Artículos contados</div>' +
+      '<div class="kpi-value">' + total + '</div>' +
+      '<div class="kpi-sub">' + fechaFmt + '</div>' +
+    '</div>' +
+    '<div class="kpi-card accent-green">' +
+      '<div class="kpi-label">Exactitud</div>' +
+      '<div class="kpi-value" style="color:' + exactColor + '">' + exactitud + '%</div>' +
+      '<div class="kpi-sub">' + (total - conDif) + ' sin diferencia</div>' +
+    '</div>' +
+    '<div class="kpi-card accent-red">' +
+      '<div class="kpi-label">Con diferencia</div>' +
+      '<div class="kpi-value" style="color:' + (conDif > 0 ? 'var(--red)' : 'var(--green)') + '">' + conDif + '</div>' +
+      '<div class="kpi-sub">de ' + total + ' conteos</div>' +
+    '</div>' +
+    '<div class="kpi-card accent-yellow">' +
+      '<div class="kpi-label">Impacto DDU$</div>' +
+      '<div class="kpi-value">$' + impacto.toFixed(0) + '</div>' +
+      '<div class="kpi-sub">+$' + impPos.toFixed(0) + ' / -$' + impNeg.toFixed(0) + '</div>' +
+    '</div>' +
+    '</div>';
+
+  var sorted = rows.slice().sort(function(a, b){
+    var da = a.diferencia === 'Sin Dif' ? 1 : 0;
+    var db = b.diferencia === 'Sin Dif' ? 1 : 0;
+    return da - db;
+  });
+
+  var filas = sorted.map(function(r, i){
+    var difCl   = r.diferencia === 'Sin Dif' ? 'text-green' : r.diferencia === 'Dif Positiva' ? 'text-orange' : 'text-red';
+    var ajCl    = r.ajustado === 'SI' ? 'text-green' : r.ajustado === 'ADM' ? 'text-orange' : '';
+    var difCont = r.dif_cont != null ? (r.dif_cont > 0 ? '+' + r.dif_cont : r.dif_cont) : '—';
+    var difCCl  = r.dif_cont > 0 ? 'text-orange' : r.dif_cont < 0 ? 'text-red' : 'text-green';
+    var impactoStr = r.dif_ddp != null ? (r.dif_ddp >= 0 ? '+$' + r.dif_ddp.toFixed(2) : '$' + r.dif_ddp.toFixed(2)) : '—';
+    var impactoCl = (r.dif_ddp||0) > 0 ? 'text-orange' : (r.dif_ddp||0) < 0 ? 'text-red' : 'text-green';
+    var fam = familiaLimpia ? familiaLimpia(r.familia) : (r.familia||'—');
+    var mot = (r.motivo||'').replace(/"/g, '&quot;');
+    return '<tr>' +
+      '<td class="text-muted" style="font-size:11px">' + (i+1) + '</td>' +
+      '<td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + (r.articulo||'') + '">' + (r.articulo||'—') + '</td>' +
+      '<td style="font-family:monospace;font-size:11px;color:var(--text-muted)">' + (r.sku_wms||'—') + '</td>' +
+      '<td style="font-size:11px">' + fam + '</td>' +
+      '<td style="text-align:center">' + (r.sistema!=null?r.sistema:'—') + '</td>' +
+      '<td style="text-align:center">' + (r.fisico!=null?r.fisico:'—') + '</td>' +
+      '<td style="text-align:center;color:var(--text-muted)">' + (r.ms||0) + '</td>' +
+      '<td style="text-align:center;font-weight:700">' + (r.total!=null?r.total:'—') + '</td>' +
+      '<td style="text-align:center" class="' + difCCl + '">' + difCont + '</td>' +
+      '<td class="' + difCl + '">' + (r.diferencia||'—') + '</td>' +
+      '<td style="font-family:monospace;font-size:11px">' + (r.ddp!=null?'$'+r.ddp:'—') + '</td>' +
+      '<td class="' + impactoCl + '" style="font-family:monospace;font-size:11px">' + impactoStr + '</td>' +
+      '<td class="' + ajCl + '">' + (r.ajustado||'NO') + '</td>' +
+      '<td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + mot + '">' + (r.motivo||'—') + '</td>' +
+    '</tr>';
+  }).join('');
+
+  tabEl.innerHTML =
+    '<div class="card">' +
+    '<h3>Detalle del conteo — ' + fechaFmt + ' (' + total + ' artículos)</h3>' +
+    '<div class="table-wrap mt-12">' +
+    '<table>' +
+    '<thead><tr>' +
+    '<th>#</th><th>Artículo</th><th>SKU WMS</th><th>Familia</th>' +
+    '<th style="text-align:center">Sistema</th><th style="text-align:center">Físico</th>' +
+    '<th style="text-align:center">MS</th><th style="text-align:center">Total</th>' +
+    '<th style="text-align:center">Dif</th><th>Resultado</th>' +
+    '<th>DDP U$</th><th>Impacto $</th><th>Ajustado</th><th>Motivo</th>' +
+    '</tr></thead>' +
+    '<tbody>' + filas + '</tbody>' +
+    '</table></div></div>';
 }
 
 </script>
