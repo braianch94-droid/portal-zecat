@@ -753,96 +753,160 @@ function buildMaquinistas(){
   if(!el)return;
   var names=['DEMARCHIS','SANDOVAL'];
   var colors={'DEMARCHIS':'#3b82f6','SANDOVAL':'#10b981'};
-  // Aggregate total
+  var colorClass={'DEMARCHIS':'blue','SANDOVAL':'green'};
+
+  // Aggregate
   var byName={};
-  names.forEach(function(n){byName[n]={total_mov:0,total_und:0,dias:0,byDate:[]};});
+  names.forEach(function(n){byName[n]={total_mov:0,total_und:0,dias:0,byDate:[],byMes:{},pa02_mov:0,rec_mov:0,rl01_mov:0,pm_mov:0,rf_mov:0,pa02_und:0,rec_und:0,rl01_und:0,pm_und:0,rf_und:0,maxMovDia:0,maxMovFecha:''};});
   MAQ_DATA.forEach(function(r){
     if(!byName[r.nombre])return;
-    byName[r.nombre].total_mov+=r.total_mov;
-    byName[r.nombre].total_und+=r.total_und;
-    byName[r.nombre].dias++;
-    byName[r.nombre].byDate.push(r);
+    var d=byName[r.nombre];
+    d.total_mov+=r.total_mov; d.total_und+=r.total_und; d.dias++;
+    d.pa02_mov+=r.pa02_mov; d.rec_mov+=r.rec_mov; d.rl01_mov+=r.rl01_mov; d.pm_mov+=r.pm_mov; d.rf_mov+=r.rf_mov;
+    d.pa02_und+=r.pa02_und; d.rec_und+=r.rec_und; d.rl01_und+=r.rl01_und; d.pm_und+=r.pm_und; d.rf_und+=r.rf_und;
+    if(r.total_mov>d.maxMovDia){d.maxMovDia=r.total_mov; d.maxMovFecha=r.fecha;}
+    var mes=r.fecha.slice(0,7);
+    if(!d.byMes[mes])d.byMes[mes]={mov:0,und:0,dias:0};
+    d.byMes[mes].mov+=r.total_mov; d.byMes[mes].und+=r.total_und; d.byMes[mes].dias++;
+    d.byDate.push(r);
   });
   names.forEach(function(n){byName[n].byDate.sort(function(a,b){return a.fecha>b.fecha?-1:1;});});
 
-  // Last 15 days for each
-  var last15={};
-  names.forEach(function(n){last15[n]=byName[n].byDate.slice(0,15);});
+  // Team totals
+  var totMov=names.reduce(function(a,n){return a+byName[n].total_mov;},0);
+  var totUnd=names.reduce(function(a,n){return a+byName[n].total_und;},0);
+  var totDias=names.reduce(function(a,n){return a+byName[n].dias;},0);
+  var promMovDia=totDias>0?Math.round(totMov/totDias):0;
 
-  var html='';
-  // KPI cards per operator
-  html+='<div class="kpi-grid g2" style="margin-bottom:18px">';
+  // Months
+  var mesSet={};
+  MAQ_DATA.forEach(function(r){mesSet[r.fecha.slice(0,7)]=1;});
+  var meses=Object.keys(mesSet).sort();
+  var mesLabels={'2026-01':'Ene 26','2026-02':'Feb 26','2026-03':'Mar 26','2026-04':'Abr 26','2026-05':'May 26','2026-06':'Jun 26'};
+
+  var html='<div>';
+
+  // ── KPIs equipo ──
+  html+='<div class="kpi-grid g4" style="margin-bottom:18px">';
+  html+='<div class="kpi-card blue"><div class="kpi-label">&#9881; Total Movimientos</div><div class="kpi-value">'+totMov.toLocaleString('es-AR')+'</div><div class="kpi-sub">Equipo completo</div></div>';
+  html+='<div class="kpi-card teal"><div class="kpi-label">&#128230; Total Unidades</div><div class="kpi-value">'+totUnd.toLocaleString('es-AR')+'</div><div class="kpi-sub">Procesadas</div></div>';
+  html+='<div class="kpi-card green"><div class="kpi-label">&#128197; Jornadas Registradas</div><div class="kpi-value">'+totDias+'</div><div class="kpi-sub">Entre los 2 operadores</div></div>';
+  html+='<div class="kpi-card amber"><div class="kpi-label">&#128200; Prom. Mov / Jornada</div><div class="kpi-value">'+promMovDia+'</div><div class="kpi-sub">Promedio equipo</div></div>';
+  html+='</div>';
+
+  // ── KPI por operador ──
+  html+='<div class="kpi-grid g2" style="margin-bottom:20px">';
   names.forEach(function(n){
     var d=byName[n];
-    var l=last15[n];
-    var avgMov=l.length?Math.round(l.reduce(function(a,r){return a+r.total_mov;},0)/l.length*10)/10:0;
-    var avgUnd=l.length?Math.round(l.reduce(function(a,r){return a+r.total_und;},0)/l.length):0;
-    html+='<div class="kpi-card" style="border-top:4px solid '+colors[n]+'">';
-    html+='<div style="font-size:18px;font-weight:800;color:'+colors[n]+';margin-bottom:10px">&#9881; '+n+'</div>';
-    html+='<div class="kpi-grid g2" style="gap:8px">';
-    html+='<div style="background:var(--bg);border-radius:8px;padding:10px"><div style="font-size:11px;color:var(--muted)">Total Movimientos</div><div style="font-size:20px;font-weight:700">'+d.total_mov.toLocaleString('es-AR')+'</div></div>';
-    html+='<div style="background:var(--bg);border-radius:8px;padding:10px"><div style="font-size:11px;color:var(--muted)">Total Unidades</div><div style="font-size:20px;font-weight:700">'+d.total_und.toLocaleString('es-AR')+'</div></div>';
-    html+='<div style="background:var(--bg);border-radius:8px;padding:10px"><div style="font-size:11px;color:var(--muted)">D&iacute;as trabajados</div><div style="font-size:20px;font-weight:700">'+d.dias+'</div></div>';
-    html+='<div style="background:var(--bg);border-radius:8px;padding:10px"><div style="font-size:11px;color:var(--muted)">Prom. Mov/d&iacute;a</div><div style="font-size:20px;font-weight:700">'+Math.round(d.total_mov/d.dias*10)/10+'</div></div>';
+    var avgMovDia=d.dias>0?Math.round(d.total_mov/d.dias*10)/10:0;
+    var avgUndDia=d.dias>0?Math.round(d.total_und/d.dias):0;
+    var ops=[['PA02',d.pa02_mov],['REC',d.rec_mov],['RL01',d.rl01_mov],['PM',d.pm_mov],['RF',d.rf_mov]].filter(function(o){return o[1]>0;});
+    var maxOp=ops.length?Math.max.apply(null,ops.map(function(o){return o[1];})):1;
+    html+='<div class="kpi-card '+colorClass[n]+'">';
+    html+='<div style="font-size:17px;font-weight:800;color:'+colors[n]+';margin-bottom:12px">&#9881; '+n+'</div>';
+    html+='<div class="kpi-grid g2" style="gap:8px;margin-bottom:12px">';
+    html+='<div style="background:var(--bg,#f5f5f5);border-radius:8px;padding:10px"><div class="kpi-label">Movimientos</div><div style="font-size:22px;font-weight:700;color:'+colors[n]+'">'+d.total_mov.toLocaleString('es-AR')+'</div></div>';
+    html+='<div style="background:var(--bg,#f5f5f5);border-radius:8px;padding:10px"><div class="kpi-label">Unidades</div><div style="font-size:22px;font-weight:700">'+d.total_und.toLocaleString('es-AR')+'</div></div>';
+    html+='<div style="background:var(--bg,#f5f5f5);border-radius:8px;padding:10px"><div class="kpi-label">Jornadas</div><div style="font-size:22px;font-weight:700">'+d.dias+'</div></div>';
+    html+='<div style="background:var(--bg,#f5f5f5);border-radius:8px;padding:10px"><div class="kpi-label">Mov / Jornada</div><div style="font-size:22px;font-weight:700">'+avgMovDia+'</div></div>';
     html+='</div>';
-    html+='<div style="margin-top:10px;font-size:12px;color:var(--muted)">&#250;lt. 15 d&iacute;as &mdash; Prom. <strong style="color:'+colors[n]+'">'+avgMov+' mov</strong> / <strong>'+avgUnd.toLocaleString('es-AR')+' und</strong></div>';
+    html+='<div style="font-size:12px;color:var(--muted,#999)">Mejor jornada: <strong style="color:'+colors[n]+'">'+d.maxMovDia.toLocaleString('es-AR')+' mov</strong> &mdash; '+d.maxMovFecha.slice(5)+'</div>';
+    html+='<div style="font-size:12px;color:var(--muted,#999);margin-top:3px">Prom. und / jornada: <strong>'+avgUndDia.toLocaleString('es-AR')+'</strong></div>';
+    html+='<div style="margin-top:12px;font-size:11px;font-weight:600;color:var(--muted,#999);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Desglose por operaci&oacute;n</div>';
+    ops.forEach(function(o){
+      var pct=Math.round(o[1]/maxOp*100);
+      var pctTot=d.total_mov>0?Math.round(o[1]/d.total_mov*100):0;
+      html+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">';
+      html+='<div style="width:36px;font-size:10px;font-weight:700">'+o[0]+'</div>';
+      html+='<div style="flex:1;background:var(--bg,#eee);border-radius:3px;height:13px">';
+      html+='<div style="width:'+pct+'%;background:'+colors[n]+';height:100%;border-radius:3px;opacity:.85"></div></div>';
+      html+='<div style="width:90px;font-size:10px;text-align:right">'+o[1].toLocaleString('es-AR')+' ('+pctTot+'%)</div>';
+      html+='</div>';
+    });
     html+='</div>';
   });
   html+='</div>';
 
-  // Comparativa visual — ultimos 15 dias
-  html+='<h3 style="margin:20px 0 10px;font-size:15px;font-weight:700">&#128200; Comparativa &#250;ltimos 15 d&iacute;as &mdash; Movimientos</h3>';
-  // Get common date range
-  var allDates={};
-  names.forEach(function(n){last15[n].forEach(function(r){allDates[r.fecha]=1;});});
-  var dateList=Object.keys(allDates).sort().reverse();
-  var maxMov=0;
-  names.forEach(function(n){last15[n].forEach(function(r){if(r.total_mov>maxMov)maxMov=r.total_mov;});});
+  // ── Desglose por tipo de operación ──
+  var opTypes=[{key:'pa02',label:'PA02',desc:'Picking / Replenishment'},{key:'rec',label:'REC',desc:'Recepción'},{key:'rl01',label:'RL01',desc:'RL01 Flow'},{key:'pm',label:'PM',desc:'Pallet Move'},{key:'rf',label:'RF',desc:'RF Move Flow'}];
+  var activeOps=opTypes.filter(function(o){return names.some(function(n){return byName[n][o.key+'_mov']>0;});});
+  if(activeOps.length>0){
+    html+='<h3 style="margin:4px 0 10px;font-size:15px;font-weight:700">&#128203; Desglose por Tipo de Operaci&oacute;n</h3>';
+    html+='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">';
+    html+='<thead><tr style="background:var(--accent,#1a1a1a);color:#fff"><th style="padding:8px 12px;text-align:left">Operaci&oacute;n</th>';
+    names.forEach(function(n){html+='<th style="padding:8px 12px;text-align:right;color:'+colors[n]+'">'+n+' Mov.</th><th style="padding:8px 12px;text-align:right">'+n+' Und.</th>';});
+    html+='<th style="padding:8px 12px;text-align:right">Total Mov.</th></tr></thead><tbody>';
+    var colTotals={};
+    names.forEach(function(n){colTotals[n]={mov:0,und:0};});
+    var grandTotMov=0;
+    activeOps.forEach(function(o,i){
+      var bg=i%2===0?'var(--card-bg,#fff)':'var(--bg,#f5f5f5)';
+      var rowTot=names.reduce(function(a,n){return a+byName[n][o.key+'_mov'];},0);
+      grandTotMov+=rowTot;
+      html+='<tr style="background:'+bg+'"><td style="padding:7px 12px;font-weight:600">'+o.label+'<span style="font-size:11px;color:var(--muted,#999);font-weight:400;margin-left:6px">'+o.desc+'</span></td>';
+      names.forEach(function(n){
+        var mv=byName[n][o.key+'_mov'], un=byName[n][o.key+'_und'];
+        colTotals[n].mov+=mv; colTotals[n].und+=un;
+        html+='<td style="padding:7px 12px;text-align:right;font-weight:600;color:'+colors[n]+'">'+mv.toLocaleString('es-AR')+'</td>';
+        html+='<td style="padding:7px 12px;text-align:right">'+un.toLocaleString('es-AR')+'</td>';
+      });
+      html+='<td style="padding:7px 12px;text-align:right;font-weight:700">'+rowTot.toLocaleString('es-AR')+'</td></tr>';
+    });
+    html+='<tr style="background:var(--accent,#1a1a1a);color:#fff;font-weight:700"><td style="padding:7px 12px">TOTAL</td>';
+    names.forEach(function(n){html+='<td style="padding:7px 12px;text-align:right;color:'+colors[n]+'">'+colTotals[n].mov.toLocaleString('es-AR')+'</td><td style="padding:7px 12px;text-align:right">'+colTotals[n].und.toLocaleString('es-AR')+'</td>';});
+    html+='<td style="padding:7px 12px;text-align:right">'+grandTotMov.toLocaleString('es-AR')+'</td></tr>';
+    html+='</tbody></table></div>';
+  }
 
+  // ── Evolución mensual ──
+  html+='<h3 style="margin:22px 0 8px;font-size:15px;font-weight:700">&#128200; Evoluci&oacute;n Mensual &mdash; Movimientos</h3>';
+  var maxMovMes=0;
+  meses.forEach(function(m){names.forEach(function(n){var v=(byName[n].byMes[m]||{mov:0}).mov; if(v>maxMovMes)maxMovMes=v;});});
   html+='<div style="overflow-x:auto"><div style="min-width:500px">';
-  // Legend
-  html+='<div style="display:flex;gap:20px;margin-bottom:10px">';
+  html+='<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px">';
   names.forEach(function(n){html+='<span style="display:flex;align-items:center;gap:6px;font-size:12px"><span style="width:12px;height:12px;border-radius:50%;background:'+colors[n]+';display:inline-block"></span>'+n+'</span>';});
   html+='</div>';
-
-  dateList.forEach(function(d){
-    html+='<div style="margin-bottom:8px"><div style="font-size:11px;color:var(--muted);margin-bottom:2px">'+d.slice(5)+'</div>';
+  meses.forEach(function(m){
+    html+='<div style="margin-bottom:14px"><div style="font-size:12px;font-weight:600;color:var(--muted,#777);margin-bottom:4px">'+(mesLabels[m]||m)+'</div>';
     names.forEach(function(n){
-      var row=last15[n].find(function(r){return r.fecha===d;})||{total_mov:0,total_und:0};
-      var pct=maxMov>0?Math.round(row.total_mov/maxMov*100):0;
-      html+='<div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">';
-      html+='<div style="width:80px;font-size:11px;text-align:right">'+n+'</div>';
-      html+='<div style="flex:1;background:var(--bg);border-radius:3px;height:16px">';
-      html+='<div style="width:'+pct+'%;background:'+colors[n]+';height:100%;border-radius:3px;display:flex;align-items:center;padding-left:4px;min-width:'+(row.total_mov>0?16:0)+'px">';
-      html+=(row.total_mov>0?'<span style="font-size:10px;color:#fff">'+row.total_mov+'</span>':'');
-      html+='</div></div>';
-      html+='<div style="font-size:10px;color:var(--muted);width:70px">'+row.total_und.toLocaleString('es-AR')+' und</div>';
-      html+='</div>';
+      var d=byName[n].byMes[m]||{mov:0,und:0,dias:0};
+      var pct=maxMovMes>0?Math.round(d.mov/maxMovMes*100):0;
+      html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">';
+      html+='<div style="width:110px;font-size:11px;text-align:right">'+n+'</div>';
+      html+='<div style="flex:1;background:var(--bg,#eee);border-radius:4px;height:18px;overflow:hidden">';
+      html+='<div style="width:'+pct+'%;background:'+colors[n]+';height:100%;border-radius:4px;display:flex;align-items:center;padding-left:6px;min-width:'+(d.mov>0?20:0)+'px">';
+      html+=(d.mov>0?'<span style="font-size:10px;color:#fff;white-space:nowrap">'+d.mov.toLocaleString('es-AR')+'</span>':'');
+      html+='</div></div><div style="font-size:10px;color:var(--muted,#999);width:90px">'+d.dias+' jornadas</div></div>';
     });
     html+='</div>';
   });
   html+='</div></div>';
 
-  // Tabla detalle
-  html+='<h3 style="margin:22px 0 8px;font-size:15px;font-weight:700">&#128203; Detalle por Operador &mdash; &#250;ltimos 15 d&iacute;as</h3>';
+  // ── Detalle últimas 30 jornadas por operador ──
+  html+='<h3 style="margin:22px 0 8px;font-size:15px;font-weight:700">&#128203; Detalle por Operador &mdash; &uacute;ltimas 30 jornadas</h3>';
   html+='<div class="kpi-grid g2">';
   names.forEach(function(n){
-    html+='<div class="kpi-card" style="border-top:3px solid '+colors[n]+'">';
+    var rows=byName[n].byDate.slice(0,30);
+    html+='<div class="kpi-card" style="border-top:3px solid '+colors[n]+';overflow-x:auto">';
     html+='<div style="font-weight:700;font-size:14px;margin-bottom:8px;color:'+colors[n]+'">'+n+'</div>';
-    html+='<table style="width:100%;font-size:12px;border-collapse:collapse">';
-    html+='<tr style="color:var(--muted)"><th style="text-align:left;padding:3px 6px">Fecha</th><th style="text-align:right;padding:3px 6px">Mov.</th><th style="text-align:right;padding:3px 6px">Und.</th><th style="text-align:right;padding:3px 6px">PA02</th><th style="text-align:right;padding:3px 6px">REC</th></tr>';
-    last15[n].forEach(function(r){
-      html+='<tr style="border-top:1px solid var(--border)">';
-      html+='<td style="padding:3px 6px">'+r.fecha.slice(5)+'</td>';
-      html+='<td style="text-align:right;padding:3px 6px;font-weight:600;color:'+colors[n]+'">'+r.total_mov+'</td>';
-      html+='<td style="text-align:right;padding:3px 6px">'+r.total_und.toLocaleString('es-AR')+'</td>';
-      html+='<td style="text-align:right;padding:3px 6px">'+r.pa02_mov+'</td>';
-      html+='<td style="text-align:right;padding:3px 6px">'+r.rec_mov+'</td>';
+    html+='<table style="width:100%;font-size:11px;border-collapse:collapse;min-width:360px">';
+    html+='<tr style="color:var(--muted,#999)"><th style="text-align:left;padding:2px 4px">Fecha</th><th style="text-align:right;padding:2px 4px">Mov</th><th style="text-align:right;padding:2px 4px">Und</th><th style="text-align:right;padding:2px 4px">PA02</th><th style="text-align:right;padding:2px 4px">REC</th><th style="text-align:right;padding:2px 4px">RL01</th><th style="text-align:right;padding:2px 4px">PM</th><th style="text-align:right;padding:2px 4px">RF</th></tr>';
+    rows.forEach(function(r,i){
+      var bg=i%2===1?'background:var(--bg,#f9f9f9)':'';
+      html+='<tr style="border-top:1px solid var(--border,#eee);'+bg+'">';
+      html+='<td style="padding:2px 4px">'+r.fecha.slice(5)+'</td>';
+      html+='<td style="text-align:right;padding:2px 4px;font-weight:600;color:'+colors[n]+'">'+r.total_mov+'</td>';
+      html+='<td style="text-align:right;padding:2px 4px">'+r.total_und.toLocaleString('es-AR')+'</td>';
+      html+='<td style="text-align:right;padding:2px 4px">'+r.pa02_mov+'</td>';
+      html+='<td style="text-align:right;padding:2px 4px">'+r.rec_mov+'</td>';
+      html+='<td style="text-align:right;padding:2px 4px">'+r.rl01_mov+'</td>';
+      html+='<td style="text-align:right;padding:2px 4px">'+r.pm_mov+'</td>';
+      html+='<td style="text-align:right;padding:2px 4px">'+r.rf_mov+'</td>';
       html+='</tr>';
     });
     html+='</table></div>';
   });
-  html+='</div>';
+  html+='</div></div>';
   el.innerHTML=html;
 }
 
