@@ -212,6 +212,7 @@ body.dark .heat-section-title{color:#cbd5e1!important}
   <button class="tab-btn" onclick="switchTab('reclamos')" id="btn-reclamos">&#128683; Reclamos</button>
   <button class="tab-btn" onclick="switchTab('control')" id="btn-control">&#128269; Control</button>
   <button class="tab-btn" onclick="switchTab('maquinistas')" id="btn-maquinistas">&#9881; Maquinistas</button>
+  <button class="tab-btn" onclick="switchTab('liquidacion')" id="btn-liquidacion">&#128184; Liquidaci&oacute;n</button>
   <button class="tab-btn" onclick="switchTab('resumen')" id="btn-resumen">&#128202; Resumen General</button>
 </nav>
 
@@ -491,6 +492,11 @@ body.dark .heat-section-title{color:#cbd5e1!important}
 <div id="sec-maquinistas" class="sec">
   <div id="maquinistas-content"></div>
 </div><!-- /sec-maquinistas -->
+
+<!-- ===== SECCION: LIQUIDACION ===== -->
+<div id="sec-liquidacion" class="sec">
+  <div id="liquidacion-content"></div>
+</div><!-- /sec-liquidacion -->
 
 <!-- ===== SECCION: RESUMEN GENERAL ===== -->
 <div id="sec-resumen" class="sec">
@@ -949,6 +955,208 @@ function buildMaquinistas(){
   el.innerHTML=html;
 }
 
+/* ================================================================
+   LIQUIDACIÓN DE BONOS
+   ================================================================ */
+function _liqSK(s){ return s.replace(/\s+/g,'_'); }
+
+function buildLiquidacion(){
+  var el=document.getElementById('liquidacion-content');
+  if(!el) return;
+
+  var anio=document.getElementById('selAnio').value;
+  var mesV=document.getElementById('selMes').value;
+  var monKey=anio+'-'+(mesV==='all'?'all':String(mesV).padStart(2,'0'));
+
+  // Aggregate pickers from selected period
+  var pmap={};
+  Object.keys(monthlyData).sort().forEach(function(k){
+    var yr=k.slice(0,4), mo=parseInt(k.slice(5,7));
+    if(anio!=='all'&&yr!==anio) return;
+    if(mesV!=='all'&&mo!==parseInt(mesV)) return;
+    var md=monthlyData[k];
+    if(!md||!md.pickers) return;
+    md.pickers.forEach(function(p){
+      if(!pmap[p.resp]) pmap[p.resp]={lineas:0,dias:0};
+      pmap[p.resp].lineas+=p.lineas;
+      pmap[p.resp].dias+=p.dias;
+    });
+  });
+  var pickers=Object.keys(pmap).map(function(name){
+    var d=pmap[name];
+    var ld=d.dias>0?Math.round(d.lineas/d.dias*10)/10:0;
+    return {nombre:name,lineas:d.lineas,dias:d.dias,ld:ld,cumpl:Math.round(ld/84*100)};
+  }).sort(function(a,b){return b.ld-a.ld;});
+
+  if(!pickers.length){
+    el.innerHTML='<div style="padding:40px;text-align:center;color:var(--text-muted)">Sin datos de picking para el per&iacute;odo seleccionado.</div>';
+    return;
+  }
+
+  // Thresholds & global state
+  var n1Thr=parseInt(localStorage.getItem('liq_n1_thr')||'100');
+  var n2Thr=parseInt(localStorage.getItem('liq_n2_thr')||'120');
+  var grupalGlobal=localStorage.getItem('liq_grupal')==='1';
+
+  // State readers
+  function pres(n){ return localStorage.getItem('liq_pres_'+_liqSK(n)+'_'+monKey)==='1'; }
+  function prodLvl(n,c){
+    var v=localStorage.getItem('liq_prod_'+_liqSK(n)+'_'+monKey);
+    if(v!==null) return parseInt(v);
+    if(!pres(n)) return 0;
+    if(c>=n2Thr) return 2;
+    if(c>=n1Thr) return 1;
+    return 0;
+  }
+  function grp(n){
+    var v=localStorage.getItem('liq_grp_'+_liqSK(n)+'_'+monKey);
+    return v!==null?(v==='1'):grupalGlobal;
+  }
+  function salBase(n){ return parseFloat(localStorage.getItem('liq_sal_'+_liqSK(n)))||0; }
+  function totalPct(n,c){
+    var p=pres(n), pr=prodLvl(n,c), g=grp(n);
+    return (p?5:0)+(pr===1?7.5:pr===2?12:0)+(g?15:0);
+  }
+
+  // Summary counts
+  var cPres=0,cN1=0,cN2=0,cGrp=0,masaBono=0;
+  pickers.forEach(function(p){
+    if(pres(p.nombre)) cPres++;
+    var pr=prodLvl(p.nombre,p.cumpl);
+    if(pr===1) cN1++; if(pr===2) cN2++;
+    if(grp(p.nombre)) cGrp++;
+    var s=salBase(p.nombre);
+    if(s>0) masaBono+=s*totalPct(p.nombre,p.cumpl)/100;
+  });
+  var mesLabel=mesV==='all'?'Todos los meses':(MES[parseInt(mesV)]||mesV)+' '+anio;
+
+  var h='<div>';
+
+  // ── Config bar ──
+  h+='<div style="background:var(--card-bg);border:1px solid var(--border);border-radius:10px;padding:14px 20px;margin-bottom:18px;display:flex;align-items:center;gap:18px;flex-wrap:wrap">';
+  h+='<span style="font-weight:700;font-size:13px">&#9881; Umbrales de productividad</span>';
+  h+='<label style="display:flex;align-items:center;gap:6px;font-size:12px">N1 (7,5%) &#8805;&nbsp;<input type="number" id="liqN1" value="'+n1Thr+'" min="50" max="200" style="width:58px;border:1px solid var(--border);border-radius:4px;padding:3px 6px;font-size:12px;background:var(--bg);color:var(--text)">% cumpl.</label>';
+  h+='<label style="display:flex;align-items:center;gap:6px;font-size:12px">N2 (12%) &#8805;&nbsp;<input type="number" id="liqN2" value="'+n2Thr+'" min="50" max="200" style="width:58px;border:1px solid var(--border);border-radius:4px;padding:3px 6px;font-size:12px;background:var(--bg);color:var(--text)">% cumpl.</label>';
+  h+='<button onclick="_liqAplyThr()" style="padding:5px 14px;background:#2563eb;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">Aplicar</button>';
+  h+='<div style="margin-left:auto;display:flex;align-items:center;gap:10px">';
+  h+='<span style="font-size:12px;font-weight:700">&#127973; Grupal 15%:</span>';
+  h+='<div onclick="_liqTogGrp()" style="width:42px;height:22px;border-radius:11px;background:'+(grupalGlobal?'#16a34a':'#9ca3af')+';position:relative;cursor:pointer;transition:.2s">';
+  h+='<div style="width:18px;height:18px;border-radius:50%;background:#fff;position:absolute;top:2px;'+(grupalGlobal?'right:2px':'left:2px')+';transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.3)"></div></div>';
+  h+='<span style="font-size:12px;font-weight:700;color:'+(grupalGlobal?'#16a34a':'#9ca3af')+'">'+(grupalGlobal?'Orden cumplido':'No cumplido')+'</span>';
+  h+='</div></div>';
+
+  // ── KPIs ──
+  h+='<div class="kpi-grid g5" style="margin-bottom:18px">';
+  h+='<div class="kpi-card green"><div class="kpi-label">&#9989; Presentismo</div><div class="kpi-value">'+cPres+' / '+pickers.length+'</div><div class="kpi-sub">Habilitados &mdash; cobran 5%</div></div>';
+  h+='<div class="kpi-card blue"><div class="kpi-label">&#11088; Nivel 1 (7,5%)</div><div class="kpi-value">'+cN1+'</div><div class="kpi-sub">&#8805; '+n1Thr+'% cumplimiento</div></div>';
+  h+='<div class="kpi-card purple"><div class="kpi-label">&#128081; Nivel 2 (12%)</div><div class="kpi-value">'+cN2+'</div><div class="kpi-sub">&#8805; '+n2Thr+'% cumplimiento</div></div>';
+  h+='<div class="kpi-card '+(grupalGlobal?'green':'amber')+'"><div class="kpi-label">&#127973; Grupal (15%)</div><div class="kpi-value" style="font-size:22px">'+(grupalGlobal?'&#9989;':'&#10060;')+'</div><div class="kpi-sub">'+(grupalGlobal?'Todos cobran +15%':'No activo')+'</div></div>';
+  h+='<div class="kpi-card teal"><div class="kpi-label">&#128184; Masa Salarial Bonos</div><div class="kpi-value" style="font-size:'+(masaBono>99999?'16':'20')+'px">'+(masaBono>0?'$'+Math.round(masaBono).toLocaleString('es-AR'):'—')+'</div><div class="kpi-sub">'+mesLabel+'</div></div>';
+  h+='</div>';
+
+  // ── Table ──
+  h+='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">';
+  h+='<thead><tr style="background:var(--accent,#1a1a1a);color:#fff">';
+  h+='<th style="padding:10px 10px;text-align:center">#</th>';
+  h+='<th style="padding:10px 10px;text-align:left">Operario</th>';
+  h+='<th style="padding:10px 10px;text-align:right">Lin/D&iacute;a</th>';
+  h+='<th style="padding:10px 10px;text-align:right">Cumpl%</th>';
+  h+='<th style="padding:10px 10px;text-align:center">Presentismo<br><small style="opacity:.7;font-weight:400">5% &mdash; abre bonos</small></th>';
+  h+='<th style="padding:10px 10px;text-align:center">Nivel 1<br><small style="opacity:.7;font-weight:400">+7,5%</small></th>';
+  h+='<th style="padding:10px 10px;text-align:center">Nivel 2<br><small style="opacity:.7;font-weight:400">+12%</small></th>';
+  h+='<th style="padding:10px 10px;text-align:center">Grupal<br><small style="opacity:.7;font-weight:400">+15%</small></th>';
+  h+='<th style="padding:10px 10px;text-align:right">Sueldo B&aacute;sico</th>';
+  h+='<th style="padding:10px 10px;text-align:center">Total %</th>';
+  h+='<th style="padding:10px 10px;text-align:right">Importe Bono</th>';
+  h+='</tr></thead><tbody>';
+
+  var totImporte=0, salCount=0, totPctSum=0;
+  pickers.forEach(function(p,i){
+    var isPres=pres(p.nombre);
+    var prLvl=prodLvl(p.nombre,p.cumpl);
+    var isGrp=grp(p.nombre);
+    var isSal=salBase(p.nombre);
+    var pct=(isPres?5:0)+(prLvl===1?7.5:prLvl===2?12:0)+(isGrp?15:0);
+    var imp=isSal>0?Math.round(isSal*pct/100):0;
+    totPctSum+=pct;
+    if(isSal>0){totImporte+=imp;salCount++;}
+
+    var bg=i%2===0?'var(--card-bg)':'var(--bg)';
+    var ldC=p.cumpl>=100?'#16a34a':p.cumpl>=83?'#d97706':'#dc2626';
+    var nm=p.nombre.replace(/'/g,"\\'");
+    var mn=monKey;
+
+    function chk(checked,disabled,onch){
+      return '<input type="checkbox"'+(checked?' checked':'')+' '+(disabled?'disabled ':'')+'onchange="'+onch+'" style="width:17px;height:17px;cursor:'+(disabled?'not-allowed':'pointer')+';accent-color:#2563eb">';
+    }
+
+    var pctC=pct>=25?'#7c3aed':pct>=20?'#16a34a':pct>=10?'#d97706':'#6b7280';
+    var pctLabel=pct>0?pct+'%':'0%';
+
+    h+='<tr style="background:'+bg+'">';
+    h+='<td style="padding:9px 10px;text-align:center;color:var(--text-muted)">'+(i+1)+'</td>';
+    h+='<td style="padding:9px 10px;font-weight:700">'+p.nombre+'</td>';
+    h+='<td style="padding:9px 10px;text-align:right;font-weight:700;color:'+ldC+'">'+p.ld+'</td>';
+    h+='<td style="padding:9px 10px;text-align:right;color:'+ldC+'">'+p.cumpl+'%</td>';
+    h+='<td style="padding:9px 10px;text-align:center">'+chk(isPres,false,'_liqSPres(\''+nm+'\',\''+mn+'\',this.checked)')+'</td>';
+    h+='<td style="padding:9px 10px;text-align:center">'+chk(prLvl===1,!isPres,'_liqSProd(\''+nm+'\',\''+mn+'\',this.checked?1:0)')+'</td>';
+    h+='<td style="padding:9px 10px;text-align:center">'+chk(prLvl===2,!isPres,'_liqSProd(\''+nm+'\',\''+mn+'\',this.checked?2:0)')+'</td>';
+    h+='<td style="padding:9px 10px;text-align:center">'+chk(isGrp,false,'_liqSGrp(\''+nm+'\',\''+mn+'\',this.checked)')+'</td>';
+    h+='<td style="padding:9px 10px;text-align:right"><input type="number" value="'+(isSal||'')+'" placeholder="$ sueldo" onchange="_liqSSal(\''+nm+'\',this.value)" style="width:120px;border:1px solid var(--border);border-radius:4px;padding:3px 7px;font-size:12px;background:var(--bg);color:var(--text);text-align:right"></td>';
+    h+='<td style="padding:9px 10px;text-align:center"><span style="display:inline-block;background:'+pctC+';color:#fff;padding:3px 12px;border-radius:12px;font-weight:700;font-size:13px;min-width:44px;text-align:center">'+pctLabel+'</span></td>';
+    h+='<td style="padding:9px 10px;text-align:right;font-weight:700">'+(isSal>0?'$'+imp.toLocaleString('es-AR'):'—')+'</td>';
+    h+='</tr>';
+  });
+
+  var avgPct=pickers.length?Math.round(totPctSum/pickers.length*10)/10:0;
+  h+='<tr style="background:var(--accent,#1a1a1a);color:#fff;font-weight:700">';
+  h+='<td colspan="8" style="padding:10px 10px">TOTALES &mdash; '+pickers.length+' operarios &bull; '+salCount+' con sueldo cargado</td>';
+  h+='<td></td>';
+  h+='<td style="padding:10px 10px;text-align:center">Prom. '+avgPct+'%</td>';
+  h+='<td style="padding:10px 10px;text-align:right">'+(totImporte>0?'$'+totImporte.toLocaleString('es-AR'):'—')+'</td>';
+  h+='</tr></tbody></table></div>';
+
+  h+='<div style="margin-top:12px;font-size:11px;color:var(--text-muted);display:flex;gap:20px;flex-wrap:wrap;line-height:1.6">';
+  h+='<span>&#9989; <b>Presentismo</b> = 5% + habilita bonos de productividad</span>';
+  h+='<span>&#11088; <b>N1</b> &#8805; '+n1Thr+'% cumpl &rarr; +7,5%</span>';
+  h+='<span>&#128081; <b>N2</b> &#8805; '+n2Thr+'% cumpl &rarr; +12% (excluye N1)</span>';
+  h+='<span>&#127973; <b>Grupal</b> &rarr; +15% (orden dep&oacute;sito) &mdash; se aplica a todos por igual</span>';
+  h+='<span>&#128190; Sueldos guardados localmente en el navegador</span>';
+  h+='</div></div>';
+
+  el.innerHTML=h;
+}
+
+// ── Handlers liquidación ──
+function _liqAplyThr(){
+  var n1=document.getElementById('liqN1'), n2=document.getElementById('liqN2');
+  if(n1) localStorage.setItem('liq_n1_thr',n1.value);
+  if(n2) localStorage.setItem('liq_n2_thr',n2.value);
+  buildLiquidacion();
+}
+function _liqTogGrp(){
+  localStorage.setItem('liq_grupal',localStorage.getItem('liq_grupal')==='1'?'0':'1');
+  buildLiquidacion();
+}
+function _liqSPres(n,m,v){
+  localStorage.setItem('liq_pres_'+_liqSK(n)+'_'+m,v?'1':'0');
+  // Reset prod override so auto-calc re-runs for this operator
+  localStorage.removeItem('liq_prod_'+_liqSK(n)+'_'+m);
+  buildLiquidacion();
+}
+function _liqSProd(n,m,v){
+  localStorage.setItem('liq_prod_'+_liqSK(n)+'_'+m,String(v));
+  buildLiquidacion();
+}
+function _liqSGrp(n,m,v){
+  localStorage.setItem('liq_grp_'+_liqSK(n)+'_'+m,v?'1':'0');
+  buildLiquidacion();
+}
+function _liqSSal(n,v){
+  localStorage.setItem('liq_sal_'+_liqSK(n),v||'0');
+  buildLiquidacion();
+}
+
 // Tab navigation
 function switchTab(name){
   document.querySelectorAll('.sec').forEach(function(s){s.classList.remove('active');});
@@ -960,6 +1168,7 @@ function switchTab(name){
   if(name==='resumen') buildResumen();
   if(name==='control') buildControl();
   if(name==='maquinistas') buildMaquinistas();
+  if(name==='liquidacion') buildLiquidacion();
 }
 
 // Poblar selector de anios
