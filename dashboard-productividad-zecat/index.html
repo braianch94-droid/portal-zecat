@@ -963,6 +963,8 @@ var _liqTab='general';
 
 function buildLiquidacion(){
   var el=document.getElementById('liquidacion-content'); if(!el) return;
+  // Ensure Pie de Máquina defaults exist before any sub-tab reads liqPie_ops
+  (function(){ var ops=[]; try{ops=JSON.parse(localStorage.getItem('liqPie_ops')||'[]');}catch(e){} ['BRAIAN OCAMPO','JOSE PINEDA'].forEach(function(d){if(ops.indexOf(d)===-1)ops.push(d);}); localStorage.setItem('liqPie_ops',JSON.stringify(ops)); })();
   var grpGlobal=localStorage.getItem('liqGrp_global')==='1';
   var tabs=[{id:'general',label:'&#128202; General'},{id:'pickers',label:'&#128230; Pickeadores'},{id:'maq',label:'&#9881; Maquinistas'},{id:'control',label:'&#128203; Control'},{id:'pie',label:'&#127968; Pie de M&aacute;quina'},{id:'dsp',label:'&#128666; Despacho'}];
   var h='<div>';
@@ -1766,7 +1768,9 @@ function applyFilter(){
     if(wcEl) wcEl.innerHTML='';
   }
 
-  // Actualizar Resumen si está activo
+  if(document.getElementById('sec-liquidacion').classList.contains('active')) buildLiquidacion();
+  if(document.getElementById('sec-control').classList.contains('active')) buildControl();
+  if(document.getElementById('sec-maquinistas').classList.contains('active')) buildMaquinistas();
   if(document.getElementById('sec-resumen').classList.contains('active')) buildResumen();
 }
 
