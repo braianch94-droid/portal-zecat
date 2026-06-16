@@ -638,112 +638,151 @@ const CTRL_DATA = [{"fecha":"2026-01-02","mes":"2026-01","nombre":"PENIDA","orde
 function buildControl(){
   var el=document.getElementById('control-content');
   if(!el)return;
-  // Aggregate by user
+
+  // Aggregate
   var byUser={};
   CTRL_DATA.forEach(function(r){
-    if(!byUser[r.nombre])byUser[r.nombre]={dias:0,ordenes:0,unidades:0,byMes:{}};
-    byUser[r.nombre].dias++;
-    byUser[r.nombre].ordenes+=r.ordenes;
-    byUser[r.nombre].unidades+=r.unidades;
-    if(!byUser[r.nombre].byMes[r.mes])byUser[r.nombre].byMes[r.mes]={ordenes:0,unidades:0};
-    byUser[r.nombre].byMes[r.mes].ordenes+=r.ordenes;
-    byUser[r.nombre].byMes[r.mes].unidades+=r.unidades;
+    if(!byUser[r.nombre])byUser[r.nombre]={dias:0,ordenes:0,unidades:0,byMes:{},byDate:[],maxOrdDia:0,maxOrdFecha:''};
+    var d=byUser[r.nombre];
+    d.dias++; d.ordenes+=r.ordenes; d.unidades+=r.unidades;
+    d.byDate.push(r);
+    if(r.ordenes>d.maxOrdDia){d.maxOrdDia=r.ordenes; d.maxOrdFecha=r.fecha;}
+    if(!d.byMes[r.mes])d.byMes[r.mes]={ordenes:0,unidades:0,dias:0};
+    d.byMes[r.mes].ordenes+=r.ordenes; d.byMes[r.mes].unidades+=r.unidades; d.byMes[r.mes].dias++;
   });
-  var users=Object.keys(byUser).sort();
-  // KPIs totales
-  var totOrd=CTRL_DATA.reduce(function(a,r){return a+r.ordenes;},0);
-  var totUnd=CTRL_DATA.reduce(function(a,r){return a+r.unidades;},0);
-  var meses=['2026-01','2026-02','2026-03','2026-04','2026-05'];
-  var mesLabels={'2026-01':'Ene','2026-02':'Feb','2026-03':'Mar','2026-04':'Abr','2026-05':'May'};
-  // Colors for users
+  Object.keys(byUser).forEach(function(u){byUser[u].byDate.sort(function(a,b){return a.fecha>b.fecha?-1:1;});});
+
+  // Sort users by total orders desc
+  var users=Object.keys(byUser).sort(function(a,b){return byUser[b].ordenes-byUser[a].ordenes;});
   var ucolors=['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6'];
   var ucolorMap={};
   users.forEach(function(u,i){ucolorMap[u]=ucolors[i%ucolors.length];});
 
-  var html='<div style="margin-bottom:18px">';
-  html+='<div class="kpi-grid g4" style="margin-bottom:18px">';
-  html+='<div class="kpi-card blue"><div class="kpi-label">&#128269; Operadores Control</div><div class="kpi-val">'+users.length+'</div></div>';
-  html+='<div class="kpi-card blue"><div class="kpi-label">&#128230; Total Ordenes</div><div class="kpi-val">'+totOrd.toLocaleString('es-AR')+'</div></div>';
-  html+='<div class="kpi-card blue"><div class="kpi-label">&#128230; Total Unidades</div><div class="kpi-val">'+totUnd.toLocaleString('es-AR')+'</div></div>';
-  html+='<div class="kpi-card blue"><div class="kpi-label">&#128203; Meses registrados</div><div class="kpi-val">'+meses.length+'</div></div>';
+  // Team totals
+  var totOrd=CTRL_DATA.reduce(function(a,r){return a+r.ordenes;},0);
+  var totUnd=CTRL_DATA.reduce(function(a,r){return a+r.unidades;},0);
+  var totDias=users.reduce(function(a,u){return a+byUser[u].dias;},0);
+  var promOrdDia=totDias>0?Math.round(totOrd/totDias*10)/10:0;
+  var promUndDia=totDias>0?Math.round(totUnd/totDias):0;
+
+  // Months (dynamic)
+  var mesSet={};
+  CTRL_DATA.forEach(function(r){mesSet[r.mes]=1;});
+  var meses=Object.keys(mesSet).sort();
+  var mesLabels={'2026-01':'Ene 26','2026-02':'Feb 26','2026-03':'Mar 26','2026-04':'Abr 26','2026-05':'May 26','2026-06':'Jun 26'};
+
+  var html='<div>';
+
+  // ── KPIs equipo ──
+  html+='<div class="kpi-grid g5" style="margin-bottom:18px">';
+  html+='<div class="kpi-card blue"><div class="kpi-label">&#128203; Total &Oacute;rdenes</div><div class="kpi-value">'+totOrd.toLocaleString('es-AR')+'</div><div class="kpi-sub">Per&iacute;odo completo</div></div>';
+  html+='<div class="kpi-card teal"><div class="kpi-label">&#128230; Total Unidades</div><div class="kpi-value">'+totUnd.toLocaleString('es-AR')+'</div><div class="kpi-sub">Controladas</div></div>';
+  html+='<div class="kpi-card green"><div class="kpi-label">&#128200; Prom. &Oacute;rd/D&iacute;a</div><div class="kpi-value">'+promOrdDia+'</div><div class="kpi-sub">Promedio equipo</div></div>';
+  html+='<div class="kpi-card amber"><div class="kpi-label">&#128200; Prom. Und/D&iacute;a</div><div class="kpi-value">'+promUndDia.toLocaleString('es-AR')+'</div><div class="kpi-sub">Promedio equipo</div></div>';
+  html+='<div class="kpi-card purple"><div class="kpi-label">&#128100; Operadores</div><div class="kpi-value">'+users.length+'</div><div class="kpi-sub">'+meses.length+' meses registrados</div></div>';
   html+='</div>';
 
-  // Ranking por ordenes (total acumulado)
-  var rankData=users.map(function(u){return {nombre:u,ordenes:byUser[u].ordenes,unidades:byUser[u].unidades,dias:byUser[u].dias,prom:Math.round(byUser[u].ordenes/byUser[u].dias*10)/10};});
-  rankData.sort(function(a,b){return b.ordenes-a.ordenes;});
-
-  html+='<h3 style="margin:16px 0 8px;font-size:15px;font-weight:700">&#127942; Ranking — Ordenes Totales Procesadas</h3>';
+  // ── Ranking con barras ──
+  var maxOrdUser=byUser[users[0]].ordenes;
+  html+='<h3 style="margin:4px 0 10px;font-size:15px;font-weight:700">&#127942; Ranking &mdash; &Oacute;rdenes Controladas</h3>';
   html+='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">';
-  html+='<thead><tr style="background:var(--accent);color:#fff"><th style="padding:8px 12px;text-align:left">#</th><th style="padding:8px 12px;text-align:left">Operador</th><th style="padding:8px 12px;text-align:right">D&iacute;as</th><th style="padding:8px 12px;text-align:right">Ordenes</th><th style="padding:8px 12px;text-align:right">Unidades</th><th style="padding:8px 12px;text-align:right">Prom. Ord/D&iacute;a</th></tr></thead><tbody>';
-  rankData.forEach(function(r,i){
-    var bg=i%2===0?'var(--card-bg)':'var(--bg)';
+  html+='<thead><tr style="background:var(--accent,#1a1a1a);color:#fff">';
+  html+='<th style="padding:8px 12px;text-align:left">#</th>';
+  html+='<th style="padding:8px 12px;text-align:left">Operador</th>';
+  html+='<th style="padding:8px 12px;text-align:right">D&iacute;as</th>';
+  html+='<th style="padding:8px 12px;min-width:180px">&Oacute;rdenes</th>';
+  html+='<th style="padding:8px 12px;text-align:right">% Total</th>';
+  html+='<th style="padding:8px 12px;text-align:right">Unidades</th>';
+  html+='<th style="padding:8px 12px;text-align:right">Prom. &Oacute;rd/D&iacute;a</th>';
+  html+='<th style="padding:8px 12px;text-align:right">Mejor d&iacute;a</th>';
+  html+='</tr></thead><tbody>';
+  users.forEach(function(u,i){
+    var d=byUser[u];
+    var bg=i%2===0?'var(--card-bg,#fff)':'var(--bg,#f5f5f5)';
     var medal=i===0?'&#129351;':i===1?'&#129352;':i===2?'&#129353;':'#'+(i+1);
-    html+='<tr style="background:'+bg+'"><td style="padding:7px 12px">'+medal+'</td>';
-    html+='<td style="padding:7px 12px;font-weight:600">'+r.nombre+'</td>';
-    html+='<td style="padding:7px 12px;text-align:right">'+r.dias+'</td>';
-    html+='<td style="padding:7px 12px;text-align:right;font-weight:700;color:'+ucolorMap[r.nombre]+'">'+r.ordenes.toLocaleString('es-AR')+'</td>';
-    html+='<td style="padding:7px 12px;text-align:right">'+r.unidades.toLocaleString('es-AR')+'</td>';
-    html+='<td style="padding:7px 12px;text-align:right">'+r.prom+'</td></tr>';
+    var pct=totOrd>0?Math.round(d.ordenes/totOrd*100):0;
+    var barPct=maxOrdUser>0?Math.round(d.ordenes/maxOrdUser*100):0;
+    var promOrd=Math.round(d.ordenes/d.dias*10)/10;
+    html+='<tr style="background:'+bg+'">';
+    html+='<td style="padding:8px 12px;font-size:15px">'+medal+'</td>';
+    html+='<td style="padding:8px 12px;font-weight:700;color:'+ucolorMap[u]+'">'+u+'</td>';
+    html+='<td style="padding:8px 12px;text-align:right">'+d.dias+'</td>';
+    html+='<td style="padding:8px 12px"><div style="display:flex;align-items:center;gap:6px">';
+    html+='<div style="flex:1;background:var(--bg,#eee);border-radius:3px;height:14px;overflow:hidden">';
+    html+='<div style="width:'+barPct+'%;background:'+ucolorMap[u]+';height:100%;border-radius:3px"></div></div>';
+    html+='<span style="font-weight:700;font-size:13px;white-space:nowrap">'+d.ordenes.toLocaleString('es-AR')+'</span></div></td>';
+    html+='<td style="padding:8px 12px;text-align:right;color:var(--muted,#999)">'+pct+'%</td>';
+    html+='<td style="padding:8px 12px;text-align:right">'+d.unidades.toLocaleString('es-AR')+'</td>';
+    html+='<td style="padding:8px 12px;text-align:right;font-weight:600">'+promOrd+'</td>';
+    html+='<td style="padding:8px 12px;text-align:right;font-size:12px">'+d.maxOrdDia+' &oacute;rd.<br><span style="color:var(--muted,#999);font-size:10px">'+d.maxOrdFecha.slice(5)+'</span></td>';
+    html+='</tr>';
   });
   html+='</tbody></table></div>';
 
-  // Evolucion mensual por usuario (barras agrupadas via divs)
-  html+='<h3 style="margin:22px 0 8px;font-size:15px;font-weight:700">&#128200; Evoluci&oacute;n Mensual de Ordenes por Operador</h3>';
-  // Find max ordenes per mes for scaling
+  // ── Evolución mensual ──
+  html+='<h3 style="margin:22px 0 8px;font-size:15px;font-weight:700">&#128200; Evoluci&oacute;n Mensual &mdash; &Oacute;rdenes por Operador</h3>';
   var maxOrdMes=0;
-  meses.forEach(function(m){
-    users.forEach(function(u){
-      var v=(byUser[u].byMes[m]||{ordenes:0}).ordenes;
-      if(v>maxOrdMes)maxOrdMes=v;
-    });
-  });
+  meses.forEach(function(m){users.forEach(function(u){var v=(byUser[u].byMes[m]||{ordenes:0}).ordenes; if(v>maxOrdMes)maxOrdMes=v;});});
   html+='<div style="overflow-x:auto"><div style="min-width:500px">';
-  // Legend
   html+='<div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:12px">';
-  users.forEach(function(u){
-    html+='<span style="display:flex;align-items:center;gap:6px;font-size:12px"><span style="width:12px;height:12px;border-radius:50%;background:'+ucolorMap[u]+';display:inline-block"></span>'+u+'</span>';
-  });
+  users.forEach(function(u){html+='<span style="display:flex;align-items:center;gap:6px;font-size:12px"><span style="width:12px;height:12px;border-radius:50%;background:'+ucolorMap[u]+';display:inline-block"></span>'+u+'</span>';});
   html+='</div>';
-  // Bars per month
   meses.forEach(function(m){
-    html+='<div style="margin-bottom:14px">';
-    html+='<div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:4px">'+mesLabels[m]+'</div>';
+    var mesTotOrd=users.reduce(function(a,u){return a+(byUser[u].byMes[m]||{ordenes:0}).ordenes;},0);
+    var mesTotUnd=users.reduce(function(a,u){return a+(byUser[u].byMes[m]||{unidades:0}).unidades;},0);
+    html+='<div style="margin-bottom:16px">';
+    html+='<div style="display:flex;align-items:baseline;gap:10px;margin-bottom:5px">';
+    html+='<div style="font-size:12px;font-weight:700;color:var(--text,#111)">'+(mesLabels[m]||m)+'</div>';
+    html+='<div style="font-size:11px;color:var(--muted,#999)">'+mesTotOrd.toLocaleString('es-AR')+' &oacute;rd. &middot; '+mesTotUnd.toLocaleString('es-AR')+' und.</div>';
+    html+='</div>';
     users.forEach(function(u){
-      var v=(byUser[u].byMes[m]||{ordenes:0}).ordenes;
-      var pct=maxOrdMes>0?Math.round(v/maxOrdMes*100):0;
+      var d=byUser[u].byMes[m]||{ordenes:0,unidades:0,dias:0};
+      var pct=maxOrdMes>0?Math.round(d.ordenes/maxOrdMes*100):0;
+      var pctMes=mesTotOrd>0?Math.round(d.ordenes/mesTotOrd*100):0;
       html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">';
-      html+='<div style="width:110px;font-size:11px;text-align:right;color:var(--text)">'+u+'</div>';
-      html+='<div style="flex:1;background:var(--bg);border-radius:4px;height:18px;overflow:hidden">';
-      html+='<div style="width:'+pct+'%;background:'+ucolorMap[u]+';height:100%;border-radius:4px;display:flex;align-items:center;padding-left:6px;min-width:'+(v>0?20:0)+'px">';
-      html+=(v>0?'<span style="font-size:10px;color:#fff;white-space:nowrap">'+v+'</span>':'');
-      html+='</div></div></div>';
+      html+='<div style="width:140px;font-size:11px;text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+u+'</div>';
+      html+='<div style="flex:1;background:var(--bg,#eee);border-radius:4px;height:18px;overflow:hidden">';
+      html+='<div style="width:'+pct+'%;background:'+ucolorMap[u]+';height:100%;border-radius:4px;display:flex;align-items:center;padding-left:6px;min-width:'+(d.ordenes>0?24:0)+'px">';
+      html+=(d.ordenes>0?'<span style="font-size:10px;color:#fff;white-space:nowrap">'+d.ordenes+'</span>':'');
+      html+='</div></div>';
+      html+='<div style="font-size:10px;color:var(--muted,#999);width:40px;text-align:right">'+(d.ordenes>0?pctMes+'%':'&mdash;')+'</div>';
+      html+='</div>';
     });
     html+='</div>';
   });
   html+='</div></div>';
 
-  // Detalle por usuario — ultimos 15 dias registrados
-  html+='<h3 style="margin:22px 0 8px;font-size:15px;font-weight:700">&#128203; Detalle por Operador</h3>';
+  // ── Detalle por operador ──
+  html+='<h3 style="margin:22px 0 8px;font-size:15px;font-weight:700">&#128203; Detalle por Operador &mdash; &uacute;ltimas 20 jornadas</h3>';
   html+='<div class="kpi-grid g'+(users.length<=3?users.length:3)+'">';
   users.forEach(function(u){
-    var rows=CTRL_DATA.filter(function(r){return r.nombre===u;});
-    rows.sort(function(a,b){return a.fecha>b.fecha?-1:1;});
-    var last15=rows.slice(0,15);
-    var avgOrd=Math.round(last15.reduce(function(a,r){return a+r.ordenes;},0)/last15.length*10)/10;
-    var avgUnd=Math.round(last15.reduce(function(a,r){return a+r.unidades;},0)/last15.length);
+    var d=byUser[u];
+    var last20=d.byDate.slice(0,20);
+    var avgOrd=last20.length?Math.round(last20.reduce(function(a,r){return a+r.ordenes;},0)/last20.length*10)/10:0;
+    var avgUnd=last20.length?Math.round(last20.reduce(function(a,r){return a+r.unidades;},0)/last20.length):0;
     html+='<div class="kpi-card" style="border-top:3px solid '+ucolorMap[u]+'">';
-    html+='<div style="font-weight:700;font-size:14px;margin-bottom:8px">'+u+'</div>';
-    html+='<div style="font-size:12px;color:var(--muted);margin-bottom:4px">Prom. Ord/d&iacute;a (&#250;lt. 15): <strong style="color:'+ucolorMap[u]+'">'+avgOrd+'</strong></div>';
-    html+='<div style="font-size:12px;color:var(--muted);margin-bottom:8px">Prom. Und/d&iacute;a (&#250;lt. 15): <strong>'+avgUnd.toLocaleString('es-AR')+'</strong></div>';
+    html+='<div style="font-weight:700;font-size:13px;margin-bottom:8px;color:'+ucolorMap[u]+'">'+u+'</div>';
+    html+='<div style="display:flex;gap:6px;margin-bottom:8px">';
+    html+='<div style="flex:1;background:var(--bg,#f5f5f5);border-radius:6px;padding:5px 7px;text-align:center"><div style="font-size:9px;color:var(--muted,#999)">Total Ord.</div><div style="font-size:15px;font-weight:700;color:'+ucolorMap[u]+'">'+d.ordenes.toLocaleString('es-AR')+'</div></div>';
+    html+='<div style="flex:1;background:var(--bg,#f5f5f5);border-radius:6px;padding:5px 7px;text-align:center"><div style="font-size:9px;color:var(--muted,#999)">Prom/D&iacute;a</div><div style="font-size:15px;font-weight:700">'+Math.round(d.ordenes/d.dias*10)/10+'</div></div>';
+    html+='<div style="flex:1;background:var(--bg,#f5f5f5);border-radius:6px;padding:5px 7px;text-align:center"><div style="font-size:9px;color:var(--muted,#999)">D&iacute;as</div><div style="font-size:15px;font-weight:700">'+d.dias+'</div></div>';
+    html+='</div>';
+    html+='<div style="font-size:11px;color:var(--muted,#999);margin-bottom:6px">Mejor d&iacute;a: <strong style="color:'+ucolorMap[u]+'">'+d.maxOrdDia+' &oacute;rd.</strong> &nbsp;&middot;&nbsp; &uacute;lt.20: prom <strong>'+avgOrd+'</strong> ord / <strong>'+avgUnd.toLocaleString('es-AR')+'</strong> und</div>';
     html+='<table style="width:100%;font-size:11px;border-collapse:collapse">';
-    html+='<tr style="color:var(--muted)"><th style="text-align:left;padding:2px 4px">Fecha</th><th style="text-align:right;padding:2px 4px">Ord.</th><th style="text-align:right;padding:2px 4px">Und.</th></tr>';
-    last15.forEach(function(r){
-      html+='<tr><td style="padding:2px 4px">'+r.fecha.slice(5)+'</td><td style="text-align:right;padding:2px 4px">'+r.ordenes+'</td><td style="text-align:right;padding:2px 4px">'+r.unidades.toLocaleString('es-AR')+'</td></tr>';
+    html+='<tr style="color:var(--muted,#999)"><th style="text-align:left;padding:2px 4px">Fecha</th><th style="text-align:right;padding:2px 4px">&Oacute;rd.</th><th style="text-align:right;padding:2px 4px">Und.</th><th style="text-align:right;padding:2px 4px">Und/&Oacute;rd</th></tr>';
+    last20.forEach(function(r,i){
+      var ratio=r.ordenes>0?Math.round(r.unidades/r.ordenes):0;
+      var bg=i%2===1?'background:var(--bg,#f9f9f9)':'';
+      html+='<tr style="border-top:1px solid var(--border,#eee);'+bg+'">';
+      html+='<td style="padding:2px 4px">'+r.fecha.slice(5)+'</td>';
+      html+='<td style="text-align:right;padding:2px 4px;font-weight:600;color:'+ucolorMap[u]+'">'+r.ordenes+'</td>';
+      html+='<td style="text-align:right;padding:2px 4px">'+r.unidades.toLocaleString('es-AR')+'</td>';
+      html+='<td style="text-align:right;padding:2px 4px;color:var(--muted,#999);font-size:10px">'+ratio+'</td>';
+      html+='</tr>';
     });
     html+='</table></div>';
   });
-  html+='</div>';
-  html+='</div>';
+  html+='</div></div>';
   el.innerHTML=html;
 }
 
