@@ -964,7 +964,7 @@ var _liqTab='general';
 function buildLiquidacion(){
   var el=document.getElementById('liquidacion-content'); if(!el) return;
   var grpGlobal=localStorage.getItem('liqGrp_global')==='1';
-  var tabs=[{id:'general',label:'&#128202; General'},{id:'pickers',label:'&#128230; Pickeadores'},{id:'maq',label:'&#9881; Maquinistas'},{id:'control',label:'&#128203; Control'},{id:'pie',label:'&#127968; Pie de M&aacute;quina'}];
+  var tabs=[{id:'general',label:'&#128202; General'},{id:'pickers',label:'&#128230; Pickeadores'},{id:'maq',label:'&#9881; Maquinistas'},{id:'control',label:'&#128203; Control'},{id:'pie',label:'&#127968; Pie de M&aacute;quina'},{id:'dsp',label:'&#128666; Despacho'}];
   var h='<div>';
   // ── Banner global grupal ──
   h+='<div style="background:'+(grpGlobal?'#f0fdf4':'var(--card-bg)')+';border:2px solid '+(grpGlobal?'#16a34a':'var(--border)')+';border-radius:10px;padding:12px 20px;margin-bottom:16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">';
@@ -981,6 +981,7 @@ function buildLiquidacion(){
   else if(_liqTab==='maq') _buildLiqMaq();
   else if(_liqTab==='control') _buildLiqCt();
   else if(_liqTab==='pie') _buildLiqPie();
+  else if(_liqTab==='dsp') _buildLiqDsp();
 }
 function _liqSetTab(t){ _liqTab=t; buildLiquidacion(); }
 
@@ -1102,6 +1103,10 @@ function _buildLiqPie(){
   var mon=anio+'-'+(mesV==='all'?'all':String(mesV).padStart(2,'0'));
   var grpGlobal=localStorage.getItem('liqGrp_global')==='1', gp=3;
   var ops=[]; try{ ops=JSON.parse(localStorage.getItem('liqPie_ops')||'[]'); }catch(e){}
+  ['BRAIAN OCAMPO','JOSE PINEDA'].forEach(function(d){ if(ops.indexOf(d)===-1) ops.push(d); });
+  localStorage.setItem('liqPie_ops',JSON.stringify(ops));
+  var pkPiePm={};
+  Object.keys(monthlyData).sort().forEach(function(k){ var yr=k.slice(0,4),mo2=parseInt(k.slice(5,7)); if(anio!=='all'&&yr!==anio) return; if(mesV!=='all'&&mo2!==parseInt(mesV)) return; var md=monthlyData[k]; if(!md||!md.pickers) return; md.pickers.forEach(function(p){ var nn=p.resp.toUpperCase(); if(!pkPiePm[nn]) pkPiePm[nn]={l:0,d:0}; pkPiePm[nn].l+=p.lineas; pkPiePm[nn].d+=p.dias; }); });
   function pr(n){ return localStorage.getItem('liqPie_pres_'+_liqSK(n)+'_'+mon)==='1'; }
   function getErr(n){ var v=localStorage.getItem('liqPie_err_'+_liqSK(n)+'_'+mon); return v===null?null:parseInt(v); }
   function lv(n){ var v=localStorage.getItem('liqPie_prod_'+_liqSK(n)+'_'+mon); if(v!==null) return parseInt(v); if(!pr(n)) return 0; var e=getErr(n); if(e===null) return 0; return e===0?2:e===1?1:0; }
@@ -1117,7 +1122,7 @@ function _buildLiqPie(){
   if(!ops.length){ el.innerHTML=h+'<div style="padding:30px;text-align:center;color:var(--text-muted);border:2px dashed var(--border);border-radius:8px">Agreg&aacute; los operarios de Pie de M&aacute;quina para comenzar.</div>'; return; }
   h+=_liqTH([['#','center'],['Operario','left'],['Errores (auditado)','center'],['Presentismo<br><small style="opacity:.7">5%</small>','center'],['N1<br><small style="opacity:.7">+2,5%</small>','center'],['N2<br><small style="opacity:.7">+4,5%</small>','center'],['Grupal<br><small style="opacity:.7">+3%</small>','center'],['Sueldo B&aacute;sico','right'],['Total %','center'],['Importe','right'],['','center']]);
   var tI=0,sC=0,tP=0;
-  ops.forEach(function(name,i){ var iP=pr(name),iL=lv(name),iG=gr(name),iS=sl(name),pct=tp(name),imp=iS>0?Math.round(iS*pct/100):0,err=getErr(name); tP+=pct; if(iS>0){tI+=imp;sC++;} var bg=i%2===0?'var(--card-bg)':'var(--bg)',eC=iL===2?'#16a34a':iL===1?'#d97706':'#dc2626',nm=name.replace(/'/g,"\\'"); h+='<tr style="background:'+bg+'"><td style="padding:9px 10px;text-align:center;color:var(--text-muted)">'+(i+1)+'</td><td style="padding:9px 10px;font-weight:700">'+name+'</td><td style="padding:9px 10px;text-align:center"><input type="number" value="'+(err!==null?err:'')+'" placeholder="—" min="0" onchange="_liqPieE(\''+nm+'\',\''+mon+'\',this.value)" style="width:60px;border:1px solid var(--border);border-radius:4px;padding:3px 6px;font-size:13px;font-weight:700;background:var(--bg);color:'+(err!==null?eC:'var(--text)')+';text-align:center"></td><td style="padding:9px 10px;text-align:center">'+_liqChk(iP,false,'_liqPieP(\''+nm+'\',\''+mon+'\',this.checked)')+'</td><td style="padding:9px 10px;text-align:center">'+_liqChk(iL===1,!iP,'_liqPieL(\''+nm+'\',\''+mon+'\',this.checked?1:0)')+'</td><td style="padding:9px 10px;text-align:center">'+_liqChk(iL===2,!iP,'_liqPieL(\''+nm+'\',\''+mon+'\',this.checked?2:0)')+'</td><td style="padding:9px 10px;text-align:center">'+_liqChk(iG,false,'_liqGrpOp(\''+nm+'\',this.checked)')+'</td><td style="padding:9px 10px;text-align:right"><input type="number" value="'+(iS||'')+'" placeholder="$ sueldo" onchange="_liqSSal(\''+nm+'\',this.value)" style="width:110px;border:1px solid var(--border);border-radius:4px;padding:3px 7px;font-size:12px;background:var(--bg);color:var(--text);text-align:right"></td><td style="padding:9px 10px;text-align:center">'+_liqBadge(pct)+'</td><td style="padding:9px 10px;text-align:right;font-weight:700">'+(iS>0?'$'+imp.toLocaleString('es-AR'):'—')+'</td><td style="padding:9px 10px;text-align:center"><button onclick="_liqPieDel('+i+')" style="background:none;border:1px solid #dc2626;color:#dc2626;border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer">&#128465;</button></td></tr>'; });
+  ops.forEach(function(name,i){ var iP=pr(name),iL=lv(name),iG=gr(name),iS=sl(name),pct=tp(name),imp=iS>0?Math.round(iS*pct/100):0,err=getErr(name); tP+=pct; if(iS>0){tI+=imp;sC++;} var bg=i%2===0?'var(--card-bg)':'var(--bg)',eC=iL===2?'#16a34a':iL===1?'#d97706':'#dc2626',nm=name.replace(/'/g,"\\'"); var pkD=pkPiePm[name.toUpperCase()]; var pkLine=''; if(pkD&&pkD.d>0){ var pkLd=Math.round(pkD.l/pkD.d*10)/10,pkC=Math.round(pkLd/84*100),pkCol=pkC>=100?'#16a34a':pkC>=83?'#d97706':'#dc2626'; pkLine='<div style="font-size:10px;color:var(--text-muted);margin-top:2px">&#128230; '+pkLd+' lin/d&iacute;a &bull; <span style="color:'+pkCol+';font-weight:700">'+pkC+'%</span></div>'; } h+='<tr style="background:'+bg+'"><td style="padding:9px 10px;text-align:center;color:var(--text-muted)">'+(i+1)+'</td><td style="padding:9px 10px;font-weight:700">'+name+pkLine+'</td><td style="padding:9px 10px;text-align:center"><input type="number" value="'+(err!==null?err:'')+'" placeholder="—" min="0" onchange="_liqPieE(\''+nm+'\',\''+mon+'\',this.value)" style="width:60px;border:1px solid var(--border);border-radius:4px;padding:3px 6px;font-size:13px;font-weight:700;background:var(--bg);color:'+(err!==null?eC:'var(--text)')+';text-align:center"></td><td style="padding:9px 10px;text-align:center">'+_liqChk(iP,false,'_liqPieP(\''+nm+'\',\''+mon+'\',this.checked)')+'</td><td style="padding:9px 10px;text-align:center">'+_liqChk(iL===1,!iP,'_liqPieL(\''+nm+'\',\''+mon+'\',this.checked?1:0)')+'</td><td style="padding:9px 10px;text-align:center">'+_liqChk(iL===2,!iP,'_liqPieL(\''+nm+'\',\''+mon+'\',this.checked?2:0)')+'</td><td style="padding:9px 10px;text-align:center">'+_liqChk(iG,false,'_liqGrpOp(\''+nm+'\',this.checked)')+'</td><td style="padding:9px 10px;text-align:right"><input type="number" value="'+(iS||'')+'" placeholder="$ sueldo" onchange="_liqSSal(\''+nm+'\',this.value)" style="width:110px;border:1px solid var(--border);border-radius:4px;padding:3px 7px;font-size:12px;background:var(--bg);color:var(--text);text-align:right"></td><td style="padding:9px 10px;text-align:center">'+_liqBadge(pct)+'</td><td style="padding:9px 10px;text-align:right;font-weight:700">'+(iS>0?'$'+imp.toLocaleString('es-AR'):'—')+'</td><td style="padding:9px 10px;text-align:center"><button onclick="_liqPieDel('+i+')" style="background:none;border:1px solid #dc2626;color:#dc2626;border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer">&#128465;</button></td></tr>'; });
   h+=_liqTF(ops.length,sC,tP,tI,7,true);
   h+=_liqLeg(['Ingres&aacute; errores auditados &mdash; N1 con &le;1 error, N2 con 0 errores','&#9989; Presentismo debe estar activo para acceder a N1/N2','Operarios guardados permanentemente en el navegador']);
   el.innerHTML=h;
@@ -1128,6 +1133,39 @@ function _liqPieP(n,m,v){ localStorage.setItem('liqPie_pres_'+_liqSK(n)+'_'+m,v?
 function _liqPieL(n,m,v){ localStorage.setItem('liqPie_prod_'+_liqSK(n)+'_'+m,String(v)); buildLiquidacion(); }
 function _liqGrpOp(n,v){ localStorage.setItem('liqGrp_op_'+_liqSK(n),v?'1':'0'); buildLiquidacion(); }
 function _liqPieE(n,m,v){ localStorage.setItem('liqPie_err_'+_liqSK(n)+'_'+m,v||'0'); buildLiquidacion(); }
+
+/* ── 5. DESPACHO ── */
+function _buildLiqDsp(){
+  var el=document.getElementById('liq-sub'); if(!el) return;
+  var anio=document.getElementById('selAnio').value, mesV=document.getElementById('selMes').value;
+  var mon=anio+'-'+(mesV==='all'?'all':String(mesV).padStart(2,'0'));
+  var grpGlobal=localStorage.getItem('liqGrp_global')==='1', gp=3;
+  var ops=[]; try{ ops=JSON.parse(localStorage.getItem('liqDsp_ops')||'[]'); }catch(e){}
+  function pr(n){ return localStorage.getItem('liqDsp_pres_'+_liqSK(n)+'_'+mon)==='1'; }
+  function getRec(n){ var v=localStorage.getItem('liqDsp_rec_'+_liqSK(n)+'_'+mon); return v===null?null:parseInt(v); }
+  function lv(n){ var v=localStorage.getItem('liqDsp_prod_'+_liqSK(n)+'_'+mon); if(v!==null) return parseInt(v); if(!pr(n)) return 0; var r=getRec(n); if(r===null) return 0; return r===0?2:r<=1?1:0; }
+  function gr(n){ var v=localStorage.getItem('liqGrp_op_'+_liqSK(n)); return v!==null?(v==='1'):grpGlobal; }
+  function sl(n){ return parseFloat(localStorage.getItem('liq_sal_'+_liqSK(n)))||0; }
+  function tp(n){ return (pr(n)?5:0)+(lv(n)>=1?2.5:0)+(lv(n)>=2?4.5:0)+(gr(n)?gp:0); }
+  var cP=0,c1=0,c2=0,mb=0;
+  ops.forEach(function(n){ if(pr(n))cP++; var l=lv(n); if(l>=1)c1++; if(l>=2)c2++; var s=sl(n); if(s>0)mb+=s*tp(n)/100; });
+  var ml=mesV==='all'?'Todos los meses':(MES[parseInt(mesV)]||mesV)+' '+anio;
+  var h='<div style="background:var(--card-bg);border:1px solid var(--border);border-radius:10px;padding:14px 20px;margin-bottom:18px;display:flex;align-items:center;gap:16px;flex-wrap:wrap"><span style="font-weight:700;font-size:13px">&#9432; N1 = &le;1 reclamo &bull; N2 = 0 reclamos &mdash; ingres&aacute; el total del per&iacute;odo</span></div>';
+  h+=_liqKPIs([{c:'green',l:'&#9989; Presentismo',v:cP+' / '+ops.length,s:'Cobran 5%',fs:'28px'},{c:'blue',l:'&#11088; N1 (2,5%)',v:c1,s:'&le;1 reclamo',fs:'28px'},{c:'purple',l:'&#128081; N2 (4,5%)',v:c2,s:'0 reclamos',fs:'28px'},{c:(grpGlobal?'green':'amber'),l:'&#127973; Grupal (3%)',v:(grpGlobal?'&#9989;':'&#10060;'),s:(grpGlobal?'+3% activado':'Ver banner arriba'),fs:'22px'},{c:'teal',l:'&#128184; Masa Bonos',v:(mb>0?'$'+Math.round(mb).toLocaleString('es-AR'):'—'),s:ml,fs:'20px'}]);
+  h+='<div style="display:flex;gap:8px;align-items:center;margin-bottom:14px"><input type="text" id="liqDspNew" placeholder="Nombre del operario..." style="border:1px solid var(--border);border-radius:6px;padding:6px 12px;font-size:13px;background:var(--bg);color:var(--text);width:240px"><button onclick="_liqDspAdd()" style="padding:6px 16px;background:#2563eb;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">+ Agregar</button></div>';
+  if(!ops.length){ el.innerHTML=h+'<div style="padding:30px;text-align:center;color:var(--text-muted);border:2px dashed var(--border);border-radius:8px">Agreg&aacute; los operarios de Despacho para comenzar.</div>'; return; }
+  h+=_liqTH([['#','center'],['Operario','left'],['Reclamos<br><small style="opacity:.7">ingresar</small>','center'],['Presentismo<br><small style="opacity:.7">5%</small>','center'],['N1<br><small style="opacity:.7">+2,5%</small>','center'],['N2<br><small style="opacity:.7">+4,5%</small>','center'],['Grupal<br><small style="opacity:.7">+3%</small>','center'],['Sueldo B&aacute;sico','right'],['Total %','center'],['Importe','right'],['','center']]);
+  var tI=0,sC=0,tP=0;
+  ops.forEach(function(name,i){ var iP=pr(name),iL=lv(name),iG=gr(name),iS=sl(name),pct=tp(name),imp=iS>0?Math.round(iS*pct/100):0,rc=getRec(name); tP+=pct; if(iS>0){tI+=imp;sC++;} var bg=i%2===0?'var(--card-bg)':'var(--bg)',rC=iL>=2?'#16a34a':iL>=1?'#d97706':'#dc2626',nm=name.replace(/'/g,"\\'"); h+='<tr style="background:'+bg+'"><td style="padding:9px 10px;text-align:center;color:var(--text-muted)">'+(i+1)+'</td><td style="padding:9px 10px;font-weight:700">'+name+'</td><td style="padding:9px 10px;text-align:center"><input type="number" value="'+(rc!==null?rc:'')+'" placeholder="—" min="0" onchange="_liqDspR(\''+nm+'\',\''+mon+'\',this.value)" style="width:55px;border:1px solid var(--border);border-radius:4px;padding:3px 6px;font-size:13px;font-weight:700;background:var(--bg);color:'+(rc!==null?rC:'var(--text)')+';text-align:center"></td><td style="padding:9px 10px;text-align:center">'+_liqChk(iP,false,'_liqDspP(\''+nm+'\',\''+mon+'\',this.checked)')+'</td><td style="padding:9px 10px;text-align:center">'+_liqChk(iL>=1,!iP,'_liqDspL(\''+nm+'\',\''+mon+'\',this.checked?1:0)')+'</td><td style="padding:9px 10px;text-align:center">'+_liqChk(iL>=2,!iP,'_liqDspL(\''+nm+'\',\''+mon+'\',this.checked?2:0)')+'</td><td style="padding:9px 10px;text-align:center">'+_liqChk(iG,false,'_liqGrpOp(\''+nm+'\',this.checked)')+'</td><td style="padding:9px 10px;text-align:right"><input type="number" value="'+(iS||'')+'" placeholder="$ sueldo" onchange="_liqSSal(\''+nm+'\',this.value)" style="width:110px;border:1px solid var(--border);border-radius:4px;padding:3px 7px;font-size:12px;background:var(--bg);color:var(--text);text-align:right"></td><td style="padding:9px 10px;text-align:center">'+_liqBadge(pct)+'</td><td style="padding:9px 10px;text-align:right;font-weight:700">'+(iS>0?'$'+imp.toLocaleString('es-AR'):'—')+'</td><td style="padding:9px 10px;text-align:center"><button onclick="_liqDspDel('+i+')" style="background:none;border:1px solid #dc2626;color:#dc2626;border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer">&#128465;</button></td></tr>'; });
+  h+=_liqTF(ops.length,sC,tP,tI,7,true);
+  h+=_liqLeg(['N1: &le;1 reclamo &rarr; +2,5% &bull; N2: 0 reclamos &rarr; +4,5% adicional (acumula)','Ingres&aacute; los reclamos del per&iacute;odo para c&aacute;lculo autom&aacute;tico de N1/N2','Operarios guardados permanentemente en el navegador']);
+  el.innerHTML=h;
+}
+function _liqDspAdd(){ var inp=document.getElementById('liqDspNew'); if(!inp||!inp.value.trim()) return; var ops=[]; try{ ops=JSON.parse(localStorage.getItem('liqDsp_ops')||'[]'); }catch(e){} var n=inp.value.trim().toUpperCase(); if(ops.indexOf(n)===-1) ops.push(n); localStorage.setItem('liqDsp_ops',JSON.stringify(ops)); buildLiquidacion(); }
+function _liqDspDel(i){ var ops=[]; try{ ops=JSON.parse(localStorage.getItem('liqDsp_ops')||'[]'); }catch(e){} ops.splice(i,1); localStorage.setItem('liqDsp_ops',JSON.stringify(ops)); buildLiquidacion(); }
+function _liqDspP(n,m,v){ localStorage.setItem('liqDsp_pres_'+_liqSK(n)+'_'+m,v?'1':'0'); localStorage.removeItem('liqDsp_prod_'+_liqSK(n)+'_'+m); buildLiquidacion(); }
+function _liqDspL(n,m,v){ localStorage.setItem('liqDsp_prod_'+_liqSK(n)+'_'+m,String(v)); buildLiquidacion(); }
+function _liqDspR(n,m,v){ localStorage.setItem('liqDsp_rec_'+_liqSK(n)+'_'+m,v||'0'); buildLiquidacion(); }
 
 /* ── 0. GENERAL ── */
 function _buildLiqGen(){
@@ -1160,12 +1198,16 @@ function _buildLiqGen(){
   /* Pie de Máquina */
   var pieNames=[]; try{pieNames=JSON.parse(localStorage.getItem('liqPie_ops')||'[]');}catch(e){}
   var pieOps=pieNames.map(function(nm){ var ev=localStorage.getItem('liqPie_err_'+_liqSK(nm)+'_'+mon); var evn=ev===null?null:parseInt(ev); return calcOp(nm,localStorage.getItem('liqPie_pres_'+_liqSK(nm)+'_'+mon)==='1','liqPie_prod_'+_liqSK(nm)+'_'+mon,function(p){if(!p||evn===null)return 0; return evn===0?2:evn===1?1:0;}); }).sort(function(a,b){return b.pct-a.pct;});
+  /* Despacho */
+  var dspNames=[]; try{dspNames=JSON.parse(localStorage.getItem('liqDsp_ops')||'[]');}catch(e){}
+  var dspOps=dspNames.map(function(nm){ var rv=localStorage.getItem('liqDsp_rec_'+_liqSK(nm)+'_'+mon); var rvn=rv===null?null:parseInt(rv); return calcOp(nm,localStorage.getItem('liqDsp_pres_'+_liqSK(nm)+'_'+mon)==='1','liqDsp_prod_'+_liqSK(nm)+'_'+mon,function(p){if(!p||rvn===null)return 0; return rvn===0?2:rvn<=1?1:0;}); }).sort(function(a,b){return b.pct-a.pct;});
 
   var groups=[
     {icon:'&#128230;',title:'Pickeadores',ops:pkOps},
     {icon:'&#9881;',title:'Maquinistas',ops:mqOps},
     {icon:'&#128203;',title:'Control',ops:ctOps},
-    {icon:'&#127968;',title:'Pie de M&aacute;quina',ops:pieOps}
+    {icon:'&#127968;',title:'Pie de M&aacute;quina',ops:pieOps},
+    {icon:'&#128666;',title:'Despacho',ops:dspOps}
   ];
 
   function chk(v,c){ return v?'<span style="color:'+c+';font-weight:800;font-size:15px">&#10003;</span>':'<span style="color:var(--text-muted);opacity:.3;font-size:12px">&mdash;</span>'; }
@@ -1210,7 +1252,11 @@ function _buildLiqGen(){
   groups.forEach(function(g){ g.ops.forEach(function(op){ if(op.imp>0) totalMasa+=op.imp; }); });
 
   var h='<div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:20px">';
-  groups.forEach(function(g){ h+=renderGrp(g); });
+  groups.forEach(function(g,i){
+    var isLast=i===groups.length-1, isOdd=groups.length%2===1;
+    var wrap=isLast&&isOdd?'<div style="grid-column:1/-1">':'<div>';
+    h+=wrap+renderGrp(g)+'</div>';
+  });
   h+='</div>';
   if(totalMasa>0){
     h+='<div style="background:var(--card-bg);border:2px solid #16a34a;border-radius:12px;padding:16px 24px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">';
