@@ -644,10 +644,11 @@ const CTRL_DATA = [{"fecha":"2026-01-02","mes":"2026-01","nombre":"PENIDA","orde
 function buildControl(){
   var el=document.getElementById('control-content');
   if(!el)return;
-
-  // Aggregate
+  var anio=document.getElementById('selAnio').value, mesV=document.getElementById('selMes').value;
+  var filtData=CTRL_DATA.filter(function(r){ var yr=r.mes.slice(0,4),mo=parseInt(r.mes.slice(5,7)); if(anio!=='all'&&yr!==anio) return false; if(mesV!=='all'&&mo!==parseInt(mesV)) return false; return true; });
+  if(!filtData.length){ el.innerHTML='<div class="nodata" style="padding:40px;text-align:center">Sin datos para el período seleccionado.</div>'; return; }
   var byUser={};
-  CTRL_DATA.forEach(function(r){
+  filtData.forEach(function(r){
     if(!byUser[r.nombre])byUser[r.nombre]={dias:0,ordenes:0,unidades:0,byMes:{},byDate:[],maxOrdDia:0,maxOrdFecha:''};
     var d=byUser[r.nombre];
     d.dias++; d.ordenes+=r.ordenes; d.unidades+=r.unidades;
@@ -664,28 +665,31 @@ function buildControl(){
   var ucolorMap={};
   users.forEach(function(u,i){ucolorMap[u]=ucolors[i%ucolors.length];});
 
-  // Team totals
-  var totOrd=CTRL_DATA.reduce(function(a,r){return a+r.ordenes;},0);
-  var totUnd=CTRL_DATA.reduce(function(a,r){return a+r.unidades;},0);
+  var totOrd=filtData.reduce(function(a,r){return a+r.ordenes;},0);
+  var totUnd=filtData.reduce(function(a,r){return a+r.unidades;},0);
   var totDias=users.reduce(function(a,u){return a+byUser[u].dias;},0);
   var promOrdDia=totDias>0?Math.round(totOrd/totDias*10)/10:0;
   var promUndDia=totDias>0?Math.round(totUnd/totDias):0;
-
-  // Months (dynamic)
+  var promUndOrd=totOrd>0?Math.round(totUnd/totOrd):0;
+  var bestDayRow=filtData.reduce(function(a,r){return r.ordenes>a.ordenes?r:a;},{ordenes:0,fecha:'',nombre:''});
   var mesSet={};
-  CTRL_DATA.forEach(function(r){mesSet[r.mes]=1;});
+  filtData.forEach(function(r){mesSet[r.mes]=1;});
   var meses=Object.keys(mesSet).sort();
   var mesLabels={'2026-01':'Ene 26','2026-02':'Feb 26','2026-03':'Mar 26','2026-04':'Abr 26','2026-05':'May 26','2026-06':'Jun 26'};
 
   var html='<div>';
 
-  // ── KPIs equipo ──
-  html+='<div class="kpi-grid g5" style="margin-bottom:18px">';
-  html+='<div class="kpi-card blue"><div class="kpi-label">&#128203; Total &Oacute;rdenes</div><div class="kpi-value">'+totOrd.toLocaleString('es-AR')+'</div><div class="kpi-sub">Per&iacute;odo completo</div></div>';
+  html+='<div class="kpi-grid g4" style="margin-bottom:10px">';
+  html+='<div class="kpi-card blue"><div class="kpi-label">&#128203; Total &Oacute;rdenes</div><div class="kpi-value">'+totOrd.toLocaleString('es-AR')+'</div><div class="kpi-sub">Per&iacute;odo seleccionado</div></div>';
   html+='<div class="kpi-card teal"><div class="kpi-label">&#128230; Total Unidades</div><div class="kpi-value">'+totUnd.toLocaleString('es-AR')+'</div><div class="kpi-sub">Controladas</div></div>';
   html+='<div class="kpi-card green"><div class="kpi-label">&#128200; Prom. &Oacute;rd/D&iacute;a</div><div class="kpi-value">'+promOrdDia+'</div><div class="kpi-sub">Promedio equipo</div></div>';
+  html+='<div class="kpi-card amber"><div class="kpi-label">&#9881; Und/Orden prom.</div><div class="kpi-value">'+promUndOrd.toLocaleString('es-AR')+'</div><div class="kpi-sub">Unidades por orden</div></div>';
+  html+='</div>';
+  html+='<div class="kpi-grid g4" style="margin-bottom:20px">';
+  html+='<div class="kpi-card purple"><div class="kpi-label">&#128100; Operadores</div><div class="kpi-value">'+users.length+'</div><div class="kpi-sub">'+meses.length+' mes'+(meses.length!==1?'es':'')+' de datos</div></div>';
+  html+='<div class="kpi-card blue"><div class="kpi-label">&#128197; D&iacute;as Trab. equipo</div><div class="kpi-value">'+totDias+'</div><div class="kpi-sub">Total acumulado</div></div>';
+  html+='<div class="kpi-card green"><div class="kpi-label">&#127942; Mejor Jornada</div><div class="kpi-value">'+bestDayRow.ordenes+'</div><div class="kpi-sub">'+(bestDayRow.nombre?bestDayRow.nombre+' &bull; ':'')+bestDayRow.fecha.slice(5)+'</div></div>';
   html+='<div class="kpi-card amber"><div class="kpi-label">&#128200; Prom. Und/D&iacute;a</div><div class="kpi-value">'+promUndDia.toLocaleString('es-AR')+'</div><div class="kpi-sub">Promedio equipo</div></div>';
-  html+='<div class="kpi-card purple"><div class="kpi-label">&#128100; Operadores</div><div class="kpi-value">'+users.length+'</div><div class="kpi-sub">'+meses.length+' meses registrados</div></div>';
   html+='</div>';
 
   // ── Ranking con barras ──
@@ -699,6 +703,7 @@ function buildControl(){
   html+='<th style="padding:8px 12px;min-width:180px">&Oacute;rdenes</th>';
   html+='<th style="padding:8px 12px;text-align:right">% Total</th>';
   html+='<th style="padding:8px 12px;text-align:right">Unidades</th>';
+  html+='<th style="padding:8px 12px;text-align:right">Und/Orden</th>';
   html+='<th style="padding:8px 12px;text-align:right">Prom. &Oacute;rd/D&iacute;a</th>';
   html+='<th style="padding:8px 12px;text-align:right">Mejor d&iacute;a</th>';
   html+='</tr></thead><tbody>';
@@ -719,6 +724,8 @@ function buildControl(){
     html+='<span style="font-weight:700;font-size:13px;white-space:nowrap">'+d.ordenes.toLocaleString('es-AR')+'</span></div></td>';
     html+='<td style="padding:8px 12px;text-align:right;color:var(--muted,#999)">'+pct+'%</td>';
     html+='<td style="padding:8px 12px;text-align:right">'+d.unidades.toLocaleString('es-AR')+'</td>';
+    var undOrd=d.ordenes>0?Math.round(d.unidades/d.ordenes):0;
+    html+='<td style="padding:8px 12px;text-align:right;color:var(--muted,#888)">'+undOrd+'</td>';
     html+='<td style="padding:8px 12px;text-align:right;font-weight:600">'+promOrd+'</td>';
     html+='<td style="padding:8px 12px;text-align:right;font-size:12px">'+d.maxOrdDia+' &oacute;rd.<br><span style="color:var(--muted,#999);font-size:10px">'+d.maxOrdFecha.slice(5)+'</span></td>';
     html+='</tr>';
@@ -965,6 +972,7 @@ function buildLiquidacion(){
   var el=document.getElementById('liquidacion-content'); if(!el) return;
   // Ensure Pie de Máquina defaults exist before any sub-tab reads liqPie_ops
   (function(){ var ops=[]; try{ops=JSON.parse(localStorage.getItem('liqPie_ops')||'[]');}catch(e){} ['BRAIAN OCAMPO','JOSE PINEDA'].forEach(function(d){if(ops.indexOf(d)===-1)ops.push(d);}); localStorage.setItem('liqPie_ops',JSON.stringify(ops)); })();
+  (function(){ var ops=[]; try{ops=JSON.parse(localStorage.getItem('liqDsp_ops')||'[]');}catch(e){} ['FLAVIO CA\xD1ETE','FABRICIO VARGAS'].forEach(function(d){if(ops.indexOf(d)===-1)ops.push(d);}); localStorage.setItem('liqDsp_ops',JSON.stringify(ops)); })();
   var grpGlobal=localStorage.getItem('liqGrp_global')==='1';
   var tabs=[{id:'general',label:'&#128202; General'},{id:'pickers',label:'&#128230; Pickeadores'},{id:'maq',label:'&#9881; Maquinistas'},{id:'control',label:'&#128203; Control'},{id:'pie',label:'&#127968; Pie de M&aacute;quina'},{id:'dsp',label:'&#128666; Despacho'}];
   var h='<div>';
@@ -2154,14 +2162,8 @@ function toggleTheme(){
   document.getElementById('themeIcon').innerHTML=dark?'&#9728;':'&#9790;';
   updateChartColors(dark);
 }
-// Aplicar tema guardado al cargar (antes del try de init)
-(function(){
-  if(localStorage.getItem('zecat-theme')==='dark'){
-    document.body.classList.add('dark');
-    document.getElementById('themeIcon').innerHTML='&#9728;';
-    // Los charts se actualizan después del init
-  }
-})();
+// Siempre inicia en modo claro
+localStorage.removeItem('zecat-theme');
 
 // Inicializar tab y filtro al ultimo mes disponible
 try {
