@@ -956,206 +956,174 @@ function buildMaquinistas(){
 }
 
 /* ================================================================
-   LIQUIDACIÓN DE BONOS
+   LIQUIDACIÓN DE BONOS — MULTI-GRUPO
    ================================================================ */
 function _liqSK(s){ return s.replace(/\s+/g,'_'); }
+var _liqTab='pickers';
 
 function buildLiquidacion(){
-  var el=document.getElementById('liquidacion-content');
-  if(!el) return;
+  var el=document.getElementById('liquidacion-content'); if(!el) return;
+  var tabs=[{id:'pickers',label:'&#128230; Pickeadores'},{id:'maq',label:'&#9881; Maquinistas'},{id:'control',label:'&#128203; Control'},{id:'pie',label:'&#127968; Pie de M&aacute;quina'}];
+  var h='<div><div style="display:flex;gap:0;margin-bottom:20px;border-bottom:2px solid var(--border)">';
+  tabs.forEach(function(t){ var a=t.id===_liqTab; h+='<button onclick="_liqSetTab(\''+t.id+'\')" style="padding:9px 18px;border:none;border-bottom:3px solid '+(a?'#2563eb':'transparent')+';background:none;color:'+(a?'#2563eb':'var(--text-muted,#666)')+';font-weight:'+(a?700:500)+';cursor:pointer;font-size:13px;margin-bottom:-2px;transition:.15s">'+t.label+'</button>'; });
+  h+='</div><div id="liq-sub"></div></div>';
+  el.innerHTML=h;
+  if(_liqTab==='pickers') _buildLiqPk();
+  else if(_liqTab==='maq') _buildLiqMaq();
+  else if(_liqTab==='control') _buildLiqCt();
+  else if(_liqTab==='pie') _buildLiqPie();
+}
+function _liqSetTab(t){ _liqTab=t; buildLiquidacion(); }
 
-  var anio=document.getElementById('selAnio').value;
-  var mesV=document.getElementById('selMes').value;
-  var monKey=anio+'-'+(mesV==='all'?'all':String(mesV).padStart(2,'0'));
+function _liqChk(chk,dis,onch){ return '<input type="checkbox"'+(chk?' checked':'')+(dis?' disabled ':' ')+'onchange="'+onch+'" style="width:17px;height:17px;cursor:'+(dis?'not-allowed':'pointer')+';accent-color:#2563eb">'; }
+function _liqBadge(pct){ var c=pct>=25?'#7c3aed':pct>=20?'#16a34a':pct>=10?'#d97706':'#6b7280'; return '<span style="display:inline-block;background:'+c+';color:#fff;padding:3px 12px;border-radius:12px;font-weight:700;font-size:13px;min-width:44px;text-align:center">'+pct+'%</span>'; }
+function _liqTgl(key,on){ return '<div onclick="_liqTogGK(\''+key+'\')" style="width:42px;height:22px;border-radius:11px;background:'+(on?'#16a34a':'#9ca3af')+';position:relative;cursor:pointer;transition:.2s"><div style="width:18px;height:18px;border-radius:50%;background:#fff;position:absolute;top:2px;'+(on?'right:2px':'left:2px')+';transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.3)"></div></div><span style="font-size:12px;font-weight:700;color:'+(on?'#16a34a':'#9ca3af')+'">'+(on?'Cumplido':'No cumplido')+'</span>'; }
+function _liqTogGK(k){ localStorage.setItem(k,localStorage.getItem(k)==='1'?'0':'1'); buildLiquidacion(); }
+function _liqAply(k1,k2){ var a=document.getElementById('liqN1'),b=document.getElementById('liqN2'); if(a)localStorage.setItem(k1,a.value); if(b)localStorage.setItem(k2,b.value); buildLiquidacion(); }
+function _liqSSal(n,v){ localStorage.setItem('liq_sal_'+_liqSK(n),v||'0'); buildLiquidacion(); }
 
-  // Aggregate pickers from selected period
+function _liqCfgBar(k1,d1,l1,k2,d2,l2,kg,gl){
+  var n1=parseInt(localStorage.getItem(k1)||d1),n2=parseInt(localStorage.getItem(k2)||d2),on=localStorage.getItem(kg)==='1';
+  return '<div style="background:var(--card-bg);border:1px solid var(--border);border-radius:10px;padding:14px 20px;margin-bottom:18px;display:flex;align-items:center;gap:16px;flex-wrap:wrap"><span style="font-weight:700;font-size:13px">&#9881; Umbrales</span><label style="display:flex;align-items:center;gap:6px;font-size:12px">N1 &ge; <input type="number" id="liqN1" value="'+n1+'" style="width:68px;border:1px solid var(--border);border-radius:4px;padding:3px 6px;font-size:12px;background:var(--bg);color:var(--text)"> '+l1+'</label><label style="display:flex;align-items:center;gap:6px;font-size:12px">N2 &ge; <input type="number" id="liqN2" value="'+n2+'" style="width:68px;border:1px solid var(--border);border-radius:4px;padding:3px 6px;font-size:12px;background:var(--bg);color:var(--text)"> '+l2+'</label><button onclick="_liqAply(\''+k1+'\',\''+k2+'\')" style="padding:5px 14px;background:#2563eb;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">Aplicar</button><div style="margin-left:auto;display:flex;align-items:center;gap:8px"><span style="font-size:12px;font-weight:700">'+gl+':</span>'+_liqTgl(kg,on)+'</div></div>';
+}
+function _liqKPIs(rows){ var h='<div class="kpi-grid g'+rows.length+'" style="margin-bottom:18px">'; rows.forEach(function(r){ h+='<div class="kpi-card '+r.c+'"><div class="kpi-label">'+r.l+'</div><div class="kpi-value" style="font-size:'+r.fs+'">'+r.v+'</div><div class="kpi-sub">'+r.s+'</div></div>'; }); return h+'</div>'; }
+function _liqTH(cols){ var h='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:var(--accent,#1a1a1a);color:#fff">'; cols.forEach(function(c){ h+='<th style="padding:10px 10px;text-align:'+c[1]+'">'+c[0]+'</th>'; }); return h+'</tr></thead><tbody>'; }
+function _liqTF(cnt,sC,tP,tI,cs,extra){ var avg=cnt?Math.round(tP/cnt*10)/10:0; var h='<tr style="background:var(--accent,#1a1a1a);color:#fff;font-weight:700"><td colspan="'+cs+'" style="padding:10px 10px">TOTALES &mdash; '+cnt+' op. &bull; '+sC+' con sueldo</td><td></td><td style="padding:10px 10px;text-align:center">Prom. '+avg+'%</td><td style="padding:10px 10px;text-align:right">'+(tI>0?'$'+tI.toLocaleString('es-AR'):'—')+'</td>'; if(extra) h+='<td></td>'; return h+'</tr></tbody></table></div>'; }
+function _liqLeg(items){ var h='<div style="margin-top:12px;font-size:11px;color:var(--text-muted);display:flex;gap:16px;flex-wrap:wrap;line-height:1.8">'; items.forEach(function(s){h+='<span>'+s+'</span>';}); return h+'</div>'; }
+
+/* ── 1. PICKEADORES ── */
+function _buildLiqPk(){
+  var el=document.getElementById('liq-sub'); if(!el) return;
+  var anio=document.getElementById('selAnio').value, mesV=document.getElementById('selMes').value;
+  var mon=anio+'-'+(mesV==='all'?'all':String(mesV).padStart(2,'0'));
+  var n1=parseInt(localStorage.getItem('liqPk_n1')||'100'), n2=parseInt(localStorage.getItem('liqPk_n2')||'120');
+  var grpOn=localStorage.getItem('liqPk_grp')==='1', gp=15;
   var pmap={};
-  Object.keys(monthlyData).sort().forEach(function(k){
-    var yr=k.slice(0,4), mo=parseInt(k.slice(5,7));
-    if(anio!=='all'&&yr!==anio) return;
-    if(mesV!=='all'&&mo!==parseInt(mesV)) return;
-    var md=monthlyData[k];
-    if(!md||!md.pickers) return;
-    md.pickers.forEach(function(p){
-      if(!pmap[p.resp]) pmap[p.resp]={lineas:0,dias:0};
-      pmap[p.resp].lineas+=p.lineas;
-      pmap[p.resp].dias+=p.dias;
-    });
-  });
-  var pickers=Object.keys(pmap).map(function(name){
-    var d=pmap[name];
-    var ld=d.dias>0?Math.round(d.lineas/d.dias*10)/10:0;
-    return {nombre:name,lineas:d.lineas,dias:d.dias,ld:ld,cumpl:Math.round(ld/84*100)};
-  }).sort(function(a,b){return b.ld-a.ld;});
-
-  if(!pickers.length){
-    el.innerHTML='<div style="padding:40px;text-align:center;color:var(--text-muted)">Sin datos de picking para el per&iacute;odo seleccionado.</div>';
-    return;
-  }
-
-  // Thresholds & global state
-  var n1Thr=parseInt(localStorage.getItem('liq_n1_thr')||'100');
-  var n2Thr=parseInt(localStorage.getItem('liq_n2_thr')||'120');
-  var grupalGlobal=localStorage.getItem('liq_grupal')==='1';
-
-  // State readers
-  function pres(n){ return localStorage.getItem('liq_pres_'+_liqSK(n)+'_'+monKey)==='1'; }
-  function prodLvl(n,c){
-    var v=localStorage.getItem('liq_prod_'+_liqSK(n)+'_'+monKey);
-    if(v!==null) return parseInt(v);
-    if(!pres(n)) return 0;
-    if(c>=n2Thr) return 2;
-    if(c>=n1Thr) return 1;
-    return 0;
-  }
-  function grp(n){
-    var v=localStorage.getItem('liq_grp_'+_liqSK(n)+'_'+monKey);
-    return v!==null?(v==='1'):grupalGlobal;
-  }
-  function salBase(n){ return parseFloat(localStorage.getItem('liq_sal_'+_liqSK(n)))||0; }
-  function totalPct(n,c){
-    var p=pres(n), pr=prodLvl(n,c), g=grp(n);
-    return (p?5:0)+(pr===1?7.5:pr===2?12:0)+(g?15:0);
-  }
-
-  // Summary counts
-  var cPres=0,cN1=0,cN2=0,cGrp=0,masaBono=0;
-  pickers.forEach(function(p){
-    if(pres(p.nombre)) cPres++;
-    var pr=prodLvl(p.nombre,p.cumpl);
-    if(pr===1) cN1++; if(pr===2) cN2++;
-    if(grp(p.nombre)) cGrp++;
-    var s=salBase(p.nombre);
-    if(s>0) masaBono+=s*totalPct(p.nombre,p.cumpl)/100;
-  });
-  var mesLabel=mesV==='all'?'Todos los meses':(MES[parseInt(mesV)]||mesV)+' '+anio;
-
-  var h='<div>';
-
-  // ── Config bar ──
-  h+='<div style="background:var(--card-bg);border:1px solid var(--border);border-radius:10px;padding:14px 20px;margin-bottom:18px;display:flex;align-items:center;gap:18px;flex-wrap:wrap">';
-  h+='<span style="font-weight:700;font-size:13px">&#9881; Umbrales de productividad</span>';
-  h+='<label style="display:flex;align-items:center;gap:6px;font-size:12px">N1 (7,5%) &#8805;&nbsp;<input type="number" id="liqN1" value="'+n1Thr+'" min="50" max="200" style="width:58px;border:1px solid var(--border);border-radius:4px;padding:3px 6px;font-size:12px;background:var(--bg);color:var(--text)">% cumpl.</label>';
-  h+='<label style="display:flex;align-items:center;gap:6px;font-size:12px">N2 (12%) &#8805;&nbsp;<input type="number" id="liqN2" value="'+n2Thr+'" min="50" max="200" style="width:58px;border:1px solid var(--border);border-radius:4px;padding:3px 6px;font-size:12px;background:var(--bg);color:var(--text)">% cumpl.</label>';
-  h+='<button onclick="_liqAplyThr()" style="padding:5px 14px;background:#2563eb;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">Aplicar</button>';
-  h+='<div style="margin-left:auto;display:flex;align-items:center;gap:10px">';
-  h+='<span style="font-size:12px;font-weight:700">&#127973; Grupal 15%:</span>';
-  h+='<div onclick="_liqTogGrp()" style="width:42px;height:22px;border-radius:11px;background:'+(grupalGlobal?'#16a34a':'#9ca3af')+';position:relative;cursor:pointer;transition:.2s">';
-  h+='<div style="width:18px;height:18px;border-radius:50%;background:#fff;position:absolute;top:2px;'+(grupalGlobal?'right:2px':'left:2px')+';transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.3)"></div></div>';
-  h+='<span style="font-size:12px;font-weight:700;color:'+(grupalGlobal?'#16a34a':'#9ca3af')+'">'+(grupalGlobal?'Orden cumplido':'No cumplido')+'</span>';
-  h+='</div></div>';
-
-  // ── KPIs ──
-  h+='<div class="kpi-grid g5" style="margin-bottom:18px">';
-  h+='<div class="kpi-card green"><div class="kpi-label">&#9989; Presentismo</div><div class="kpi-value">'+cPres+' / '+pickers.length+'</div><div class="kpi-sub">Habilitados &mdash; cobran 5%</div></div>';
-  h+='<div class="kpi-card blue"><div class="kpi-label">&#11088; Nivel 1 (7,5%)</div><div class="kpi-value">'+cN1+'</div><div class="kpi-sub">&#8805; '+n1Thr+'% cumplimiento</div></div>';
-  h+='<div class="kpi-card purple"><div class="kpi-label">&#128081; Nivel 2 (12%)</div><div class="kpi-value">'+cN2+'</div><div class="kpi-sub">&#8805; '+n2Thr+'% cumplimiento</div></div>';
-  h+='<div class="kpi-card '+(grupalGlobal?'green':'amber')+'"><div class="kpi-label">&#127973; Grupal (15%)</div><div class="kpi-value" style="font-size:22px">'+(grupalGlobal?'&#9989;':'&#10060;')+'</div><div class="kpi-sub">'+(grupalGlobal?'Todos cobran +15%':'No activo')+'</div></div>';
-  h+='<div class="kpi-card teal"><div class="kpi-label">&#128184; Masa Salarial Bonos</div><div class="kpi-value" style="font-size:'+(masaBono>99999?'16':'20')+'px">'+(masaBono>0?'$'+Math.round(masaBono).toLocaleString('es-AR'):'—')+'</div><div class="kpi-sub">'+mesLabel+'</div></div>';
-  h+='</div>';
-
-  // ── Table ──
-  h+='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">';
-  h+='<thead><tr style="background:var(--accent,#1a1a1a);color:#fff">';
-  h+='<th style="padding:10px 10px;text-align:center">#</th>';
-  h+='<th style="padding:10px 10px;text-align:left">Operario</th>';
-  h+='<th style="padding:10px 10px;text-align:right">Lin/D&iacute;a</th>';
-  h+='<th style="padding:10px 10px;text-align:right">Cumpl%</th>';
-  h+='<th style="padding:10px 10px;text-align:center">Presentismo<br><small style="opacity:.7;font-weight:400">5% &mdash; abre bonos</small></th>';
-  h+='<th style="padding:10px 10px;text-align:center">Nivel 1<br><small style="opacity:.7;font-weight:400">+7,5%</small></th>';
-  h+='<th style="padding:10px 10px;text-align:center">Nivel 2<br><small style="opacity:.7;font-weight:400">+12%</small></th>';
-  h+='<th style="padding:10px 10px;text-align:center">Grupal<br><small style="opacity:.7;font-weight:400">+15%</small></th>';
-  h+='<th style="padding:10px 10px;text-align:right">Sueldo B&aacute;sico</th>';
-  h+='<th style="padding:10px 10px;text-align:center">Total %</th>';
-  h+='<th style="padding:10px 10px;text-align:right">Importe Bono</th>';
-  h+='</tr></thead><tbody>';
-
-  var totImporte=0, salCount=0, totPctSum=0;
-  pickers.forEach(function(p,i){
-    var isPres=pres(p.nombre);
-    var prLvl=prodLvl(p.nombre,p.cumpl);
-    var isGrp=grp(p.nombre);
-    var isSal=salBase(p.nombre);
-    var pct=(isPres?5:0)+(prLvl===1?7.5:prLvl===2?12:0)+(isGrp?15:0);
-    var imp=isSal>0?Math.round(isSal*pct/100):0;
-    totPctSum+=pct;
-    if(isSal>0){totImporte+=imp;salCount++;}
-
-    var bg=i%2===0?'var(--card-bg)':'var(--bg)';
-    var ldC=p.cumpl>=100?'#16a34a':p.cumpl>=83?'#d97706':'#dc2626';
-    var nm=p.nombre.replace(/'/g,"\\'");
-    var mn=monKey;
-
-    function chk(checked,disabled,onch){
-      return '<input type="checkbox"'+(checked?' checked':'')+' '+(disabled?'disabled ':'')+'onchange="'+onch+'" style="width:17px;height:17px;cursor:'+(disabled?'not-allowed':'pointer')+';accent-color:#2563eb">';
-    }
-
-    var pctC=pct>=25?'#7c3aed':pct>=20?'#16a34a':pct>=10?'#d97706':'#6b7280';
-    var pctLabel=pct>0?pct+'%':'0%';
-
-    h+='<tr style="background:'+bg+'">';
-    h+='<td style="padding:9px 10px;text-align:center;color:var(--text-muted)">'+(i+1)+'</td>';
-    h+='<td style="padding:9px 10px;font-weight:700">'+p.nombre+'</td>';
-    h+='<td style="padding:9px 10px;text-align:right;font-weight:700;color:'+ldC+'">'+p.ld+'</td>';
-    h+='<td style="padding:9px 10px;text-align:right;color:'+ldC+'">'+p.cumpl+'%</td>';
-    h+='<td style="padding:9px 10px;text-align:center">'+chk(isPres,false,'_liqSPres(\''+nm+'\',\''+mn+'\',this.checked)')+'</td>';
-    h+='<td style="padding:9px 10px;text-align:center">'+chk(prLvl===1,!isPres,'_liqSProd(\''+nm+'\',\''+mn+'\',this.checked?1:0)')+'</td>';
-    h+='<td style="padding:9px 10px;text-align:center">'+chk(prLvl===2,!isPres,'_liqSProd(\''+nm+'\',\''+mn+'\',this.checked?2:0)')+'</td>';
-    h+='<td style="padding:9px 10px;text-align:center">'+chk(isGrp,false,'_liqSGrp(\''+nm+'\',\''+mn+'\',this.checked)')+'</td>';
-    h+='<td style="padding:9px 10px;text-align:right"><input type="number" value="'+(isSal||'')+'" placeholder="$ sueldo" onchange="_liqSSal(\''+nm+'\',this.value)" style="width:120px;border:1px solid var(--border);border-radius:4px;padding:3px 7px;font-size:12px;background:var(--bg);color:var(--text);text-align:right"></td>';
-    h+='<td style="padding:9px 10px;text-align:center"><span style="display:inline-block;background:'+pctC+';color:#fff;padding:3px 12px;border-radius:12px;font-weight:700;font-size:13px;min-width:44px;text-align:center">'+pctLabel+'</span></td>';
-    h+='<td style="padding:9px 10px;text-align:right;font-weight:700">'+(isSal>0?'$'+imp.toLocaleString('es-AR'):'—')+'</td>';
-    h+='</tr>';
-  });
-
-  var avgPct=pickers.length?Math.round(totPctSum/pickers.length*10)/10:0;
-  h+='<tr style="background:var(--accent,#1a1a1a);color:#fff;font-weight:700">';
-  h+='<td colspan="8" style="padding:10px 10px">TOTALES &mdash; '+pickers.length+' operarios &bull; '+salCount+' con sueldo cargado</td>';
-  h+='<td></td>';
-  h+='<td style="padding:10px 10px;text-align:center">Prom. '+avgPct+'%</td>';
-  h+='<td style="padding:10px 10px;text-align:right">'+(totImporte>0?'$'+totImporte.toLocaleString('es-AR'):'—')+'</td>';
-  h+='</tr></tbody></table></div>';
-
-  h+='<div style="margin-top:12px;font-size:11px;color:var(--text-muted);display:flex;gap:20px;flex-wrap:wrap;line-height:1.6">';
-  h+='<span>&#9989; <b>Presentismo</b> = 5% + habilita bonos de productividad</span>';
-  h+='<span>&#11088; <b>N1</b> &#8805; '+n1Thr+'% cumpl &rarr; +7,5%</span>';
-  h+='<span>&#128081; <b>N2</b> &#8805; '+n2Thr+'% cumpl &rarr; +12% (excluye N1)</span>';
-  h+='<span>&#127973; <b>Grupal</b> &rarr; +15% (orden dep&oacute;sito) &mdash; se aplica a todos por igual</span>';
-  h+='<span>&#128190; Sueldos guardados localmente en el navegador</span>';
-  h+='</div></div>';
-
+  Object.keys(monthlyData).sort().forEach(function(k){ var yr=k.slice(0,4),mo=parseInt(k.slice(5,7)); if(anio!=='all'&&yr!==anio) return; if(mesV!=='all'&&mo!==parseInt(mesV)) return; var md=monthlyData[k]; if(!md||!md.pickers) return; md.pickers.forEach(function(p){ if(!pmap[p.resp]) pmap[p.resp]={l:0,d:0}; pmap[p.resp].l+=p.lineas; pmap[p.resp].d+=p.dias; }); });
+  var list=Object.keys(pmap).map(function(nm){ var d=pmap[nm],ld=d.d>0?Math.round(d.l/d.d*10)/10:0; return {n:nm,ld:ld,c:Math.round(ld/84*100)}; }).sort(function(a,b){return b.ld-a.ld;});
+  if(!list.length){ el.innerHTML='<p style="padding:30px;text-align:center;color:var(--text-muted)">Sin datos para el per&iacute;odo.</p>'; return; }
+  function pr(n){ return localStorage.getItem('liqPk_pres_'+_liqSK(n)+'_'+mon)==='1'; }
+  function lv(n,c){ var v=localStorage.getItem('liqPk_prod_'+_liqSK(n)+'_'+mon); if(v!==null) return parseInt(v); if(!pr(n)) return 0; return c>=n2?2:c>=n1?1:0; }
+  function gr(n){ var v=localStorage.getItem('liqPk_grp_'+_liqSK(n)+'_'+mon); return v!==null?(v==='1'):grpOn; }
+  function sl(n){ return parseFloat(localStorage.getItem('liq_sal_'+_liqSK(n)))||0; }
+  function tp(n,c){ return (pr(n)?5:0)+(lv(n,c)===1?7.5:lv(n,c)===2?12:0)+(gr(n)?gp:0); }
+  var cP=0,c1=0,c2=0,mb=0;
+  list.forEach(function(x){ if(pr(x.n))cP++; var l=lv(x.n,x.c); if(l===1)c1++; if(l===2)c2++; var s=sl(x.n); if(s>0)mb+=s*tp(x.n,x.c)/100; });
+  var ml=mesV==='all'?'Todos los meses':(MES[parseInt(mesV)]||mesV)+' '+anio;
+  var h=_liqCfgBar('liqPk_n1','100','% cumpl.','liqPk_n2','120','% cumpl.','liqPk_grp','&#127973; Grupal '+gp+'%');
+  h+=_liqKPIs([{c:'green',l:'&#9989; Presentismo',v:cP+' / '+list.length,s:'Cobran 5%',fs:'28px'},{c:'blue',l:'&#11088; N1 (7,5%)',v:c1,s:'&ge;'+n1+'% cumpl.',fs:'28px'},{c:'purple',l:'&#128081; N2 (12%)',v:c2,s:'&ge;'+n2+'% cumpl.',fs:'28px'},{c:(grpOn?'green':'amber'),l:'&#127973; Grupal ('+gp+'%)',v:(grpOn?'&#9989;':'&#10060;'),s:(grpOn?'Todos +'+gp+'%':'No activo'),fs:'22px'},{c:'teal',l:'&#128184; Masa Bonos',v:(mb>0?'$'+Math.round(mb).toLocaleString('es-AR'):'—'),s:ml,fs:(mb>99999?'16px':'20px')}]);
+  h+=_liqTH([['#','center'],['Operario','left'],['Lin/D&iacute;a','right'],['Cumpl%','right'],['Presentismo<br><small style="opacity:.7">5%</small>','center'],['N1<br><small style="opacity:.7">+7,5%</small>','center'],['N2<br><small style="opacity:.7">+12%</small>','center'],['Grupal<br><small style="opacity:.7">+'+gp+'%</small>','center'],['Sueldo B&aacute;sico','right'],['Total %','center'],['Importe','right']]);
+  var tI=0,sC=0,tP=0;
+  list.forEach(function(x,i){ var iP=pr(x.n),iL=lv(x.n,x.c),iG=gr(x.n),iS=sl(x.n),pct=tp(x.n,x.c),imp=iS>0?Math.round(iS*pct/100):0; tP+=pct; if(iS>0){tI+=imp;sC++;} var bg=i%2===0?'var(--card-bg)':'var(--bg)',lC=x.c>=100?'#16a34a':x.c>=83?'#d97706':'#dc2626',nm=x.n.replace(/'/g,"\\'"); h+='<tr style="background:'+bg+'"><td style="padding:9px 10px;text-align:center;color:var(--text-muted)">'+(i+1)+'</td><td style="padding:9px 10px;font-weight:700">'+x.n+'</td><td style="padding:9px 10px;text-align:right;font-weight:700;color:'+lC+'">'+x.ld+'</td><td style="padding:9px 10px;text-align:right;color:'+lC+'">'+x.c+'%</td><td style="padding:9px 10px;text-align:center">'+_liqChk(iP,false,'_liqPkP(\''+nm+'\',\''+mon+'\',this.checked)')+'</td><td style="padding:9px 10px;text-align:center">'+_liqChk(iL===1,!iP,'_liqPkL(\''+nm+'\',\''+mon+'\',this.checked?1:0)')+'</td><td style="padding:9px 10px;text-align:center">'+_liqChk(iL===2,!iP,'_liqPkL(\''+nm+'\',\''+mon+'\',this.checked?2:0)')+'</td><td style="padding:9px 10px;text-align:center">'+_liqChk(iG,false,'_liqPkG(\''+nm+'\',\''+mon+'\',this.checked)')+'</td><td style="padding:9px 10px;text-align:right"><input type="number" value="'+(iS||'')+'" placeholder="$ sueldo" onchange="_liqSSal(\''+nm+'\',this.value)" style="width:110px;border:1px solid var(--border);border-radius:4px;padding:3px 7px;font-size:12px;background:var(--bg);color:var(--text);text-align:right"></td><td style="padding:9px 10px;text-align:center">'+_liqBadge(pct)+'</td><td style="padding:9px 10px;text-align:right;font-weight:700">'+(iS>0?'$'+imp.toLocaleString('es-AR'):'—')+'</td></tr>'; });
+  h+=_liqTF(list.length,sC,tP,tI,8,false);
+  h+=_liqLeg(['&#9989; Presentismo = 5% + habilita bonos prod.','N1 &ge;'+n1+'% &rarr; +7,5%','N2 &ge;'+n2+'% &rarr; +12% (excluye N1)','&#127973; Grupal +'+gp+'% (orden dep&oacute;sito)','&#128190; Sueldos guardados en el navegador']);
   el.innerHTML=h;
 }
+function _liqPkP(n,m,v){ localStorage.setItem('liqPk_pres_'+_liqSK(n)+'_'+m,v?'1':'0'); localStorage.removeItem('liqPk_prod_'+_liqSK(n)+'_'+m); buildLiquidacion(); }
+function _liqPkL(n,m,v){ localStorage.setItem('liqPk_prod_'+_liqSK(n)+'_'+m,String(v)); buildLiquidacion(); }
+function _liqPkG(n,m,v){ localStorage.setItem('liqPk_grp_'+_liqSK(n)+'_'+m,v?'1':'0'); buildLiquidacion(); }
 
-// ── Handlers liquidación ──
-function _liqAplyThr(){
-  var n1=document.getElementById('liqN1'), n2=document.getElementById('liqN2');
-  if(n1) localStorage.setItem('liq_n1_thr',n1.value);
-  if(n2) localStorage.setItem('liq_n2_thr',n2.value);
-  buildLiquidacion();
+/* ── 2. MAQUINISTAS ── */
+function _buildLiqMaq(){
+  var el=document.getElementById('liq-sub'); if(!el) return;
+  var anio=document.getElementById('selAnio').value, mesV=document.getElementById('selMes').value;
+  var mon=anio+'-'+(mesV==='all'?'all':String(mesV).padStart(2,'0'));
+  var n1=parseInt(localStorage.getItem('liqMq_n1')||'100'), n2=parseInt(localStorage.getItem('liqMq_n2')||'120');
+  var grpOn=localStorage.getItem('liqMq_grp')==='1', gp=3;
+  var pmap={};
+  MAQ_DATA.forEach(function(r){ var yr=r.fecha.slice(0,4),mo=parseInt(r.fecha.slice(5,7)); if(anio!=='all'&&yr!==anio) return; if(mesV!=='all'&&mo!==parseInt(mesV)) return; if(!pmap[r.nombre]) pmap[r.nombre]={mv:0,d:0}; pmap[r.nombre].mv+=r.total_mov||0; pmap[r.nombre].d++; });
+  var list=Object.keys(pmap).map(function(nm){ var d=pmap[nm],mvd=d.d>0?Math.round(d.mv/d.d*10)/10:0; return {n:nm,mvd:mvd,mv:d.mv}; }).sort(function(a,b){return b.mvd-a.mvd;});
+  if(!list.length){ el.innerHTML='<p style="padding:30px;text-align:center;color:var(--text-muted)">Sin datos para el per&iacute;odo.</p>'; return; }
+  function pr(n){ return localStorage.getItem('liqMq_pres_'+_liqSK(n)+'_'+mon)==='1'; }
+  function lv(n,mvd){ var v=localStorage.getItem('liqMq_prod_'+_liqSK(n)+'_'+mon); if(v!==null) return parseInt(v); if(!pr(n)) return 0; return mvd>=n2?2:mvd>=n1?1:0; }
+  function gr(n){ var v=localStorage.getItem('liqMq_grp_'+_liqSK(n)+'_'+mon); return v!==null?(v==='1'):grpOn; }
+  function sl(n){ return parseFloat(localStorage.getItem('liq_sal_'+_liqSK(n)))||0; }
+  function tp(n,mvd){ return (pr(n)?5:0)+(lv(n,mvd)===1?7.5:lv(n,mvd)===2?12:0)+(gr(n)?gp:0); }
+  var cP=0,c1=0,c2=0,mb=0;
+  list.forEach(function(x){ if(pr(x.n))cP++; var l=lv(x.n,x.mvd); if(l===1)c1++; if(l===2)c2++; var s=sl(x.n); if(s>0)mb+=s*tp(x.n,x.mvd)/100; });
+  var ml=mesV==='all'?'Todos los meses':(MES[parseInt(mesV)]||mesV)+' '+anio;
+  var h=_liqCfgBar('liqMq_n1','100','mov/d&iacute;a','liqMq_n2','120','mov/d&iacute;a','liqMq_grp','&#127973; Grupal '+gp+'%');
+  h+=_liqKPIs([{c:'green',l:'&#9989; Presentismo',v:cP+' / '+list.length,s:'Cobran 5%',fs:'28px'},{c:'blue',l:'&#11088; N1 (7,5%)',v:c1,s:'&ge;'+n1+' mov/d&iacute;a',fs:'28px'},{c:'purple',l:'&#128081; N2 (12%)',v:c2,s:'&ge;'+n2+' mov/d&iacute;a',fs:'28px'},{c:'teal',l:'&#128184; Masa Bonos',v:(mb>0?'$'+Math.round(mb).toLocaleString('es-AR'):'—'),s:ml,fs:'20px'}]);
+  h+=_liqTH([['#','center'],['Operario','left'],['Mov/D&iacute;a','right'],['Mov Total','right'],['Presentismo<br><small style="opacity:.7">5%</small>','center'],['N1<br><small style="opacity:.7">+7,5%</small>','center'],['N2<br><small style="opacity:.7">+12%</small>','center'],['Grupal<br><small style="opacity:.7">+'+gp+'%</small>','center'],['Sueldo B&aacute;sico','right'],['Total %','center'],['Importe','right']]);
+  var tI=0,sC=0,tP=0;
+  list.forEach(function(x,i){ var iP=pr(x.n),iL=lv(x.n,x.mvd),iG=gr(x.n),iS=sl(x.n),pct=tp(x.n,x.mvd),imp=iS>0?Math.round(iS*pct/100):0; tP+=pct; if(iS>0){tI+=imp;sC++;} var bg=i%2===0?'var(--card-bg)':'var(--bg)',mC=x.mvd>=n2?'#16a34a':x.mvd>=n1?'#d97706':'#dc2626',nm=x.n.replace(/'/g,"\\'"); h+='<tr style="background:'+bg+'"><td style="padding:9px 10px;text-align:center;color:var(--text-muted)">'+(i+1)+'</td><td style="padding:9px 10px;font-weight:700">'+x.n+'</td><td style="padding:9px 10px;text-align:right;font-weight:700;color:'+mC+'">'+x.mvd+'</td><td style="padding:9px 10px;text-align:right">'+x.mv.toLocaleString('es-AR')+'</td><td style="padding:9px 10px;text-align:center">'+_liqChk(iP,false,'_liqMqP(\''+nm+'\',\''+mon+'\',this.checked)')+'</td><td style="padding:9px 10px;text-align:center">'+_liqChk(iL===1,!iP,'_liqMqL(\''+nm+'\',\''+mon+'\',this.checked?1:0)')+'</td><td style="padding:9px 10px;text-align:center">'+_liqChk(iL===2,!iP,'_liqMqL(\''+nm+'\',\''+mon+'\',this.checked?2:0)')+'</td><td style="padding:9px 10px;text-align:center">'+_liqChk(iG,false,'_liqMqG(\''+nm+'\',\''+mon+'\',this.checked)')+'</td><td style="padding:9px 10px;text-align:right"><input type="number" value="'+(iS||'')+'" placeholder="$ sueldo" onchange="_liqSSal(\''+nm+'\',this.value)" style="width:110px;border:1px solid var(--border);border-radius:4px;padding:3px 7px;font-size:12px;background:var(--bg);color:var(--text);text-align:right"></td><td style="padding:9px 10px;text-align:center">'+_liqBadge(pct)+'</td><td style="padding:9px 10px;text-align:right;font-weight:700">'+(iS>0?'$'+imp.toLocaleString('es-AR'):'—')+'</td></tr>'; });
+  h+=_liqTF(list.length,sC,tP,tI,8,false);
+  h+=_liqLeg(['N1 &ge;'+n1+' mov/d&iacute;a &rarr; +7,5%','N2 &ge;'+n2+' mov/d&iacute;a &rarr; +12%','&#127973; Grupal +'+gp+'% (espec&iacute;fico maquinistas)','N1 y N2 son excluyentes']);
+  el.innerHTML=h;
 }
-function _liqTogGrp(){
-  localStorage.setItem('liq_grupal',localStorage.getItem('liq_grupal')==='1'?'0':'1');
-  buildLiquidacion();
+function _liqMqP(n,m,v){ localStorage.setItem('liqMq_pres_'+_liqSK(n)+'_'+m,v?'1':'0'); localStorage.removeItem('liqMq_prod_'+_liqSK(n)+'_'+m); buildLiquidacion(); }
+function _liqMqL(n,m,v){ localStorage.setItem('liqMq_prod_'+_liqSK(n)+'_'+m,String(v)); buildLiquidacion(); }
+function _liqMqG(n,m,v){ localStorage.setItem('liqMq_grp_'+_liqSK(n)+'_'+m,v?'1':'0'); buildLiquidacion(); }
+
+/* ── 3. CONTROL ── */
+function _buildLiqCt(){
+  var el=document.getElementById('liq-sub'); if(!el) return;
+  var anio=document.getElementById('selAnio').value, mesV=document.getElementById('selMes').value;
+  var mon=anio+'-'+(mesV==='all'?'all':String(mesV).padStart(2,'0'));
+  var n1u=parseInt(localStorage.getItem('liqCt_n1u')||'3000'), n2u=parseInt(localStorage.getItem('liqCt_n2u')||'3500');
+  var grpOn=localStorage.getItem('liqCt_grp')==='1', gp=15;
+  var pmap={};
+  CTRL_DATA.forEach(function(r){ var yr=r.mes.slice(0,4),mo=parseInt(r.mes.slice(5,7)); if(anio!=='all'&&yr!==anio) return; if(mesV!=='all'&&mo!==parseInt(mesV)) return; if(!pmap[r.nombre]) pmap[r.nombre]={und:0,d:0}; pmap[r.nombre].und+=r.unidades||0; pmap[r.nombre].d++; });
+  var list=Object.keys(pmap).map(function(nm){ var d=pmap[nm],upd=d.d>0?Math.round(d.und/d.d):0; return {n:nm,upd:upd,und:d.und}; }).sort(function(a,b){return b.upd-a.upd;});
+  if(!list.length){ el.innerHTML='<p style="padding:30px;text-align:center;color:var(--text-muted)">Sin datos para el per&iacute;odo.</p>'; return; }
+  function pr(n){ return localStorage.getItem('liqCt_pres_'+_liqSK(n)+'_'+mon)==='1'; }
+  function getRec(n){ var v=localStorage.getItem('liqCt_rec_'+_liqSK(n)+'_'+mon); return v===null?null:parseInt(v); }
+  function lv(n,upd){ var v=localStorage.getItem('liqCt_prod_'+_liqSK(n)+'_'+mon); if(v!==null) return parseInt(v); if(!pr(n)) return 0; var r=getRec(n); if(r===null) return 0; if(upd>n2u&&r===0) return 2; if(upd>n1u&&r<=1) return 1; return 0; }
+  function gr(n){ var v=localStorage.getItem('liqCt_grp_'+_liqSK(n)+'_'+mon); return v!==null?(v==='1'):grpOn; }
+  function sl(n){ return parseFloat(localStorage.getItem('liq_sal_'+_liqSK(n)))||0; }
+  function tp(n,upd){ return (pr(n)?5:0)+(lv(n,upd)===1?7.5:lv(n,upd)===2?12:0)+(gr(n)?gp:0); }
+  var cP=0,c1=0,c2=0,mb=0;
+  list.forEach(function(x){ if(pr(x.n))cP++; var l=lv(x.n,x.upd); if(l===1)c1++; if(l===2)c2++; var s=sl(x.n); if(s>0)mb+=s*tp(x.n,x.upd)/100; });
+  var ml=mesV==='all'?'Todos los meses':(MES[parseInt(mesV)]||mesV)+' '+anio;
+  var h='<div style="background:var(--card-bg);border:1px solid var(--border);border-radius:10px;padding:14px 20px;margin-bottom:18px;display:flex;align-items:center;gap:16px;flex-wrap:wrap"><span style="font-weight:700;font-size:13px">&#9881; Umbrales</span><label style="display:flex;align-items:center;gap:6px;font-size:12px">N1 und/d&iacute;a &gt; <input type="number" id="liqN1" value="'+n1u+'" style="width:68px;border:1px solid var(--border);border-radius:4px;padding:3px 6px;font-size:12px;background:var(--bg);color:var(--text)"> + &le;1 reclamo</label><label style="display:flex;align-items:center;gap:6px;font-size:12px">N2 und/d&iacute;a &gt; <input type="number" id="liqN2" value="'+n2u+'" style="width:68px;border:1px solid var(--border);border-radius:4px;padding:3px 6px;font-size:12px;background:var(--bg);color:var(--text)"> + 0 reclamos</label><button onclick="_liqAply(\'liqCt_n1u\',\'liqCt_n2u\')" style="padding:5px 14px;background:#2563eb;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer">Aplicar</button><div style="margin-left:auto;display:flex;align-items:center;gap:8px"><span style="font-size:12px;font-weight:700">&#127973; Grupal '+gp+'%:</span>'+_liqTgl('liqCt_grp',grpOn)+'</div></div>';
+  h+=_liqKPIs([{c:'green',l:'&#9989; Presentismo',v:cP+' / '+list.length,s:'Cobran 5%',fs:'28px'},{c:'blue',l:'&#11088; N1 (7,5%)',v:c1,s:'&gt;'+n1u.toLocaleString('es-AR')+' und + &le;1 rec.',fs:'28px'},{c:'purple',l:'&#128081; N2 (12%)',v:c2,s:'&gt;'+n2u.toLocaleString('es-AR')+' und + 0 rec.',fs:'28px'},{c:(grpOn?'green':'amber'),l:'&#127973; Grupal ('+gp+'%)',v:(grpOn?'&#9989;':'&#10060;'),s:(grpOn?'Todos +'+gp+'%':'No activo'),fs:'22px'},{c:'teal',l:'&#128184; Masa Bonos',v:(mb>0?'$'+Math.round(mb).toLocaleString('es-AR'):'—'),s:ml,fs:'20px'}]);
+  h+=_liqTH([['#','center'],['Operario','left'],['Und/D&iacute;a','right'],['Und Total','right'],['Reclamos<br><small style="opacity:.7">ingresar</small>','center'],['Presentismo<br><small style="opacity:.7">5%</small>','center'],['N1<br><small style="opacity:.7">+7,5%</small>','center'],['N2<br><small style="opacity:.7">+12%</small>','center'],['Grupal<br><small style="opacity:.7">+'+gp+'%</small>','center'],['Sueldo B&aacute;sico','right'],['Total %','center'],['Importe','right']]);
+  var tI=0,sC=0,tP=0;
+  list.forEach(function(x,i){ var iP=pr(x.n),iL=lv(x.n,x.upd),iG=gr(x.n),iS=sl(x.n),pct=tp(x.n,x.upd),imp=iS>0?Math.round(iS*pct/100):0,rc=getRec(x.n); tP+=pct; if(iS>0){tI+=imp;sC++;} var bg=i%2===0?'var(--card-bg)':'var(--bg)',uC=iL===2?'#16a34a':iL===1?'#d97706':'#dc2626',nm=x.n.replace(/'/g,"\\'"); h+='<tr style="background:'+bg+'"><td style="padding:9px 10px;text-align:center;color:var(--text-muted)">'+(i+1)+'</td><td style="padding:9px 10px;font-weight:700">'+x.n+'</td><td style="padding:9px 10px;text-align:right;font-weight:700;color:'+uC+'">'+x.upd.toLocaleString('es-AR')+'</td><td style="padding:9px 10px;text-align:right">'+x.und.toLocaleString('es-AR')+'</td><td style="padding:9px 10px;text-align:center"><input type="number" value="'+(rc!==null?rc:'')+'" placeholder="—" min="0" onchange="_liqCtR(\''+nm+'\',\''+mon+'\',this.value)" style="width:55px;border:1px solid var(--border);border-radius:4px;padding:3px 6px;font-size:12px;background:var(--bg);color:var(--text);text-align:center"></td><td style="padding:9px 10px;text-align:center">'+_liqChk(iP,false,'_liqCtP(\''+nm+'\',\''+mon+'\',this.checked)')+'</td><td style="padding:9px 10px;text-align:center">'+_liqChk(iL===1,!iP,'_liqCtL(\''+nm+'\',\''+mon+'\',this.checked?1:0)')+'</td><td style="padding:9px 10px;text-align:center">'+_liqChk(iL===2,!iP,'_liqCtL(\''+nm+'\',\''+mon+'\',this.checked?2:0)')+'</td><td style="padding:9px 10px;text-align:center">'+_liqChk(iG,false,'_liqCtG(\''+nm+'\',\''+mon+'\',this.checked)')+'</td><td style="padding:9px 10px;text-align:right"><input type="number" value="'+(iS||'')+'" placeholder="$ sueldo" onchange="_liqSSal(\''+nm+'\',this.value)" style="width:110px;border:1px solid var(--border);border-radius:4px;padding:3px 7px;font-size:12px;background:var(--bg);color:var(--text);text-align:right"></td><td style="padding:9px 10px;text-align:center">'+_liqBadge(pct)+'</td><td style="padding:9px 10px;text-align:right;font-weight:700">'+(iS>0?'$'+imp.toLocaleString('es-AR'):'—')+'</td></tr>'; });
+  h+=_liqTF(list.length,sC,tP,tI,9,false);
+  h+=_liqLeg(['&#9432; Ingres&aacute; los reclamos del per&iacute;odo para que el sistema calcule N1/N2 autom&aacute;ticamente','N1: &gt;'+n1u.toLocaleString('es-AR')+' und/d&iacute;a + &le;1 reclamo &rarr; +7,5%','N2: &gt;'+n2u.toLocaleString('es-AR')+' und/d&iacute;a + 0 reclamos &rarr; +12%']);
+  el.innerHTML=h;
 }
-function _liqSPres(n,m,v){
-  localStorage.setItem('liq_pres_'+_liqSK(n)+'_'+m,v?'1':'0');
-  // Reset prod override so auto-calc re-runs for this operator
-  localStorage.removeItem('liq_prod_'+_liqSK(n)+'_'+m);
-  buildLiquidacion();
+function _liqCtP(n,m,v){ localStorage.setItem('liqCt_pres_'+_liqSK(n)+'_'+m,v?'1':'0'); localStorage.removeItem('liqCt_prod_'+_liqSK(n)+'_'+m); buildLiquidacion(); }
+function _liqCtL(n,m,v){ localStorage.setItem('liqCt_prod_'+_liqSK(n)+'_'+m,String(v)); buildLiquidacion(); }
+function _liqCtG(n,m,v){ localStorage.setItem('liqCt_grp_'+_liqSK(n)+'_'+m,v?'1':'0'); buildLiquidacion(); }
+function _liqCtR(n,m,v){ localStorage.setItem('liqCt_rec_'+_liqSK(n)+'_'+m,v||'0'); buildLiquidacion(); }
+
+/* ── 4. PIE DE MÁQUINA ── */
+function _buildLiqPie(){
+  var el=document.getElementById('liq-sub'); if(!el) return;
+  var anio=document.getElementById('selAnio').value, mesV=document.getElementById('selMes').value;
+  var mon=anio+'-'+(mesV==='all'?'all':String(mesV).padStart(2,'0'));
+  var grpOn=localStorage.getItem('liqPie_grp')==='1', gp=15;
+  var ops=[]; try{ ops=JSON.parse(localStorage.getItem('liqPie_ops')||'[]'); }catch(e){}
+  function pr(n){ return localStorage.getItem('liqPie_pres_'+_liqSK(n)+'_'+mon)==='1'; }
+  function getErr(n){ var v=localStorage.getItem('liqPie_err_'+_liqSK(n)+'_'+mon); return v===null?null:parseInt(v); }
+  function lv(n){ var v=localStorage.getItem('liqPie_prod_'+_liqSK(n)+'_'+mon); if(v!==null) return parseInt(v); if(!pr(n)) return 0; var e=getErr(n); if(e===null) return 0; return e===0?2:e===1?1:0; }
+  function gr(n){ var v=localStorage.getItem('liqPie_grp_'+_liqSK(n)+'_'+mon); return v!==null?(v==='1'):grpOn; }
+  function sl(n){ return parseFloat(localStorage.getItem('liq_sal_'+_liqSK(n)))||0; }
+  function tp(n){ return (pr(n)?5:0)+(lv(n)===1?7.5:lv(n)===2?12:0)+(gr(n)?gp:0); }
+  var cP=0,c1=0,c2=0,mb=0;
+  ops.forEach(function(n){ if(pr(n))cP++; var l=lv(n); if(l===1)c1++; if(l===2)c2++; var s=sl(n); if(s>0)mb+=s*tp(n)/100; });
+  var ml=mesV==='all'?'Todos los meses':(MES[parseInt(mesV)]||mesV)+' '+anio;
+  var h='<div style="background:var(--card-bg);border:1px solid var(--border);border-radius:10px;padding:14px 20px;margin-bottom:18px;display:flex;align-items:center;gap:16px;flex-wrap:wrap"><span style="font-weight:700;font-size:13px">&#9432; N1 = &le;1 error &bull; N2 = 0 errores &mdash; ingresos a producci&oacute;n (auditado)</span><div style="margin-left:auto;display:flex;align-items:center;gap:8px"><span style="font-size:12px;font-weight:700">&#127973; Grupal '+gp+'%:</span>'+_liqTgl('liqPie_grp',grpOn)+'</div></div>';
+  h+=_liqKPIs([{c:'green',l:'&#9989; Presentismo',v:cP+' / '+ops.length,s:'Cobran 5%',fs:'28px'},{c:'blue',l:'&#11088; N1 (7,5%)',v:c1,s:'M&aacute;x. 1 error',fs:'28px'},{c:'purple',l:'&#128081; N2 (12%)',v:c2,s:'0 errores',fs:'28px'},{c:'teal',l:'&#128184; Masa Bonos',v:(mb>0?'$'+Math.round(mb).toLocaleString('es-AR'):'—'),s:ml,fs:'20px'}]);
+  h+='<div style="display:flex;gap:8px;align-items:center;margin-bottom:14px"><input type="text" id="liqPieNew" placeholder="Nombre del operario..." style="border:1px solid var(--border);border-radius:6px;padding:6px 12px;font-size:13px;background:var(--bg);color:var(--text);width:240px"><button onclick="_liqPieAdd()" style="padding:6px 16px;background:#2563eb;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer">+ Agregar</button></div>';
+  if(!ops.length){ el.innerHTML=h+'<div style="padding:30px;text-align:center;color:var(--text-muted);border:2px dashed var(--border);border-radius:8px">Agreg&aacute; los operarios de Pie de M&aacute;quina para comenzar.</div>'; return; }
+  h+=_liqTH([['#','center'],['Operario','left'],['Errores (auditado)','center'],['Presentismo<br><small style="opacity:.7">5%</small>','center'],['N1<br><small style="opacity:.7">+7,5%</small>','center'],['N2<br><small style="opacity:.7">+12%</small>','center'],['Grupal<br><small style="opacity:.7">+'+gp+'%</small>','center'],['Sueldo B&aacute;sico','right'],['Total %','center'],['Importe','right'],['','center']]);
+  var tI=0,sC=0,tP=0;
+  ops.forEach(function(name,i){ var iP=pr(name),iL=lv(name),iG=gr(name),iS=sl(name),pct=tp(name),imp=iS>0?Math.round(iS*pct/100):0,err=getErr(name); tP+=pct; if(iS>0){tI+=imp;sC++;} var bg=i%2===0?'var(--card-bg)':'var(--bg)',eC=iL===2?'#16a34a':iL===1?'#d97706':'#dc2626',nm=name.replace(/'/g,"\\'"); h+='<tr style="background:'+bg+'"><td style="padding:9px 10px;text-align:center;color:var(--text-muted)">'+(i+1)+'</td><td style="padding:9px 10px;font-weight:700">'+name+'</td><td style="padding:9px 10px;text-align:center"><input type="number" value="'+(err!==null?err:'')+'" placeholder="—" min="0" onchange="_liqPieE(\''+nm+'\',\''+mon+'\',this.value)" style="width:60px;border:1px solid var(--border);border-radius:4px;padding:3px 6px;font-size:13px;font-weight:700;background:var(--bg);color:'+(err!==null?eC:'var(--text)')+';text-align:center"></td><td style="padding:9px 10px;text-align:center">'+_liqChk(iP,false,'_liqPieP(\''+nm+'\',\''+mon+'\',this.checked)')+'</td><td style="padding:9px 10px;text-align:center">'+_liqChk(iL===1,!iP,'_liqPieL(\''+nm+'\',\''+mon+'\',this.checked?1:0)')+'</td><td style="padding:9px 10px;text-align:center">'+_liqChk(iL===2,!iP,'_liqPieL(\''+nm+'\',\''+mon+'\',this.checked?2:0)')+'</td><td style="padding:9px 10px;text-align:center">'+_liqChk(iG,false,'_liqPieG(\''+nm+'\',\''+mon+'\',this.checked)')+'</td><td style="padding:9px 10px;text-align:right"><input type="number" value="'+(iS||'')+'" placeholder="$ sueldo" onchange="_liqSSal(\''+nm+'\',this.value)" style="width:110px;border:1px solid var(--border);border-radius:4px;padding:3px 7px;font-size:12px;background:var(--bg);color:var(--text);text-align:right"></td><td style="padding:9px 10px;text-align:center">'+_liqBadge(pct)+'</td><td style="padding:9px 10px;text-align:right;font-weight:700">'+(iS>0?'$'+imp.toLocaleString('es-AR'):'—')+'</td><td style="padding:9px 10px;text-align:center"><button onclick="_liqPieDel('+i+')" style="background:none;border:1px solid #dc2626;color:#dc2626;border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer">&#128465;</button></td></tr>'; });
+  h+=_liqTF(ops.length,sC,tP,tI,7,true);
+  h+=_liqLeg(['Ingres&aacute; errores auditados &mdash; N1 con &le;1 error, N2 con 0 errores','&#9989; Presentismo debe estar activo para acceder a N1/N2','Operarios guardados permanentemente en el navegador']);
+  el.innerHTML=h;
 }
-function _liqSProd(n,m,v){
-  localStorage.setItem('liq_prod_'+_liqSK(n)+'_'+m,String(v));
-  buildLiquidacion();
-}
-function _liqSGrp(n,m,v){
-  localStorage.setItem('liq_grp_'+_liqSK(n)+'_'+m,v?'1':'0');
-  buildLiquidacion();
-}
-function _liqSSal(n,v){
-  localStorage.setItem('liq_sal_'+_liqSK(n),v||'0');
-  buildLiquidacion();
-}
+function _liqPieAdd(){ var inp=document.getElementById('liqPieNew'); if(!inp||!inp.value.trim()) return; var ops=[]; try{ ops=JSON.parse(localStorage.getItem('liqPie_ops')||'[]'); }catch(e){} var n=inp.value.trim().toUpperCase(); if(!ops.includes(n)) ops.push(n); localStorage.setItem('liqPie_ops',JSON.stringify(ops)); buildLiquidacion(); }
+function _liqPieDel(i){ var ops=[]; try{ ops=JSON.parse(localStorage.getItem('liqPie_ops')||'[]'); }catch(e){} ops.splice(i,1); localStorage.setItem('liqPie_ops',JSON.stringify(ops)); buildLiquidacion(); }
+function _liqPieP(n,m,v){ localStorage.setItem('liqPie_pres_'+_liqSK(n)+'_'+m,v?'1':'0'); localStorage.removeItem('liqPie_prod_'+_liqSK(n)+'_'+m); buildLiquidacion(); }
+function _liqPieL(n,m,v){ localStorage.setItem('liqPie_prod_'+_liqSK(n)+'_'+m,String(v)); buildLiquidacion(); }
+function _liqPieG(n,m,v){ localStorage.setItem('liqPie_grp_'+_liqSK(n)+'_'+m,v?'1':'0'); buildLiquidacion(); }
+function _liqPieE(n,m,v){ localStorage.setItem('liqPie_err_'+_liqSK(n)+'_'+m,v||'0'); buildLiquidacion(); }
+
+function _liqSSal(n,v){ localStorage.setItem('liq_sal_'+_liqSK(n),v||'0'); buildLiquidacion(); }
 
 // Tab navigation
 function switchTab(name){
