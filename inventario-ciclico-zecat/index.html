@@ -1,2314 +1,453 @@
 <!DOCTYPE html>
-<html lang="es" data-theme="dark">
+<html lang="es">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Inventario Cíclico — Zecat</title>
+<title>Dashboard Inventario C&iacute;clico | Zecat ARG 2025-26</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 <style>
-/* ============================================================
-   VARIABLES Y RESET
-   ============================================================ */
-:root {
-  --bg:        #0d1117;
-  --card:      #161b22;
-  --card2:     #1c2333;
-  --border:    #30363d;
-  --text:      #e6edf3;
-  --text-muted:#8b949e;
-  --red:       #F97171;
-  --green:     #4ade80;
-  --orange:    #fb923c;
-  --blue:      #60a5fa;
-  --purple:    #c084fc;
-  --yellow:    #facc15;
-  --hover:     #21262d;
-  --input-bg:  #0d1117;
-  --shadow:    0 2px 8px rgba(0,0,0,.4);
-}
-[data-theme="light"] {
-  --bg:        #f6f8fa;
-  --card:      #ffffff;
-  --card2:     #f0f2f5;
-  --border:    #d0d7de;
-  --text:      #1f2328;
-  --text-muted:#636c76;
-  --hover:     #f3f4f6;
-  --input-bg:  #ffffff;
-  --shadow:    0 2px 8px rgba(0,0,0,.1);
-}
-
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-html, body {
-  font-family: Arial, sans-serif;
-  font-size: 13px;
-  background: var(--bg);
-  color: var(--text);
-  height: 100%;
-  overflow-x: hidden;
-}
-
-/* ============================================================
-   LAYOUT PRINCIPAL
-   ============================================================ */
-.spa-root {
-  padding: 16px;
-  max-width: 1400px;
-  margin: 0 auto;
-}
-
-.section { display: none; }
-.section.active { display: block; }
-
-/* ============================================================
-   TIPOGRAFÍA Y HELPERS
-   ============================================================ */
-h2 { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 16px; }
-h3 { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 10px; }
-
-.text-muted { color: var(--text-muted); }
-.text-red    { color: var(--red); }
-.text-green  { color: var(--green); }
-.text-orange { color: var(--orange); }
-.text-blue   { color: var(--blue); }
-.text-yellow { color: var(--yellow); }
-.text-purple { color: var(--purple); }
-
-.mt-8  { margin-top: 8px; }
-.mt-12 { margin-top: 12px; }
-.mt-16 { margin-top: 16px; }
-.mt-24 { margin-top: 24px; }
-.mb-8  { margin-bottom: 8px; }
-.mb-12 { margin-bottom: 12px; }
-.mb-16 { margin-bottom: 16px; }
-
-/* ============================================================
-   CARDS
-   ============================================================ */
-.card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 16px;
-  box-shadow: var(--shadow);
-}
-
-/* ============================================================
-   KPI CARDS
-   ============================================================ */
-.kpi-grid {
-  display: grid;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-.kpi-grid-5 { grid-template-columns: repeat(5, 1fr); }
-.kpi-grid-4 { grid-template-columns: repeat(4, 1fr); }
-
-@media (max-width: 1100px) {
-  .kpi-grid-5 { grid-template-columns: repeat(3, 1fr); }
-  .kpi-grid-4 { grid-template-columns: repeat(2, 1fr); }
-}
-@media (max-width: 700px) {
-  .kpi-grid-5, .kpi-grid-4 { grid-template-columns: 1fr 1fr; }
-}
-
-.kpi-card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 14px 16px;
-  border-left: 4px solid var(--blue);
-  box-shadow: var(--shadow);
-}
-.kpi-card.accent-blue   { border-left-color: var(--blue); }
-.kpi-card.accent-green  { border-left-color: var(--green); }
-.kpi-card.accent-orange { border-left-color: var(--orange); }
-.kpi-card.accent-red    { border-left-color: var(--red); }
-.kpi-card.accent-purple { border-left-color: var(--purple); }
-.kpi-card.accent-yellow { border-left-color: var(--yellow); }
-
-.kpi-label {
-  font-size: 11px;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  letter-spacing: .4px;
-  margin-bottom: 6px;
-}
-.kpi-value {
-  font-size: 22px;
-  font-weight: 700;
-  line-height: 1;
-  color: var(--text);
-}
-.kpi-sub {
-  font-size: 11px;
-  color: var(--text-muted);
-  margin-top: 4px;
-}
-.kpi-value.v-green  { color: var(--green); }
-.kpi-value.v-orange { color: var(--orange); }
-.kpi-value.v-red    { color: var(--red); }
-
-/* Progress bar */
-.progress-wrap {
-  width: 100%;
-  height: 8px;
-  background: var(--border);
-  border-radius: 4px;
-  margin-top: 8px;
-  overflow: hidden;
-}
-.progress-fill {
-  height: 100%;
-  border-radius: 4px;
-  background: var(--blue);
-  transition: width .5s ease;
-}
-.progress-fill.green  { background: var(--green); }
-.progress-fill.orange { background: var(--orange); }
-
-/* ============================================================
-   GRIDS DE CHARTS
-   ============================================================ */
-.charts-grid-2 {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-  margin-bottom: 16px;
-}
-.charts-grid-3 {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 16px;
-  margin-bottom: 16px;
-}
-@media (max-width: 1000px) {
-  .charts-grid-2, .charts-grid-3 { grid-template-columns: 1fr; }
-}
-.chart-card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 16px;
-  box-shadow: var(--shadow);
-}
-.chart-card canvas { max-height: 260px; }
-
-/* ============================================================
-   TABLAS
-   ============================================================ */
-.table-wrap {
-  overflow-x: auto;
-  border-radius: 8px;
-}
-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 12.5px;
-}
-thead tr {
-  background: var(--card2);
-  border-bottom: 2px solid var(--border);
-}
-th {
-  padding: 8px 10px;
-  text-align: left;
-  font-weight: 600;
-  color: var(--text-muted);
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: .3px;
-  white-space: nowrap;
-}
-td {
-  padding: 8px 10px;
-  border-bottom: 1px solid var(--border);
-  vertical-align: middle;
-  color: var(--text);
-}
-tbody tr:hover { background: var(--hover); }
-tbody tr:last-child td { border-bottom: none; }
-th.right, td.right { text-align: right; }
-th.center, td.center { text-align: center; }
-
-/* ============================================================
-   BADGES
-   ============================================================ */
-.badge {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 11px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-.badge-green  { background: rgba(74,222,128,.15); color: var(--green); border: 1px solid rgba(74,222,128,.3); }
-.badge-red    { background: rgba(249,113,113,.15); color: var(--red);   border: 1px solid rgba(249,113,113,.3); }
-.badge-orange { background: rgba(251,146,60,.15);  color: var(--orange);border: 1px solid rgba(251,146,60,.3); }
-.badge-blue   { background: rgba(96,165,250,.15);  color: var(--blue);  border: 1px solid rgba(96,165,250,.3); }
-.badge-yellow { background: rgba(250,204,21,.15);  color: var(--yellow);border: 1px solid rgba(250,204,21,.3); }
-.badge-gray   { background: rgba(139,148,158,.15); color: var(--text-muted); border: 1px solid rgba(139,148,158,.3); }
-
-/* Tier badges */
-.tier-t1 { background: rgba(249,113,113,.2); color: var(--red);    border: 1px solid rgba(249,113,113,.4); padding: 2px 7px; border-radius: 10px; font-size: 11px; font-weight: 700; }
-.tier-t2 { background: rgba(251,146,60,.2);  color: var(--orange); border: 1px solid rgba(251,146,60,.4);  padding: 2px 7px; border-radius: 10px; font-size: 11px; font-weight: 700; }
-.tier-t3 { background: rgba(250,204,21,.2);  color: var(--yellow); border: 1px solid rgba(250,204,21,.4);  padding: 2px 7px; border-radius: 10px; font-size: 11px; font-weight: 700; }
-.tier-t4 { background: rgba(96,165,250,.2);  color: var(--blue);   border: 1px solid rgba(96,165,250,.4);  padding: 2px 7px; border-radius: 10px; font-size: 11px; font-weight: 700; }
-
-/* ============================================================
-   BOTONES
-   ============================================================ */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 7px 14px;
-  border-radius: 6px;
-  border: 1px solid var(--border);
-  background: var(--card2);
-  color: var(--text);
-  font-size: 13px;
-  cursor: pointer;
-  transition: background .15s, border-color .15s;
-  font-family: Arial, sans-serif;
-}
-.btn:hover { background: var(--hover); border-color: var(--text-muted); }
-.btn-primary { background: #1f6feb; border-color: #1f6feb; color: #fff; }
-.btn-primary:hover { background: #388bfd; border-color: #388bfd; }
-.btn-danger  { background: rgba(249,113,113,.15); border-color: rgba(249,113,113,.4); color: var(--red); }
-.btn-danger:hover { background: rgba(249,113,113,.25); }
-.btn-success { background: rgba(74,222,128,.15); border-color: rgba(74,222,128,.4); color: var(--green); }
-.btn-success:hover { background: rgba(74,222,128,.25); }
-.btn-sm { padding: 4px 9px; font-size: 12px; }
-
-/* ============================================================
-   FORMULARIOS
-   ============================================================ */
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 12px;
-}
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.form-group label {
-  font-size: 11px;
-  color: var(--text-muted);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: .3px;
-}
-.form-group input,
-.form-group select,
-.form-group textarea {
-  background: var(--input-bg);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 7px 10px;
-  color: var(--text);
-  font-size: 13px;
-  font-family: Arial, sans-serif;
-  transition: border-color .15s;
-  width: 100%;
-}
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
-  outline: none;
-  border-color: var(--blue);
-}
-.form-group input::placeholder { color: var(--text-muted); }
-.form-group select option { background: var(--card); }
-
-/* preview cálculo */
-.calc-preview {
-  background: var(--card2);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 10px 14px;
-  font-size: 13px;
-  display: flex;
-  gap: 20px;
-  flex-wrap: wrap;
-  align-items: center;
-  margin-top: 12px;
-}
-.calc-preview span { color: var(--text-muted); }
-.calc-preview strong { color: var(--text); margin-left: 4px; }
-
-/* ============================================================
-   FILTROS
-   ============================================================ */
-.filters-row {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  align-items: flex-end;
-  margin-bottom: 12px;
-}
-.filters-row input,
-.filters-row select {
-  background: var(--input-bg);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 6px 10px;
-  color: var(--text);
-  font-size: 13px;
-  font-family: Arial, sans-serif;
-}
-.filters-row input:focus,
-.filters-row select:focus { outline: none; border-color: var(--blue); }
-
-/* ============================================================
-   SKELETON LOADER
-   ============================================================ */
-.skeleton {
-  background: linear-gradient(90deg, var(--card2) 25%, var(--hover) 50%, var(--card2) 75%);
-  background-size: 400% 100%;
-  animation: shimmer 1.4s infinite;
-  border-radius: 6px;
-}
-@keyframes shimmer {
-  0%   { background-position: 100% 0; }
-  100% { background-position: -100% 0; }
-}
-.sk-line  { height: 14px; margin: 6px 0; }
-.sk-block { height: 80px; margin: 8px 0; }
-.sk-kpi   { height: 72px; border-radius: 8px; }
-
-/* ============================================================
-   SPINNERS / ESTADOS
-   ============================================================ */
-.spinner {
-  display: inline-block;
-  width: 18px; height: 18px;
-  border: 2px solid var(--border);
-  border-top-color: var(--blue);
-  border-radius: 50%;
-  animation: spin .7s linear infinite;
-  vertical-align: middle;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
-
-.empty-state {
-  text-align: center;
-  padding: 40px 20px;
-  color: var(--text-muted);
-}
-.empty-state .icon { font-size: 32px; margin-bottom: 8px; }
-
-.alert {
-  padding: 10px 14px;
-  border-radius: 6px;
-  font-size: 13px;
-  margin-bottom: 12px;
-}
-.alert-error   { background: rgba(249,113,113,.1); border: 1px solid rgba(249,113,113,.3); color: var(--red); }
-.alert-success { background: rgba(74,222,128,.1);  border: 1px solid rgba(74,222,128,.3);  color: var(--green); }
-.alert-info    { background: rgba(96,165,250,.1);  border: 1px solid rgba(96,165,250,.3);  color: var(--blue); }
-
-/* ============================================================
-   SECCIÓN HOY
-   ============================================================ */
-.hoy-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-.hoy-fecha {
-  font-size: 18px;
-  font-weight: 700;
-}
-.hoy-cards-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-@media (max-width: 700px) {
-  .hoy-cards-row { grid-template-columns: 1fr; }
-}
-.ciclo-progress-card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 16px;
-}
-.ciclo-progress-title {
-  font-size: 13px;
-  font-weight: 600;
-  margin-bottom: 6px;
-  display: flex;
-  justify-content: space-between;
-}
-.ciclo-progress-bar {
-  width: 100%;
-  height: 14px;
-  background: var(--border);
-  border-radius: 7px;
-  overflow: hidden;
-  margin-top: 4px;
-}
-.ciclo-progress-fill {
-  height: 100%;
-  border-radius: 7px;
-  background: linear-gradient(90deg, var(--blue), var(--purple));
-  transition: width .6s ease;
-}
-
-/* Stock web coloreado */
-.sw-red    { color: var(--red); font-weight: 600; }
-.sw-orange { color: var(--orange); font-weight: 600; }
-.sw-green  { color: var(--green); }
-
-/* ============================================================
-   SECCIÓN STOCK UPLOAD
-   ============================================================ */
-.dropzone {
-  border: 2px dashed var(--border);
-  border-radius: 10px;
-  padding: 40px;
-  text-align: center;
-  cursor: pointer;
-  transition: border-color .2s, background .2s;
-  margin-bottom: 16px;
-}
-.dropzone:hover,
-.dropzone.drag-over {
-  border-color: var(--blue);
-  background: rgba(96,165,250,.05);
-}
-.dropzone .dz-icon { font-size: 36px; margin-bottom: 10px; }
-.dropzone p { color: var(--text-muted); font-size: 13px; margin-top: 6px; }
-.dropzone input[type=file] { display: none; }
-
-/* ============================================================
-   PAGINACIÓN
-   ============================================================ */
-.pagination {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-top: 12px;
-  flex-wrap: wrap;
-}
-.page-info { color: var(--text-muted); font-size: 12px; flex: 1; }
-
-/* ============================================================
-   DIVIDER
-   ============================================================ */
-.divider {
-  border: none;
-  border-top: 1px solid var(--border);
-  margin: 20px 0;
-}
-
-/* ============================================================
-   ACCIONES TABLA
-   ============================================================ */
-.action-btn {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 3px 6px;
-  border-radius: 4px;
-  font-size: 13px;
-  transition: background .15s;
-}
-.action-btn.edit  { color: var(--blue); }
-.action-btn.del   { color: var(--red); }
-.action-btn:hover { background: var(--hover); }
-
-/* ============================================================
-   SECCIÓN LOADING OVERLAY
-   ============================================================ */
-.section-loading {
-  padding: 40px;
-  text-align: center;
-  color: var(--text-muted);
-}
-
-/* ============================================================
-   MODAL CONFIRMACIÓN
-   ============================================================ */
-.modal-backdrop {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,.6);
-  z-index: 1000;
-  align-items: center;
-  justify-content: center;
-}
-.modal-backdrop.show { display: flex; }
-.modal {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 24px;
-  max-width: 380px;
-  width: 90%;
-  box-shadow: 0 8px 32px rgba(0,0,0,.5);
-}
-.modal h3 { margin-bottom: 8px; }
-.modal p  { color: var(--text-muted); margin-bottom: 20px; font-size: 13px; }
-.modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
-
-/* ============================================================
-   NAV INTERNO
-   ============================================================ */
-.spa-nav {
-  display: flex; gap: 6px; padding: 4px 0 16px 0;
-  margin-bottom: 4px; overflow-x: auto; flex-wrap: wrap;
-}
-.spa-nav-btn {
-  padding: 7px 16px; background: var(--card2); border: 1px solid var(--border);
-  border-radius: 6px; color: var(--text-muted); cursor: pointer;
-  font-size: 12px; font-weight: 600; transition: all .15s; white-space: nowrap;
-}
-.spa-nav-btn:hover { background: var(--hover); color: var(--text); }
-.spa-nav-btn.active { background: var(--blue); border-color: var(--blue); color: #fff; }
+:root{--bg:#f0f2f5;--card:#fff;--text:#1a1a2e;--muted:#6b7280;--faint:#9ca3af;--border:#e5e7eb;--border-lt:#f3f4f6;--thead:#f8fafc;--hover:#f8fafc;--shadow:rgba(0,0,0,.06);--shadow2:rgba(0,0,0,.1);}
+html[data-theme=dark]{--bg:#080B15;--card:#0d1117;--text:#e6edf3;--muted:#8b949e;--faint:#6e7681;--border:#1f2937;--border-lt:#161b22;--thead:#0d1117;--hover:#111827;--shadow:rgba(0,0,0,.4);--shadow2:rgba(0,0,0,.6);}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Inter',Arial,sans-serif;background:var(--bg);color:var(--text);transition:background .25s,color .25s;}
+header{background:var(--card);color:var(--text);padding:18px 32px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);position:relative;}
+header::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent 0%,#F97171 50%,transparent 100%);}
+header h1{font-size:20px;font-weight:700;letter-spacing:.2px;}
+header .subtitle{font-size:12px;color:var(--muted);margin-top:2px;}
+header .badge{background:rgba(249,113,113,.07);border:1px solid rgba(249,113,113,.18);border-radius:8px;padding:6px 14px;font-size:11.5px;text-align:right;line-height:1.7;color:var(--muted);}
+.theme-btn{background:rgba(249,113,113,.07);border:1px solid rgba(249,113,113,.18);border-radius:50%;width:38px;height:38px;font-size:18px;cursor:pointer;margin-left:12px;flex-shrink:0;transition:background .2s,transform .2s;line-height:1;}
+.theme-btn:hover{background:rgba(249,113,113,.18);transform:scale(1.08);}
+.container{max-width:1400px;margin:0 auto;padding:24px;}
+.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:24px;}
+.kpi-card{background:var(--card);border-radius:12px;padding:18px 20px;box-shadow:0 2px 8px var(--shadow);border-top:3px solid var(--border);transition:transform .2s,box-shadow .2s;}
+.kpi-card:hover{transform:translateY(-2px);box-shadow:0 6px 16px var(--shadow2);}
+.kpi-card.blue  {border-top-color:#F97171;}
+.kpi-card.green {border-top-color:#16a34a;}
+.kpi-card.red   {border-top-color:#dc2626;}
+.kpi-card.amber {border-top-color:#d97706;}
+.kpi-card.purple{border-top-color:#7c3aed;}
+.kpi-label{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);font-weight:600;margin-bottom:8px;}
+.kpi-value{font-size:28px;font-weight:700;color:var(--text);line-height:1;}
+.kpi-value.amber{color:#d97706;}
+.kpi-value.red  {color:#dc2626;}
+.kpi-sub{font-size:12px;color:var(--faint);margin-top:6px;}
+.charts-row{display:grid;gap:20px;margin-bottom:20px;}
+.charts-row-2{grid-template-columns:1fr 1fr;}
+.charts-row-3{grid-template-columns:1.2fr 1fr 1fr;}
+.chart-card{background:var(--card);border-radius:12px;padding:22px;box-shadow:0 2px 8px var(--shadow);}
+.chart-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px;}
+.chart-subtitle{font-size:11px;color:var(--faint);margin-bottom:18px;}
+.table-card{background:var(--card);border-radius:12px;padding:22px;box-shadow:0 2px 8px var(--shadow);margin-bottom:20px;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+thead tr{background:var(--thead);}
+thead th{padding:10px 12px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:600;border-bottom:2px solid var(--border);}
+tbody tr{border-bottom:1px solid var(--border-lt);transition:background .15s;}
+tbody tr:hover{background:var(--hover);}
+tbody td{padding:10px 12px;color:var(--text);}
+.badge-pos{background:#dcfce7;color:#16a34a;border-radius:12px;padding:2px 10px;font-size:11px;font-weight:600;white-space:nowrap;}
+.badge-neg{background:#fee2e2;color:#dc2626;border-radius:12px;padding:2px 10px;font-size:11px;font-weight:600;white-space:nowrap;}
+.badge-sin{background:#e0f2fe;color:#0284c7;border-radius:12px;padding:2px 10px;font-size:11px;font-weight:600;white-space:nowrap;}
+html[data-theme=dark] .badge-pos{background:#14532d;color:#4ade80;}
+html[data-theme=dark] .badge-neg{background:#450a0a;color:#f87171;}
+html[data-theme=dark] .badge-sin{background:#0c2a4a;color:#38bdf8;}
+.sku-text{font-family:monospace;font-size:12px;color:var(--muted);}
+.alert-bar{background:linear-gradient(90deg,#fee2e2,#fff7ed);border:1px solid #fca5a5;border-radius:10px;padding:14px 20px;margin-bottom:20px;display:flex;align-items:center;gap:12px;}
+.alert-text{font-size:13px;color:#7f1d1d;}
+html[data-theme=dark] .alert-bar{background:linear-gradient(90deg,#450a0a,#3d1f00);border-color:#7f1d1d;}
+html[data-theme=dark] .alert-text{color:#fca5a5;}
+html[data-theme=dark] div[style*="background:white"]{background:#0d1117 !important;}
+html[data-theme=dark] div[style*="background:#e5e7eb"]{background:#1f2937 !important;}
+html[data-theme=dark] span[style*="color:#9ca3af"],html[data-theme=dark] div[style*="color:#9ca3af"]{color:#6e7681 !important;}
+html[data-theme=dark] span[style*="color:#6b7280"],html[data-theme=dark] div[style*="color:#6b7280"]{color:#8b949e !important;}
+html[data-theme=dark] span[style*="color:#1a1a2e"],html[data-theme=dark] div[style*="color:#1a1a2e"]{color:#e6edf3 !important;}
+footer{text-align:center;padding:20px;font-size:11px;color:var(--faint);}
+@media(max-width:1100px){.kpi-grid{grid-template-columns:repeat(3,1fr)}.charts-row-3{grid-template-columns:1fr 1fr}}
+@media(max-width:700px){.kpi-grid{grid-template-columns:1fr 1fr}.charts-row-2,.charts-row-3{grid-template-columns:1fr}}
 </style>
+<script>(function(){var t=localStorage.getItem('theme')||'light';document.documentElement.setAttribute('data-theme',t);})();</script>
 </head>
 <body>
+<header>
+  <div>
+    <div class="subtitle">ZECAT &mdash; Art&iacute;culos Promocionales SA</div>
+    <h1>Dashboard Inventario C&iacute;clico ARG 2025-26</h1>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px">
+    <div class="badge">Actualizado: 26/05/2026 08:32<br>Datos acumulados: Marzo 2026 &mdash; mayo 2026</div>
+    <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="Cambiar tema claro / oscuro">&#x1F319;</button>
+  </div>
+</header>
 
-<!-- MODAL CONFIRMAR ELIMINAR -->
-<div class="modal-backdrop" id="modalEliminar">
-  <div class="modal">
-    <h3>Eliminar conteo</h3>
-    <p>¿Estás seguro de que querés eliminar este registro? Esta acción no se puede deshacer.</p>
-    <div class="modal-actions">
-      <button class="btn" onclick="cerrarModal()">Cancelar</button>
-      <button class="btn btn-danger" id="btnConfirmarEliminar">Eliminar</button>
-    </div>
+<div class="container">
+
+<div class="alert-bar">
+  <span style="font-size:20px">&#9888;&#65039;</span>
+  <div class="alert-text">
+    Tendencia cr&iacute;tica: La exactitud pas&oacute; de <strong>57% en Marzo 2026</strong>
+    a <strong>62.2% en mayo 2026</strong>.
+    El impacto econ&oacute;mico acumulado es de <strong>$14.454</strong>.
   </div>
 </div>
 
-<div class="spa-root">
-
-  <!-- NAV INTERNO -->
-  <div class="spa-nav" id="spa-nav">
-    <button class="spa-nav-btn" id="nav-dashboard" onclick="window.switchTab('dashboard')">&#128202; Dashboard</button>
-    <button class="spa-nav-btn" id="nav-hoy" onclick="window.switchTab('hoy')">&#128203; Hoy</button>
-    <button class="spa-nav-btn" id="nav-conteos" onclick="window.switchTab('conteos')">&#128197; Conteos</button>
-    <button class="spa-nav-btn" id="nav-carga" onclick="window.switchTab('carga')">&#128394; Carga</button>
-    <button class="spa-nav-btn" id="nav-stock" onclick="window.switchTab('stock')">&#128230; Stock</button>
+<div class="kpi-grid">
+  <div class="kpi-card blue">
+    <div class="kpi-label">SKUs &Uacute;nicos Contados</div>
+    <div class="kpi-value">790</div>
+    <div class="kpi-sub">875 conteos totales (con repetidos)</div>
   </div>
-
-  <!-- ============================================================
-       SECCIÓN: DASHBOARD
-       ============================================================ -->
-  <div id="section-dashboard" class="section">
-    <div style="display:flex; justify-content:flex-end; margin-bottom:8px;">
-      <button class="btn btn-sm btn-success" onclick="exportarDashboardExcel()" title="Exportar todos los conteos a Excel">⬇️ Exportar Excel</button>
-    </div>
-    <div id="dashboard-content">
-      <div class="section-loading"><span class="spinner"></span> Cargando dashboard...</div>
-    </div>
+  <div class="kpi-card green">
+    <div class="kpi-label">Exactitud Total</div>
+    <div class="kpi-value amber">55.4%</div>
+    <div class="kpi-sub">485 &iacute;tems sin diferencia</div>
   </div>
-
-  <!-- ============================================================
-       SECCIÓN: HOY
-       ============================================================ -->
-  <div id="section-hoy" class="section">
-    <div style="display:flex; justify-content:flex-end; margin-bottom:8px;">
-      <button class="btn btn-sm btn-success" onclick="exportarHoyExcel()" title="Exportar lista de hoy a Excel">⬇️ Exportar Excel</button>
-    </div>
-    <div id="hoy-content">
-      <div class="section-loading"><span class="spinner"></span> Cargando lista del día...</div>
-    </div>
+  <div class="kpi-card amber">
+    <div class="kpi-label">Diferencia Positiva</div>
+    <div class="kpi-value amber">252</div>
+    <div class="kpi-sub">28.8% &mdash; M&aacute;s f&iacute;sico que sistema</div>
   </div>
-
-  <!-- ============================================================
-       SECCIÓN: CARGA
-       ============================================================ -->
-  <div id="section-carga" class="section">
-    <h2>Registro de Conteos</h2>
-
-    <!-- FORMULARIO -->
-    <div class="card mb-16" id="form-card">
-      <h3 id="form-titulo">Nuevo conteo</h3>
-      <input type="hidden" id="edit-id">
-      <div class="form-grid mt-12">
-        <div class="form-group" style="grid-column: span 2;">
-          <label>Artículo</label>
-          <input type="text" id="f-articulo" placeholder="Nombre del artículo" list="articulo-list" autocomplete="off">
-          <datalist id="articulo-list"></datalist>
-        </div>
-        <div class="form-group">
-          <label>SKU WMS</label>
-          <input type="text" id="f-sku" placeholder="Ej: A04-0001">
-        </div>
-        <div class="form-group">
-          <label>Familia</label>
-          <input type="text" id="f-familia" placeholder="Ej: Drinkware" list="familia-list">
-          <datalist id="familia-list"></datalist>
-        </div>
-        <div class="form-group">
-          <label>Sistema</label>
-          <input type="number" id="f-sistema" placeholder="0" step="1">
-        </div>
-        <div class="form-group">
-          <label>Físico</label>
-          <input type="number" id="f-fisico" placeholder="0" step="1">
-        </div>
-        <div class="form-group">
-          <label>M.S (Mov. Stock)</label>
-          <input type="number" id="f-ms" placeholder="0" step="1" value="0">
-        </div>
-        <div class="form-group">
-          <label>Valor DDP Stock (U$)</label>
-          <input type="number" id="f-ddp" placeholder="0.00" step="0.01" title="Total del stock: DDP × Stock Web">
-          <input type="hidden" id="f-ddp-unit">
-        </div>
-        <div class="form-group">
-          <label>Ajustado</label>
-          <select id="f-ajustado">
-            <option value="NO">NO</option>
-            <option value="SI">SI</option>
-            <option value="ADM">ADM</option>
-          </select>
-        </div>
-        <div class="form-group" style="grid-column: span 2;">
-          <label>Motivo</label>
-          <input type="text" id="f-motivo" placeholder="Motivo de la diferencia">
-        </div>
-        <div class="form-group" style="grid-column: span 2;">
-          <label>Observación</label>
-          <input type="text" id="f-observacion" placeholder="Observación adicional">
-        </div>
-        <div class="form-group">
-          <label>Fecha</label>
-          <input type="date" id="f-fecha">
-        </div>
-      </div>
-
-      <!-- Preview cálculo -->
-      <div class="calc-preview" id="calc-preview">
-        <div><span>Total:</span> <strong id="prev-total">—</strong></div>
-        <div><span>Dif Conteo:</span> <strong id="prev-dif-cont">—</strong></div>
-        <div><span>Dif $:</span> <strong id="prev-dif-ddp">—</strong></div>
-        <div id="prev-badge-wrap"></div>
-      </div>
-
-      <div id="form-alert"></div>
-
-      <div class="mt-12" style="display:flex; gap:8px; flex-wrap:wrap;">
-        <button class="btn btn-primary" onclick="guardarConteo()">
-          <span id="btn-guardar-icon">💾</span>
-          <span id="btn-guardar-txt">Guardar conteo</span>
-        </button>
-        <button class="btn" onclick="resetForm()">Cancelar</button>
-      </div>
-    </div>
-
-    <!-- FILTROS Y TABLA -->
-    <div class="card">
-      <h3>Conteos registrados</h3>
-      <div class="filters-row mt-8">
-        <input type="text"   id="fil-q"        placeholder="Buscar artículo, SKU..." style="min-width:180px;" oninput="debounceFilter()">
-        <select id="fil-mes"        onchange="aplicarFiltros()"><option value="">Todos los meses</option></select>
-        <select id="fil-familia"    onchange="aplicarFiltros()"><option value="">Todas las familias</option></select>
-        <select id="fil-diferencia" onchange="aplicarFiltros()">
-          <option value="">Todas las diferencias</option>
-          <option value="Sin Dif">Sin Dif</option>
-          <option value="Dif Positiva">Dif Positiva</option>
-          <option value="Dif Negativa">Dif Negativa</option>
-        </select>
-        <button class="btn btn-sm" onclick="aplicarFiltros()">Filtrar</button>
-        <button class="btn btn-sm" onclick="limpiarFiltros()">Limpiar</button>
-      </div>
-      <div id="tabla-conteos-wrap">
-        <div class="section-loading"><span class="spinner"></span></div>
-      </div>
-      <div class="pagination" id="paginacion"></div>
-    </div>
+  <div class="kpi-card red">
+    <div class="kpi-label">Diferencia Negativa</div>
+    <div class="kpi-value red">138</div>
+    <div class="kpi-sub">15.8% &mdash; Menos f&iacute;sico que sistema</div>
   </div>
-
-  <!-- ============================================================
-       SECCIÓN: STOCK
-       ============================================================ -->
-  <div id="section-stock" class="section">
-    <h2>Gestión de Stock</h2>
-
-    <div class="card mb-16" id="stock-estado-card">
-      <div class="section-loading"><span class="spinner"></span> Cargando estado del stock...</div>
-    </div>
-
-    <div class="card">
-      <h3>Subir nuevo archivo de stock</h3>
-      <p class="text-muted mt-8 mb-12" style="font-size:12px;">El archivo debe ser un .xlsx exportado del WMS con columnas: SKU, Artículo, Familia, Stock Web, DDP. Al subir un nuevo archivo se reemplaza el stock anterior.</p>
-
-      <div class="dropzone" id="dropzone" onclick="document.getElementById('stock-file-input').click()">
-        <div class="dz-icon">📂</div>
-        <strong>Hacé click o arrastá el archivo acá</strong>
-        <p>Formatos aceptados: .xlsx</p>
-        <input type="file" id="stock-file-input" accept=".xlsx" onchange="subirStock(this.files[0])">
-      </div>
-
-      <div id="upload-progress" style="display:none;" class="alert alert-info">
-        <span class="spinner"></span> Subiendo archivo...
-      </div>
-      <div id="upload-result"></div>
-      <div id="stock-preview" class="mt-16"></div>
-    </div>
-    <div id="backup-section"></div>
+  <div class="kpi-card purple">
+    <div class="kpi-label">Impacto Econ&oacute;mico</div>
+    <div class="kpi-value" style="font-size:22px">$14.454</div>
+    <div class="kpi-sub">Stock total $764.383</div>
   </div>
+</div>
 
-  <!-- ============================================================
-       SECCIÓN: CONTEOS POR FECHA
-       ============================================================ -->
-  <div id="section-conteos" class="section">
-    <h2>&#128197; Historial de Conteos</h2>
-
-    <div class="card mb-16" style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
-      <label style="font-weight:600; font-size:13px; white-space:nowrap;">Seleccioná una fecha:</label>
-      <input type="date" id="conteos-fecha-input"
-        style="background:var(--input-bg); border:1px solid var(--border); border-radius:6px; padding:6px 10px; color:var(--text); font-size:13px;">
-      <button class="btn btn-primary" onclick="loadConteosDia()">&#128269; Ver conteo</button>
-    </div>
-
-    <div id="conteos-resumen"></div>
-    <div id="conteos-tabla"></div>
+<div class="kpi-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:24px">
+  <div class="kpi-card blue">
+    <div class="kpi-label">D&iacute;as con Conteo</div>
+    <div class="kpi-value">24</div>
+    <div class="kpi-sub">Jornadas activas en el per&iacute;odo</div>
   </div>
+  <div class="kpi-card amber">
+    <div class="kpi-label">Promedio por D&iacute;a</div>
+    <div class="kpi-value">36.5</div>
+    <div class="kpi-sub">SKUs contados por jornada</div>
+  </div>
+  <div class="kpi-card green">
+    <div class="kpi-label">D&iacute;a M&aacute;s Activo</div>
+    <div class="kpi-value" style="font-size:20px">31/03/2026</div>
+    <div class="kpi-sub">233 SKUs contados</div>
+  </div>
+</div>
 
+<!-- Barra de progreso total -->
+<div style="background:white;border-radius:12px;padding:22px 28px;box-shadow:0 2px 8px rgba(0,0,0,.06);margin-bottom:20px">
+  <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px">
+    <div>
+      <span style="font-size:14px;font-weight:700;color:#1a1a2e">Progreso Total del Inventario C&iacute;clico</span>
+      <span style="font-size:12px;color:#9ca3af;margin-left:12px">SKUs contados al menos 1 vez sobre el universo elegible</span>
+    </div>
+    <div style="font-size:28px;font-weight:700;color:#dc2626">0%</div>
+  </div>
+  <div style="background:#e5e7eb;border-radius:999px;height:18px;overflow:hidden;margin-bottom:14px">
+    <div style="background:linear-gradient(90deg,#dc2626,#f87171);height:18px;width:0%;border-radius:999px;transition:width .5s"></div>
+  </div>
+  <div style="display:flex;gap:32px;flex-wrap:wrap">
+    <div><span style="font-size:22px;font-weight:700;color:#16a34a">0</span> <span style="font-size:12px;color:#6b7280">contados</span></div>
+    <div><span style="font-size:22px;font-weight:700;color:#dc2626">1597</span> <span style="font-size:12px;color:#6b7280">pendientes</span></div>
+    <div><span style="font-size:22px;font-weight:700;color:#1a1a2e">1597</span> <span style="font-size:12px;color:#6b7280">universo total</span></div>
+    <div style="margin-left:auto;text-align:right"><span style="font-size:18px;font-weight:700;color:#7c3aed">123 d&iacute;as</span><br><span style="font-size:11px;color:#9ca3af">para completar a 13 SKUs/d&iacute;a</span></div>
+  </div>
+</div>
 
-</div><!-- /spa-root -->
+<!-- KPIs de cobertura -->
+<div class="kpi-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:24px">
+  <div class="kpi-card green">
+    <div class="kpi-label">Cobertura Global</div>
+    <div class="kpi-value" style="color:#dc2626">0%</div>
+    <div class="kpi-sub">de elegibles contados al menos 1 vez</div>
+  </div>
+  <div class="kpi-card blue">
+    <div class="kpi-label">Total Elegibles</div>
+    <div class="kpi-value">1597</div>
+    <div class="kpi-sub">activos en web (con y sin stock)</div>
+  </div>
+  <div class="kpi-card amber">
+    <div class="kpi-label">Pendientes de Contar</div>
+    <div class="kpi-value amber">1597</div>
+    <div class="kpi-sub">no contados en los &uacute;ltimos 30 d&iacute;as</div>
+  </div>
+  <div class="kpi-card purple">
+    <div class="kpi-label">D&iacute;as para Completar</div>
+    <div class="kpi-value" style="font-size:22px">123</div>
+    <div class="kpi-sub">a 13 SKUs/d&iacute;a (promedio objetivo)</div>
+  </div>
+</div>
+
+<div class="charts-row charts-row-3">
+  <div class="chart-card">
+    <div class="chart-title">Evoluci&oacute;n de Exactitud por Mes</div>
+    <div class="chart-subtitle">% de SKUs sin diferencia vs. total contado por mes</div>
+    <div style="position:relative;height:220px"><canvas id="chartTrend"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Distribuci&oacute;n de Diferencias</div>
+    <div class="chart-subtitle">875 conteos totales &mdash; 790 SKUs &uacute;nicos</div>
+    <div style="position:relative;height:220px"><canvas id="chartDonut"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Conteos por Mes</div>
+    <div class="chart-subtitle">Cantidad de SKUs contados por mes</div>
+    <div style="position:relative;height:220px"><canvas id="chartConteos"></canvas></div>
+  </div>
+</div>
+
+<div class="charts-row charts-row-2">
+  <div class="chart-card">
+    <div class="chart-title">Exactitud por Familia</div>
+    <div class="chart-subtitle">% de SKUs sin diferencia &mdash; l&iacute;nea verde = 70% objetivo</div>
+    <div style="position:relative;height:260px"><canvas id="chartFamily"></canvas></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Impacto Econ&oacute;mico por Familia (DDP)</div>
+    <div class="chart-subtitle">Suma de diferencias en valor DDP &mdash; naranja=sobrante, rojo=faltante</div>
+    <div style="position:relative;height:260px"><canvas id="chartImpact"></canvas></div>
+  </div>
+</div>
+
+<div class="charts-row" style="grid-template-columns:1fr">
+  <div class="chart-card">
+    <div class="chart-title">Detalle por Mes &mdash; Composici&oacute;n de Conteos</div>
+    <div class="chart-subtitle">Barras apiladas: Sin Diferencia / Positiva / Negativa</div>
+    <div style="position:relative;height:220px"><canvas id="chartStacked"></canvas></div>
+  </div>
+</div>
+
+<div class="table-card">
+  <div class="chart-title" style="margin-bottom:4px">Top 10 SKUs con Mayor Impacto Econ&oacute;mico</div>
+  <div class="chart-subtitle" style="margin-bottom:16px">Ordenados por valor absoluto de diferencia DDP</div>
+  <table>
+    <thead><tr><th>#</th><th>SKU WMS</th><th>Art&iacute;culo</th><th>Diferencia</th><th style="text-align:right">Unidades</th><th style="text-align:right">Costo DDP</th><th style="text-align:right">Impacto $</th><th>Mes</th></tr></thead>
+    <tbody><tr><td style='color:#9ca3af;font-weight:600'>1</td><td class='sku-text'>A0210000555</td><td style='max-width:260px'>Mochila Arrecifes Az&#250;l Negro .</td><td><span class='badge-pos'>Dif Positiva</span></td><td style='text-align:right;font-weight:600'>238</td><td style='text-align:right'>$9,78</td><td style='text-align:right;font-weight:700;color:#d97706'>$2.327,64</td><td><span class='badge-sin'>marzo</span></td></tr>
+<tr><td style='color:#9ca3af;font-weight:600'>2</td><td class='sku-text'>A0110002022</td><td style='max-width:260px'>CHALECO STREAM MEN Large Negro Poliestileno</td><td><span class='badge-pos'>Dif Positiva</span></td><td style='text-align:right;font-weight:600'>167</td><td style='text-align:right'>$12,42</td><td style='text-align:right;font-weight:700;color:#d97706'>$2.074,06</td><td><span class='badge-sin'>abril</span></td></tr>
+<tr><td style='color:#9ca3af;font-weight:600'>3</td><td class='sku-text'>A0410000368</td><td style='max-width:260px'>Jarro Titan Gris Claro Gris Claro ABS</td><td><span class='badge-pos'>Dif Positiva</span></td><td style='text-align:right;font-weight:600'>249</td><td style='text-align:right'>$5,65</td><td style='text-align:right;font-weight:700;color:#d97706'>$1.407,10</td><td><span class='badge-sin'>marzo</span></td></tr>
+<tr><td style='color:#9ca3af;font-weight:600'>4</td><td class='sku-text'>A0410000402</td><td style='max-width:260px'>Botella JIM Blanco Blanco Aluminio/Zamac</td><td><span class='badge-pos'>Dif Positiva</span></td><td style='text-align:right;font-weight:600'>577</td><td style='text-align:right'>$2,13</td><td style='text-align:right;font-weight:700;color:#d97706'>$1.230,74</td><td><span class='badge-sin'>mayo</span></td></tr>
+<tr><td style='color:#9ca3af;font-weight:600'>5</td><td class='sku-text'>A0210000321</td><td style='max-width:260px'>Mochila FELD Gris Oscuro Negro .</td><td><span class='badge-neg'>Dif Negativa</span></td><td style='text-align:right;font-weight:600'>86</td><td style='text-align:right'>$10,37</td><td style='text-align:right;font-weight:700;color:#d97706'>$891,73</td><td><span class='badge-sin'>marzo</span></td></tr>
+<tr><td style='color:#9ca3af;font-weight:600'>6</td><td class='sku-text'>A0110001409</td><td style='max-width:260px'>Campera Softshell Race Hombre Small Negro Poliestileno</td><td><span class='badge-pos'>Dif Positiva</span></td><td style='text-align:right;font-weight:600'>62</td><td style='text-align:right'>$14,30</td><td style='text-align:right;font-weight:700;color:#d97706'>$886,51</td><td><span class='badge-sin'>mayo</span></td></tr>
+<tr><td style='color:#9ca3af;font-weight:600'>7</td><td class='sku-text'>A0110001396</td><td style='max-width:260px'>Campera Softshell Race Mujer X Large Negro Poliestileno</td><td><span class='badge-pos'>Dif Positiva</span></td><td style='text-align:right;font-weight:600'>45</td><td style='text-align:right'>$16,38</td><td style='text-align:right;font-weight:700;color:#d97706'>$737,06</td><td><span class='badge-sin'>mayo</span></td></tr>
+<tr><td style='color:#9ca3af;font-weight:600'>8</td><td class='sku-text'>A0410000171</td><td style='max-width:260px'>Jarro Daten Negro Negro A.Inox/Hier</td><td><span class='badge-pos'>Dif Positiva</span></td><td style='text-align:right;font-weight:600'>100</td><td style='text-align:right'>$6,94</td><td style='text-align:right;font-weight:700;color:#d97706'>$694,50</td><td><span class='badge-sin'>mayo</span></td></tr>
+<tr><td style='color:#9ca3af;font-weight:600'>9</td><td class='sku-text'>A0410000204</td><td style='max-width:260px'>Mate ORIGEN c/Bombilla Negro Negro Acero</td><td><span class='badge-pos'>Dif Positiva</span></td><td style='text-align:right;font-weight:600'>104</td><td style='text-align:right'>$4,96</td><td style='text-align:right;font-weight:700;color:#d97706'>$515,63</td><td><span class='badge-sin'>marzo</span></td></tr>
+<tr><td style='color:#9ca3af;font-weight:600'>10</td><td class='sku-text'>A0110000050</td><td style='max-width:260px'>Campera Polar Volley X Small Azul</td><td><span class='badge-pos'>Dif Positiva</span></td><td style='text-align:right;font-weight:600'>42</td><td style='text-align:right'>$12,17</td><td style='text-align:right;font-weight:700;color:#d97706'>$510,95</td><td><span class='badge-sin'>marzo</span></td></tr>
+</tbody>
+  </table>
+</div>
+
+<div class="table-card">
+  <div class="chart-title" style="margin-bottom:4px">Resumen por Familia</div>
+  <div class="chart-subtitle" style="margin-bottom:16px">Exactitud y exposici&oacute;n econ&oacute;mica por l&iacute;nea de producto</div>
+  <table>
+    <thead><tr><th>Familia</th><th style="text-align:right">SKUs</th><th style="text-align:right">Sin Dif.</th><th style="text-align:right">Exactitud</th><th style="text-align:right">Impacto $</th></tr></thead>
+    <tbody><tr><td style='font-weight:600'>A-01 - Apparel</td><td style='text-align:right'>351</td><td style='text-align:right'>238</td><td style='text-align:right;font-weight:700;color:#16a34a'>67,8%</td><td style='text-align:right;font-weight:700;color:#d97706'>$4.847,26</td></tr>
+<tr><td style='font-weight:600'>A-04 - Drinkware</td><td style='text-align:right'>159</td><td style='text-align:right'>76</td><td style='text-align:right;font-weight:700;color:#16a34a'>47,8%</td><td style='text-align:right;font-weight:700;color:#d97706'>$4.577,00</td></tr>
+<tr><td style='font-weight:600'>A-02 - Bolsos y Mochilas</td><td style='text-align:right'>137</td><td style='text-align:right'>62</td><td style='text-align:right;font-weight:700;color:#16a34a'>45,3%</td><td style='text-align:right;font-weight:700;color:#d97706'>$2.540,83</td></tr>
+<tr><td style='font-weight:600'>A-07 - Gorros</td><td style='text-align:right'>67</td><td style='text-align:right'>30</td><td style='text-align:right;font-weight:700;color:#16a34a'>44,8%</td><td style='text-align:right;font-weight:700;color:#d97706'>$1.874,99</td></tr>
+<tr><td style='font-weight:600'>A-05 - Escritorio</td><td style='text-align:right'>42</td><td style='text-align:right'>20</td><td style='text-align:right;font-weight:700;color:#16a34a'>47,6%</td><td style='text-align:right;font-weight:700;color:#d97706'>$143,29</td></tr>
+<tr><td style='font-weight:600'>A-06 - Escritura</td><td style='text-align:right'>38</td><td style='text-align:right'>20</td><td style='text-align:right;font-weight:700;color:#16a34a'>52,6%</td><td style='text-align:right;font-weight:700;color:#d97706'>$108,10</td></tr>
+<tr><td style='font-weight:600'>A-08 - Hogar y Tiempo Lib</td><td style='text-align:right'>33</td><td style='text-align:right'>13</td><td style='text-align:right;font-weight:700;color:#d97706'>39,4%</td><td style='text-align:right;font-weight:700;color:#d97706'>$238,35</td></tr>
+<tr><td style='font-weight:600'>A-12 - Tecnolog&#237;a</td><td style='text-align:right'>16</td><td style='text-align:right'>12</td><td style='text-align:right;font-weight:700;color:#16a34a'>75,0%</td><td style='text-align:right;font-weight:700;color:#d97706'>$202,38</td></tr>
+<tr><td style='font-weight:600'>A-11 - Paraguas</td><td style='text-align:right'>16</td><td style='text-align:right'>7</td><td style='text-align:right;font-weight:700;color:#16a34a'>43,8%</td><td style='text-align:right;font-weight:700;color:#d97706'>$27,36</td></tr>
+<tr><td style='font-weight:600'>A-10 - Llaveros</td><td style='text-align:right'>11</td><td style='text-align:right'>2</td><td style='text-align:right;font-weight:700;color:#dc2626'>18,2%</td><td style='text-align:right;font-weight:700;color:#dc2626'>$-105,73</td></tr>
+<tr><td style='font-weight:600'>A-03 - Packaging</td><td style='text-align:right'>4</td><td style='text-align:right'>4</td><td style='text-align:right;font-weight:700;color:#16a34a'>100,0%</td><td style='text-align:right;font-weight:700;color:#d97706'>$0,00</td></tr>
+<tr><td style='font-weight:600'>A-09 - Imanes</td><td style='text-align:right'>1</td><td style='text-align:right'></td><td style='text-align:right;font-weight:700;color:#dc2626'>0,0%</td><td style='text-align:right;font-weight:700;color:#d97706'>$0,00</td></tr>
+</tbody>
+  </table>
+</div>
+
+<div class="charts-row" style="grid-template-columns:1fr">
+  <div class="chart-card">
+    <div class="chart-title">Progreso de Cobertura por Familia</div>
+    <div class="chart-subtitle">Art&iacute;culos contados vs. pendientes por familia &mdash; actualizado 15/05/2026</div>
+    <div style="position:relative;height:300px"><canvas id="chartCobertura"></canvas></div>
+  </div>
+</div>
+
+<div class="table-card">
+  <div class="chart-title" style="margin-bottom:4px">Detalle de Cobertura por Familia</div>
+  <div class="chart-subtitle" style="margin-bottom:16px">Progreso acumulado del per&iacute;odo &mdash; elegibles activos en web</div>
+  <table>
+    <thead><tr>
+      <th>Familia</th>
+      <th style="text-align:right">Total Elegibles</th>
+      <th style="text-align:right;color:#16a34a">Contados</th>
+      <th style="text-align:right;color:#dc2626">Pendientes</th>
+      <th style="text-align:right">Cobertura</th>
+      <th style="width:160px">Progreso</th>
+    </tr></thead>
+    <tbody><tr style='border-bottom:1px solid #f3f4f6'><td style='padding:10px 12px;font-weight:600'>Packaging</td><td style='padding:10px 12px;text-align:right'>9</td><td style='padding:10px 12px;text-align:right;color:#16a34a;font-weight:600'>0</td><td style='padding:10px 12px;text-align:right;color:#dc2626'>9</td><td style='padding:10px 12px;text-align:right;font-weight:700;color:#dc2626'>0%</td><td style='padding:10px 14px;width:160px'><div style='background:#e5e7eb;border-radius:4px;height:10px'><div style='background:#ef4444;border-radius:4px;height:10px;width:0%'></div></div></td></tr>
+<tr style='border-bottom:1px solid #f3f4f6'><td style='padding:10px 12px;font-weight:600'>Notebooks</td><td style='padding:10px 12px;text-align:right'>69</td><td style='padding:10px 12px;text-align:right;color:#16a34a;font-weight:600'>0</td><td style='padding:10px 12px;text-align:right;color:#dc2626'>69</td><td style='padding:10px 12px;text-align:right;font-weight:700;color:#dc2626'>0%</td><td style='padding:10px 14px;width:160px'><div style='background:#e5e7eb;border-radius:4px;height:10px'><div style='background:#ef4444;border-radius:4px;height:10px;width:0%'></div></div></td></tr>
+<tr style='border-bottom:1px solid #f3f4f6'><td style='padding:10px 12px;font-weight:600'>Llaveros</td><td style='padding:10px 12px;text-align:right'>34</td><td style='padding:10px 12px;text-align:right;color:#16a34a;font-weight:600'>0</td><td style='padding:10px 12px;text-align:right;color:#dc2626'>34</td><td style='padding:10px 12px;text-align:right;font-weight:700;color:#dc2626'>0%</td><td style='padding:10px 14px;width:160px'><div style='background:#e5e7eb;border-radius:4px;height:10px'><div style='background:#ef4444;border-radius:4px;height:10px;width:0%'></div></div></td></tr>
+<tr style='border-bottom:1px solid #f3f4f6'><td style='padding:10px 12px;font-weight:600'>Tecnolog&#237;a</td><td style='padding:10px 12px;text-align:right'>56</td><td style='padding:10px 12px;text-align:right;color:#16a34a;font-weight:600'>0</td><td style='padding:10px 12px;text-align:right;color:#dc2626'>56</td><td style='padding:10px 12px;text-align:right;font-weight:700;color:#dc2626'>0%</td><td style='padding:10px 14px;width:160px'><div style='background:#e5e7eb;border-radius:4px;height:10px'><div style='background:#ef4444;border-radius:4px;height:10px;width:0%'></div></div></td></tr>
+<tr style='border-bottom:1px solid #f3f4f6'><td style='padding:10px 12px;font-weight:600'>Sin Familia</td><td style='padding:10px 12px;text-align:right'>1</td><td style='padding:10px 12px;text-align:right;color:#16a34a;font-weight:600'>0</td><td style='padding:10px 12px;text-align:right;color:#dc2626'>1</td><td style='padding:10px 12px;text-align:right;font-weight:700;color:#dc2626'>0%</td><td style='padding:10px 14px;width:160px'><div style='background:#e5e7eb;border-radius:4px;height:10px'><div style='background:#ef4444;border-radius:4px;height:10px;width:0%'></div></div></td></tr>
+<tr style='border-bottom:1px solid #f3f4f6'><td style='padding:10px 12px;font-weight:600'>Paraguas</td><td style='padding:10px 12px;text-align:right'>32</td><td style='padding:10px 12px;text-align:right;color:#16a34a;font-weight:600'>0</td><td style='padding:10px 12px;text-align:right;color:#dc2626'>32</td><td style='padding:10px 12px;text-align:right;font-weight:700;color:#dc2626'>0%</td><td style='padding:10px 14px;width:160px'><div style='background:#e5e7eb;border-radius:4px;height:10px'><div style='background:#ef4444;border-radius:4px;height:10px;width:0%'></div></div></td></tr>
+<tr style='border-bottom:1px solid #f3f4f6'><td style='padding:10px 12px;font-weight:600'>Drinkware</td><td style='padding:10px 12px;text-align:right'>247</td><td style='padding:10px 12px;text-align:right;color:#16a34a;font-weight:600'>0</td><td style='padding:10px 12px;text-align:right;color:#dc2626'>247</td><td style='padding:10px 12px;text-align:right;font-weight:700;color:#dc2626'>0%</td><td style='padding:10px 14px;width:160px'><div style='background:#e5e7eb;border-radius:4px;height:10px'><div style='background:#ef4444;border-radius:4px;height:10px;width:0%'></div></div></td></tr>
+<tr style='border-bottom:1px solid #f3f4f6'><td style='padding:10px 12px;font-weight:600'>Bolsos y Mochilas</td><td style='padding:10px 12px;text-align:right'>324</td><td style='padding:10px 12px;text-align:right;color:#16a34a;font-weight:600'>0</td><td style='padding:10px 12px;text-align:right;color:#dc2626'>324</td><td style='padding:10px 12px;text-align:right;font-weight:700;color:#dc2626'>0%</td><td style='padding:10px 14px;width:160px'><div style='background:#e5e7eb;border-radius:4px;height:10px'><div style='background:#ef4444;border-radius:4px;height:10px;width:0%'></div></div></td></tr>
+<tr style='border-bottom:1px solid #f3f4f6'><td style='padding:10px 12px;font-weight:600'>Apparel</td><td style='padding:10px 12px;text-align:right'>508</td><td style='padding:10px 12px;text-align:right;color:#16a34a;font-weight:600'>0</td><td style='padding:10px 12px;text-align:right;color:#dc2626'>508</td><td style='padding:10px 12px;text-align:right;font-weight:700;color:#dc2626'>0%</td><td style='padding:10px 14px;width:160px'><div style='background:#e5e7eb;border-radius:4px;height:10px'><div style='background:#ef4444;border-radius:4px;height:10px;width:0%'></div></div></td></tr>
+<tr style='border-bottom:1px solid #f3f4f6'><td style='padding:10px 12px;font-weight:600'>Hogar y Tiempo Libre</td><td style='padding:10px 12px;text-align:right'>77</td><td style='padding:10px 12px;text-align:right;color:#16a34a;font-weight:600'>0</td><td style='padding:10px 12px;text-align:right;color:#dc2626'>77</td><td style='padding:10px 12px;text-align:right;font-weight:700;color:#dc2626'>0%</td><td style='padding:10px 14px;width:160px'><div style='background:#e5e7eb;border-radius:4px;height:10px'><div style='background:#ef4444;border-radius:4px;height:10px;width:0%'></div></div></td></tr>
+<tr style='border-bottom:1px solid #f3f4f6'><td style='padding:10px 12px;font-weight:600'>Headwear</td><td style='padding:10px 12px;text-align:right'>136</td><td style='padding:10px 12px;text-align:right;color:#16a34a;font-weight:600'>0</td><td style='padding:10px 12px;text-align:right;color:#dc2626'>136</td><td style='padding:10px 12px;text-align:right;font-weight:700;color:#dc2626'>0%</td><td style='padding:10px 14px;width:160px'><div style='background:#e5e7eb;border-radius:4px;height:10px'><div style='background:#ef4444;border-radius:4px;height:10px;width:0%'></div></div></td></tr>
+<tr style='border-bottom:1px solid #f3f4f6'><td style='padding:10px 12px;font-weight:600'>Escritura</td><td style='padding:10px 12px;text-align:right'>104</td><td style='padding:10px 12px;text-align:right;color:#16a34a;font-weight:600'>0</td><td style='padding:10px 12px;text-align:right;color:#dc2626'>104</td><td style='padding:10px 12px;text-align:right;font-weight:700;color:#dc2626'>0%</td><td style='padding:10px 14px;width:160px'><div style='background:#e5e7eb;border-radius:4px;height:10px'><div style='background:#ef4444;border-radius:4px;height:10px;width:0%'></div></div></td></tr>
+</tbody>
+  </table>
+</div>
+
+<div class="charts-row" style="grid-template-columns:1fr">
+  <div class="chart-card">
+    <div class="chart-title">Conteos por D&iacute;a &mdash; Actividad Diaria</div>
+    <div class="chart-subtitle">Cantidad de SKUs contados en cada jornada de inventario (24 d&iacute;as activos)</div>
+    <div style="position:relative;height:220px"><canvas id="chartDia"></canvas></div>
+  </div>
+</div>
+
+<div class="charts-row charts-row-2">
+  <div class="table-card" style="margin-bottom:0">
+    <div class="chart-title" style="margin-bottom:4px">Ranking de Art&iacute;culos M&aacute;s Contados</div>
+    <div class="chart-subtitle" style="margin-bottom:16px">Top 20 art&iacute;culos por frecuencia de conteo</div>
+    <table>
+      <thead><tr><th>#</th><th>Art&iacute;culo</th><th style="text-align:right">Veces</th><th>Frecuencia</th></tr></thead>
+      <tbody><tr><td style='color:#9ca3af;font-weight:600;width:32px'>1</td><td>Botella Viper Rojo Rojo Plastico</td><td style='text-align:right;font-weight:700;color:#2563eb;width:60px'>3</td><td style='width:160px'><div style='background:#e5e7eb;border-radius:4px;height:8px'><div style='background:#2563eb;border-radius:4px;height:8px;width:1%'></div></div></td></tr>
+<tr><td style='color:#9ca3af;font-weight:600;width:32px'>2</td><td>Gorro ACE Negro Gris Claro Algodon 100%</td><td style='text-align:right;font-weight:700;color:#2563eb;width:60px'>2</td><td style='width:160px'><div style='background:#e5e7eb;border-radius:4px;height:8px'><div style='background:#2563eb;border-radius:4px;height:8px;width:1%'></div></div></td></tr>
+<tr><td style='color:#9ca3af;font-weight:600;width:32px'>3</td><td>Jarro Break Gris Ceramica .</td><td style='text-align:right;font-weight:700;color:#2563eb;width:60px'>2</td><td style='width:160px'><div style='background:#e5e7eb;border-radius:4px;height:8px'><div style='background:#2563eb;border-radius:4px;height:8px;width:1%'></div></div></td></tr>
+<tr><td style='color:#9ca3af;font-weight:600;width:32px'>4</td><td>Cooler Dakota Gris / Negro</td><td style='text-align:right;font-weight:700;color:#2563eb;width:60px'>2</td><td style='width:160px'><div style='background:#e5e7eb;border-radius:4px;height:8px'><div style='background:#2563eb;border-radius:4px;height:8px;width:1%'></div></div></td></tr>
+<tr><td style='color:#9ca3af;font-weight:600;width:32px'>5</td><td>Cuaderno JOURNAL A5 Hojas Rayadas Rojo Rojo Cuero ecologico</td><td style='text-align:right;font-weight:700;color:#2563eb;width:60px'>2</td><td style='width:160px'><div style='background:#e5e7eb;border-radius:4px;height:8px'><div style='background:#2563eb;border-radius:4px;height:8px;width:1%'></div></div></td></tr>
+<tr><td style='color:#9ca3af;font-weight:600;width:32px'>6</td><td>Cuaderno BUSH Crema Crema Papel</td><td style='text-align:right;font-weight:700;color:#2563eb;width:60px'>2</td><td style='width:160px'><div style='background:#e5e7eb;border-radius:4px;height:8px'><div style='background:#2563eb;border-radius:4px;height:8px;width:1%'></div></div></td></tr>
+<tr><td style='color:#9ca3af;font-weight:600;width:32px'>7</td><td>Mochila JUMP Negro Negro .</td><td style='text-align:right;font-weight:700;color:#2563eb;width:60px'>2</td><td style='width:160px'><div style='background:#e5e7eb;border-radius:4px;height:8px'><div style='background:#2563eb;border-radius:4px;height:8px;width:1%'></div></div></td></tr>
+<tr><td style='color:#9ca3af;font-weight:600;width:32px'>8</td><td>Campera Windbreaker Cardon Polyester Negro U/XXL</td><td style='text-align:right;font-weight:700;color:#2563eb;width:60px'>2</td><td style='width:160px'><div style='background:#e5e7eb;border-radius:4px;height:8px'><div style='background:#2563eb;border-radius:4px;height:8px;width:1%'></div></div></td></tr>
+<tr><td style='color:#9ca3af;font-weight:600;width:32px'>9</td><td>Gorro Trucker c/broche Rojo Blanco .</td><td style='text-align:right;font-weight:700;color:#2563eb;width:60px'>2</td><td style='width:160px'><div style='background:#e5e7eb;border-radius:4px;height:8px'><div style='background:#2563eb;border-radius:4px;height:8px;width:1%'></div></div></td></tr>
+<tr><td style='color:#9ca3af;font-weight:600;width:32px'>10</td><td>Botella Dairy Blanco Blanco Acero</td><td style='text-align:right;font-weight:700;color:#2563eb;width:60px'>2</td><td style='width:160px'><div style='background:#e5e7eb;border-radius:4px;height:8px'><div style='background:#2563eb;border-radius:4px;height:8px;width:1%'></div></div></td></tr>
+<tr><td style='color:#9ca3af;font-weight:600;width:32px'>11</td><td>Termo AVANZA 1Lt. Gris Plata Gris Plata A.Inox/Hier</td><td style='text-align:right;font-weight:700;color:#2563eb;width:60px'>2</td><td style='width:160px'><div style='background:#e5e7eb;border-radius:4px;height:8px'><div style='background:#2563eb;border-radius:4px;height:8px;width:1%'></div></div></td></tr>
+<tr><td style='color:#9ca3af;font-weight:600;width:32px'>12</td><td>Campera Montana Mujer Medium Azul Poliestileno</td><td style='text-align:right;font-weight:700;color:#2563eb;width:60px'>2</td><td style='width:160px'><div style='background:#e5e7eb;border-radius:4px;height:8px'><div style='background:#2563eb;border-radius:4px;height:8px;width:1%'></div></div></td></tr>
+<tr><td style='color:#9ca3af;font-weight:600;width:32px'>13</td><td>Campera Windbreaker Cardon Polyester Negro U/XXXL</td><td style='text-align:right;font-weight:700;color:#2563eb;width:60px'>2</td><td style='width:160px'><div style='background:#e5e7eb;border-radius:4px;height:8px'><div style='background:#2563eb;border-radius:4px;height:8px;width:1%'></div></div></td></tr>
+<tr><td style='color:#9ca3af;font-weight:600;width:32px'>14</td><td>Mochila Cima - S Azul Azul .</td><td style='text-align:right;font-weight:700;color:#2563eb;width:60px'>2</td><td style='width:160px'><div style='background:#e5e7eb;border-radius:4px;height:8px'><div style='background:#2563eb;border-radius:4px;height:8px;width:1%'></div></div></td></tr>
+<tr><td style='color:#9ca3af;font-weight:600;width:32px'>15</td><td>Campera Montana Hombre Small Azul Poliestileno</td><td style='text-align:right;font-weight:700;color:#2563eb;width:60px'>2</td><td style='width:160px'><div style='background:#e5e7eb;border-radius:4px;height:8px'><div style='background:#2563eb;border-radius:4px;height:8px;width:1%'></div></div></td></tr>
+<tr><td style='color:#9ca3af;font-weight:600;width:32px'>16</td><td>Mochila Lisa Rojo Rojo .</td><td style='text-align:right;font-weight:700;color:#2563eb;width:60px'>2</td><td style='width:160px'><div style='background:#e5e7eb;border-radius:4px;height:8px'><div style='background:#2563eb;border-radius:4px;height:8px;width:1%'></div></div></td></tr>
+<tr><td style='color:#9ca3af;font-weight:600;width:32px'>17</td><td>CHALECO STREAM MEN 3 X Large Negro Poliestileno</td><td style='text-align:right;font-weight:700;color:#2563eb;width:60px'>2</td><td style='width:160px'><div style='background:#e5e7eb;border-radius:4px;height:8px'><div style='background:#2563eb;border-radius:4px;height:8px;width:1%'></div></div></td></tr>
+<tr><td style='color:#9ca3af;font-weight:600;width:32px'>18</td><td>Gorro FUN Negro Negro .</td><td style='text-align:right;font-weight:700;color:#2563eb;width:60px'>2</td><td style='width:160px'><div style='background:#e5e7eb;border-radius:4px;height:8px'><div style='background:#2563eb;border-radius:4px;height:8px;width:1%'></div></div></td></tr>
+<tr><td style='color:#9ca3af;font-weight:600;width:32px'>19</td><td>Tote Felt Gris Claro Gris Claro Algodon/Poliest</td><td style='text-align:right;font-weight:700;color:#2563eb;width:60px'>2</td><td style='width:160px'><div style='background:#e5e7eb;border-radius:4px;height:8px'><div style='background:#2563eb;border-radius:4px;height:8px;width:1%'></div></div></td></tr>
+<tr><td style='color:#9ca3af;font-weight:600;width:32px'>20</td><td>Botella ALU c/handle color Blanco Azul Aluminio/Zamac</td><td style='text-align:right;font-weight:700;color:#2563eb;width:60px'>2</td><td style='width:160px'><div style='background:#e5e7eb;border-radius:4px;height:8px'><div style='background:#2563eb;border-radius:4px;height:8px;width:1%'></div></div></td></tr>
+</tbody>
+    </table>
+  </div>
+  <div class="chart-card" style="display:flex;flex-direction:column">
+    <div class="chart-title" style="margin-bottom:4px">Conteos por Mes &mdash; Detalle</div>
+    <div class="chart-subtitle" style="margin-bottom:18px">Distribuci&oacute;n de conteos y exactitud mensual</div>
+    <div style="position:relative;flex:1;min-height:300px"><canvas id="chartMesDetalle"></canvas></div>
+  </div>
+</div>
+
+</div>
+<footer>Dashboard generado autom&aacute;ticamente desde Ciclico ARG 2025-26.xlsx &nbsp;|&nbsp; Zecat &mdash; Art&iacute;culos Promocionales SA &nbsp;|&nbsp; 26/05/2026 08:32</footer>
 
 <script>
-/* ================================================================
-   CONFIG
-   ================================================================ */
-/* ================================================================
-   LOCAL DB — IndexedDB (sin backend, datos persistidos en el browser)
-   ================================================================ */
-const DB_NAME = 'ciclico_arg_v1';
-const DB_VERSION = 1;
+function _isDark(){return document.documentElement.getAttribute('data-theme')==='dark';}
+function _gc(){return _isDark()?'#1f2937':'#f3f4f6';}
+Chart.defaults.font.family='Inter,Arial,sans-serif';
+Chart.defaults.font.size=12;
+Chart.defaults.color=_isDark()?'#8b949e':'#555';
+const meses=["Marzo 2026","Abril 2026","Mayo 2026"], conteos=[502,156,217], sinDif=[286,64,135],
+      difPos=[157,50,45], difNeg=[59,42,37], acc=[57,41,62,2],
+      famL=["Apparel","Drinkware","Bolsos y Mochilas","Gorros","Escritorio","Escritura","Hogar y Tiempo Lib","Tecnolog&#237;a","Paraguas","Llaveros","Packaging","Imanes"], famAcc=[67,8,47,8,45,3,44,8,47,6,52,6,39,4,75,43,8,18,2,100,0], famImp=[4847,26,4577,2540,83,1874,99,143,29,108,1,238,35,202,38,27,36,-105,73,0,0];
+const _charts=[];
 
-function openDB() {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, DB_VERSION);
-    req.onupgradeneeded = e => {
-      const db = e.target.result;
-      if (!db.objectStoreNames.contains('conteos')) {
-        const cs = db.createObjectStore('conteos', {keyPath:'id', autoIncrement:true});
-        cs.createIndex('dia', 'dia'); cs.createIndex('articulo', 'articulo');
-      }
-      if (!db.objectStoreNames.contains('stock'))
-        db.createObjectStore('stock', {keyPath:'articulo'});
-      if (!db.objectStoreNames.contains('ciclo'))
-        db.createObjectStore('ciclo', {keyPath:'id'});
-      if (!db.objectStoreNames.contains('recomendaciones'))
-        db.createObjectStore('recomendaciones', {keyPath:'fecha'});
-    };
-    req.onsuccess = e => resolve(e.target.result);
-    req.onerror   = e => reject(e.target.error);
+_charts.push(new Chart('chartTrend',{type:'line',data:{labels:meses,datasets:[
+  {label:'% Exactitud',data:acc,borderColor:'#F97171',backgroundColor:'rgba(249,113,113,.08)',borderWidth:2.5,tension:.3,fill:true,
+   pointBackgroundColor:acc.map(v=>v<30?'#dc2626':v<50?'#d97706':'#16a34a'),pointRadius:5},
+  {label:'Objetivo 70%',data:Array(meses.length).fill(70),borderColor:'#16a34a',borderWidth:1.5,borderDash:[6,4],pointRadius:0,fill:false}
+]},options:{responsive:true,maintainAspectRatio:false,
+  plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}},
+  scales:{y:{min:0,max:100,ticks:{callback:v=>v+'%'},grid:{color:_gc()}},x:{grid:{display:false}}}}}));
+
+_charts.push(new Chart('chartDonut',{type:'doughnut',data:{
+  labels:['Sin Diferencia','Dif. Positiva','Dif. Negativa'],
+  datasets:[{data:[485,252,138],backgroundColor:['#F97171','#f59e0b','#ef4444'],borderWidth:2,borderColor:'#fff'}]
+},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',
+  plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11},padding:12}},
+  tooltip:{callbacks:{label:ctx=>' '+ctx.label+': '+ctx.raw+' SKUs'}}}}}));
+
+_charts.push(new Chart('chartConteos',{type:'bar',data:{labels:meses,datasets:[
+  {label:'SKUs contados',data:conteos,backgroundColor:conteos.map((_,i)=>'hsla('+(220+i*10)+',70%,55%,.85)'),borderRadius:5}
+]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+  scales:{y:{grid:{color:_gc()}},x:{grid:{display:false}}}}}));
+
+_charts.push(new Chart('chartFamily',{type:'bar',data:{labels:famL,datasets:[
+  {label:'% Exactitud',data:famAcc,backgroundColor:famAcc.map(v=>v<25?'#ef4444':v<40?'#f59e0b':v<55?'#3b82f6':'#16a34a'),borderRadius:5},
+  {label:'Objetivo 70%',data:Array(famL.length).fill(70),type:'line',borderColor:'#16a34a',borderWidth:2,borderDash:[5,4],pointRadius:0,fill:false}
+]},options:{responsive:true,maintainAspectRatio:false,
+  plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}},
+  scales:{y:{min:0,max:100,ticks:{callback:v=>v+'%'},grid:{color:_gc()}},x:{grid:{display:false},ticks:{font:{size:10}}}}}}));
+
+_charts.push(new Chart('chartImpact',{type:'bar',data:{labels:famL,datasets:[
+  {label:'Impacto DDP',data:famImp,backgroundColor:famImp.map(v=>v>=0?'rgba(245,158,11,.8)':'rgba(239,68,68,.8)'),borderRadius:4}
+]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
+  tooltip:{callbacks:{label:ctx=>' \$'+ctx.raw.toLocaleString('es-AR',{maximumFractionDigits:0})}}},
+  scales:{y:{grid:{color:_gc()},ticks:{callback:v=>'\$'+v.toLocaleString('es-AR',{maximumFractionDigits:0})}},x:{grid:{display:false},ticks:{font:{size:10}}}}}}));
+
+_charts.push(new Chart('chartStacked',{type:'bar',data:{labels:meses,datasets:[
+  {label:'Sin Diferencia',data:sinDif,backgroundColor:'#F97171'},
+  {label:'Dif. Positiva', data:difPos,backgroundColor:'#f59e0b'},
+  {label:'Dif. Negativa', data:difNeg,backgroundColor:'#ef4444'}
+]},options:{responsive:true,maintainAspectRatio:false,
+  plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}},
+  scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,grid:{color:_gc()}}}}}));
+
+const diaL=["18/03/2026","19/03/2026","20/03/2026","25/03/2026","26/03/2026","30/03/2026","31/03/2026","01/04/2026","07/04/2026","15/04/2026","17/04/2026","20/04/2026","21/04/2026","22/04/2026","23/04/2026","24/04/2026","29/04/2026","04/05/2026","05/05/2026","06/05/2026","11/05/2026","12/05/2026","13/05/2026","14/05/2026"], diaC=[83,48,45,49,15,29,233,30,17,33,10,19,12,13,3,10,9,47,9,6,60,20,40,35];
+_charts.push(new Chart('chartDia',{type:'bar',data:{labels:diaL,datasets:[
+  {label:'SKUs contados',data:diaC,
+   backgroundColor:diaC.map(v=>v>150?'#dc2626':v>80?'#f59e0b':'#F97171'),
+   borderRadius:3}
+]},options:{responsive:true,maintainAspectRatio:false,
+  plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+ctx.raw+' SKUs'}}},
+  scales:{y:{grid:{color:_gc()},ticks:{font:{size:11}}},
+    x:{grid:{display:false},ticks:{font:{size:9},maxRotation:45,minRotation:30}}}}}));
+
+if (document.getElementById('chartCobertura')) {
+  _charts.push(new Chart('chartCobertura',{type:'bar',data:{labels:["Packaging","Notebooks","Llaveros","Tecnolog&#237;a","Sin Familia","Paraguas","Drinkware","Bolsos y Mochilas","Apparel","Hogar y Tiempo Libre","Headwear","Escritura"],datasets:[
+    {label:'Contados',   data:[0,0,0,0,0,0,0,0,0,0,0,0], backgroundColor:'#16a34a',borderRadius:4},
+    {label:'Pendientes', data:[9,69,34,56,1,32,247,324,508,77,136,104], backgroundColor:'#e5e7eb',borderRadius:4}
+  ]},options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}},
+    scales:{x:{stacked:true,grid:{display:false},ticks:{font:{size:10}}},
+      y:{stacked:true,grid:{color:_gc()},ticks:{font:{size:11}}}}}}));
+}
+
+_charts.push(new Chart('chartMesDetalle',{type:'bar',data:{labels:meses,datasets:[
+  {label:'Total contados',data:conteos,backgroundColor:'rgba(249,113,113,.15)',borderColor:'#F97171',borderWidth:1.5,borderRadius:4,yAxisID:'y'},
+  {label:'% Exactitud',data:acc,type:'line',borderColor:'#16a34a',backgroundColor:'rgba(22,163,74,.1)',
+   borderWidth:2,tension:.3,fill:true,pointRadius:4,pointBackgroundColor:acc.map(v=>v<30?'#dc2626':v<50?'#f59e0b':'#16a34a'),yAxisID:'y1'}
+]},options:{responsive:true,maintainAspectRatio:false,
+  plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}},
+  scales:{
+    y:{position:'left',grid:{color:_gc()},title:{display:true,text:'SKUs',font:{size:10}}},
+    y1:{position:'right',min:0,max:100,grid:{display:false},ticks:{callback:v=>v+'%'},title:{display:true,text:'Exactitud',font:{size:10}}},
+    x:{grid:{display:false}}}}}));
+
+function toggleTheme(){
+  var h=document.documentElement;
+  var dark=h.getAttribute('data-theme')==='dark';
+  var next=dark?'light':'dark';
+  h.setAttribute('data-theme',next);
+  localStorage.setItem('theme',next);
+  var nowDark=next==='dark';
+  var gc=nowDark?'#1f2937':'#f3f4f6';
+  Chart.defaults.color=nowDark?'#8b949e':'#555';
+  _charts.forEach(function(c){
+    if(!c||!c.options)return;
+    var sc=c.options.scales||{};
+    Object.values(sc).forEach(function(ax){if(ax.grid)ax.grid.color=gc;});
+    c.update('none');
   });
-}
-async function idbGetAll(st) {
-  const db = await openDB();
-  return new Promise((res,rej) => { const r = db.transaction(st,'readonly').objectStore(st).getAll(); r.onsuccess=e=>res(e.target.result); r.onerror=e=>rej(e.target.error); });
-}
-async function idbGet(st, key) {
-  const db = await openDB();
-  return new Promise((res,rej) => { const r = db.transaction(st,'readonly').objectStore(st).get(key); r.onsuccess=e=>res(e.target.result); r.onerror=e=>rej(e.target.error); });
-}
-async function idbPut(st, data) {
-  const db = await openDB();
-  return new Promise((res,rej) => { const r = db.transaction(st,'readwrite').objectStore(st).put(data); r.onsuccess=e=>res(e.target.result); r.onerror=e=>rej(e.target.error); });
-}
-async function idbAdd(st, data) {
-  const db = await openDB();
-  return new Promise((res,rej) => { const r = db.transaction(st,'readwrite').objectStore(st).add(data); r.onsuccess=e=>res(e.target.result); r.onerror=e=>rej(e.target.error); });
-}
-async function idbDelete(st, key) {
-  const db = await openDB();
-  return new Promise((res,rej) => { const r = db.transaction(st,'readwrite').objectStore(st).delete(key); r.onsuccess=e=>res(e.target.result); r.onerror=e=>rej(e.target.error); });
-}
-async function idbClear(st) {
-  const db = await openDB();
-  return new Promise((res,rej) => { const r = db.transaction(st,'readwrite').objectStore(st).clear(); r.onsuccess=e=>res(); r.onerror=e=>rej(e.target.error); });
-}
-async function idbBulkPut(st, items) {
-  const db = await openDB();
-  return new Promise((res,rej) => {
-    const tx = db.transaction(st,'readwrite'); const store = tx.objectStore(st);
-    items.forEach(it => store.put(it));
-    tx.oncomplete = res; tx.onerror = e => rej(e.target.error);
-  });
-}
-
-/* -- Business logic -- */
-const MESES_ES_ARR = ['','enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-const FERIADOS_SET = new Set(['2025-01-01','2025-03-03','2025-03-04','2025-03-24','2025-04-02','2025-04-18','2025-05-01','2025-05-25','2025-06-16','2025-06-20','2025-07-09','2025-08-18','2025-10-13','2025-11-24','2025-12-08','2025-12-25','2026-01-01','2026-02-16','2026-02-17','2026-03-24','2026-04-02','2026-04-03','2026-05-01','2026-05-25','2026-06-15','2026-06-20','2026-07-09','2026-08-17','2026-10-12','2026-11-23','2026-12-08','2026-12-25']);
-function familiaLimpia(f) { return (f||'').replace(/^[A-Z]-\d+ - /,''); }
-function fmtFecha(iso) { if (!iso) return '—'; var p = iso.split('-'); return p[2]+'/'+p[1]+'/'+p[0]; }
-function calcularCampos(sistema,fisico,ms,ddp) {
-  const total=(fisico||0)+(ms||0), difCont=total-(sistema||0);
-  const diferencia=difCont===0?'Sin Dif':difCont>0?'Dif Positiva':'Dif Negativa';
-  return {total,difCont,diferencia,stockDdp:(sistema||0)*(ddp||0),difDdp:difCont*(ddp||0)};
-}
-function isoHoyStr() { return new Date().toISOString().slice(0,10); }
-const isoHoy = isoHoyStr; // alias para compatibilidad
-function esLaborable(s) { const d=new Date(s+'T12:00:00'),dow=d.getDay(); return dow!==0&&dow!==6&&!FERIADOS_SET.has(s); }
-function diaLaborableAnterior(s) {
-  let d=new Date(s+'T12:00:00'); d.setDate(d.getDate()-1);
-  while(true){ const t=d.toISOString().slice(0,10); if(d.getDay()!==0&&d.getDay()!==6&&!FERIADOS_SET.has(t)) return t; d.setDate(d.getDate()-1); }
-}
-
-async function getCiclo() {
-  let c = await idbGet('ciclo',1);
-  if (!c) { c={id:1,ciclo_numero:1,fecha_inicio:isoHoyStr(),total_elegibles:0,ya_recomendados:[]}; await idbPut('ciclo',c); }
-  return c;
-}
-
-async function generarListaHoy(fechaStr) {
-  const ciclo = await getCiclo();
-  const yaRec = new Set(ciclo.ya_recomendados||[]);
-  const conteos = await idbGetAll('conteos');
-  const fechaInicio = ciclo.fecha_inicio || fechaStr;
-  const contadosCiclo = new Set(conteos.filter(c=>c.dia>=fechaInicio).map(c=>c.articulo));
-  const excluidos = new Set([...yaRec,...contadosCiclo]);
-  const stock = await idbGetAll('stock');
-  const activo = s => s.situacion && s.situacion.toLowerCase().includes('activo en web') && !s.situacion.toLowerCase().includes('inactivo');
-  const f1 = stock.filter(s=>activo(s)&&(s.stock_web||0)>0&&(s.stock_web||0)<300).sort((a,b)=>(b.ddp||0)-(a.ddp||0));
-  const f2 = stock.filter(s=>activo(s)&&(s.stock_web||0)>=300).sort((a,b)=>(b.ddp||0)-(a.ddp||0));
-  let disp = [...f1.filter(s=>!excluidos.has(s.articulo)),...f2.filter(s=>!excluidos.has(s.articulo))];
-  // Solo reiniciar el ciclo cuando NO quedan más ítems (no cuando quedan < 20)
-  if (disp.length === 0) {
-    disp = [...f1,...f2];
-    const nuevoNum = ciclo.ciclo_numero + 1;
-    await idbPut('ciclo',{...ciclo,ciclo_numero:nuevoNum,ya_recomendados:[],fecha_inicio:fechaStr});
-  }
-  const sel = disp.slice(0, Math.min(20, disp.length));
-  const items = sel.map(s=>({articulo:s.articulo,sku:s.sku||'',familia:familiaLimpia(s.familia),stockWeb:s.stock_web||0,ddpVal:Math.round((s.stock_web||0)*(s.ddp||0)*100)/100,ddp:s.ddp||0,tier:(s.stock_web||0)<50?1:(s.stock_web||0)<100?2:(s.stock_web||0)<200?3:4}));
-  await idbPut('recomendaciones',{fecha:fechaStr,items});
-  const cicloFresh = await getCiclo();
-  await idbPut('ciclo',{...cicloFresh,ya_recomendados:[...new Set([...(cicloFresh.ya_recomendados||[]),...items.map(i=>i.articulo)])]});
-  return items;
-}
-
-async function apiGetHoy() {
-  const hoy = isoHoyStr(), lab = esLaborable(hoy);
-  let rec = await idbGet('recomendaciones',hoy); let items = rec?rec.items:[];
-  if (!items.length && lab) items = await generarListaHoy(hoy);
-  const conteos = await idbGetAll('conteos');
-  const ayer = diaLaborableAnterior(hoy);
-  const hoyMap = {}; conteos.filter(c=>c.dia===hoy).forEach(c=>{ hoyMap[c.articulo]=c; });
-  const itemsFull = items.map(it=>{ const ct=hoyMap[it.articulo]; return {...it,contado:!!ct,conteo_id:ct?.id||null,fisico:ct?.fisico??null,dif_cont:ct?.difCont??ct?.dif_cont??null,diferencia:ct?.diferencia||null,motivo:ct?.motivo||null,observacion:ct?.observacion||null}; });
-  const ciclo = await getCiclo();
-  return {fecha:hoy,es_laborable:lab,items:itemsFull,ayer:{fecha:ayer,items:conteos.filter(c=>c.dia===ayer).map(c=>({articulo:c.articulo,diferencia:c.diferencia}))},ciclo:{ciclo_numero:ciclo.ciclo_numero,total_elegibles:ciclo.total_elegibles,ya_recomendados_count:(ciclo.ya_recomendados||[]).length}};
-}
-
-async function apiGetDashboard() {
-  const rows = await idbGetAll('conteos'), n=rows.length;
-  if (!n) { const ciclo=await getCiclo(); return {updated_at:new Date().toLocaleString('es-AR'),kpis:{total_conteos:0,skus_unicos:0,exactitud_pct:0,dif_positiva:{count:0,pct:0},dif_negativa:{count:0,pct:0},impacto_total:0,stock_valorizado:0,dias_activos:0,avg_skus_dia:0,dia_mas_activo:{fecha:null,cantidad:0}},cobertura:{total_elegibles:ciclo.total_elegibles||0,total_contados_unicos:0,cobertura_pct:0,dias_estimados:ciclo.total_elegibles?Math.ceil(ciclo.total_elegibles/20):0},mensual:[],familias:[],diario:[],top_impacto:[],top_frecuencia:[],top_neg_unidades:[],top_pos_unidades:[],top_reincidentes:[],motivos:[]}; }
-  const sinDif=rows.filter(r=>r.diferencia==='Sin Dif').length;
-  const difPos=rows.filter(r=>r.diferencia==='Dif Positiva');
-  const difNeg=rows.filter(r=>r.diferencia==='Dif Negativa');
-  const exactitud=Math.round(sinDif/n*1000)/10;
-  const impactoTotal=Math.round(rows.reduce((s,r)=>s+(r.dif_ddp||0),0)*100)/100;
-  const stockVal=Math.round(rows.reduce((s,r)=>s+(r.stock_ddp||0),0)*100)/100;
-  const dias=[...new Set(rows.filter(r=>r.dia).map(r=>r.dia))].sort();
-  const diasActivos=dias.length, avgSkusDia=diasActivos?Math.round(n/diasActivos*10)/10:0;
-  const cpd={}; rows.forEach(r=>{if(r.dia) cpd[r.dia]=(cpd[r.dia]||0)+1;});
-  let dma={fecha:null,cantidad:0}; Object.entries(cpd).forEach(([d,c])=>{ if(c>dma.cantidad) dma={fecha:d,cantidad:c}; });
-  const ciclo=await getCiclo();
-  const totalEl=ciclo.total_elegibles||0, contadosU=new Set(rows.map(r=>r.articulo)).size;
-  const cobPct=totalEl?Math.round(contadosU/totalEl*1000)/10:0;
-  const diasEst=totalEl?Math.max(0,Math.round((totalEl-contadosU)/20)):0;
-  const mMap={}; rows.forEach(r=>{ if(!r.dia) return; const d=new Date(r.dia+'T12:00:00'),k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; if(!mMap[k]) mMap[k]={y:d.getFullYear(),m:d.getMonth()+1,rows:[]}; mMap[k].rows.push(r); });
-  const mensual=Object.entries(mMap).sort((a,b)=>a[0].localeCompare(b[0])).map(([,v])=>{ const s=v.rows.filter(r=>r.diferencia==='Sin Dif').length,p=v.rows.filter(r=>r.diferencia==='Dif Positiva').length,nn=v.rows.filter(r=>r.diferencia==='Dif Negativa').length; return {mes:`${(MESES_ES_ARR[v.m]||'').charAt(0).toUpperCase()+(MESES_ES_ARR[v.m]||'').slice(1)} ${v.y}`,conteos:v.rows.length,exactitud_pct:v.rows.length?Math.round(s/v.rows.length*1000)/10:0,sin_dif:s,dif_pos:p,dif_neg:nn}; });
-  const famMap={}; rows.forEach(r=>{ const f=familiaLimpia(r.familia)||'Sin familia'; if(!famMap[f]) famMap[f]=[]; famMap[f].push(r); });
-  const familias=Object.entries(famMap).sort((a,b)=>b[1].length-a[1].length).map(([fam,fr])=>{ const s=fr.filter(r=>r.diferencia==='Sin Dif').length,p=fr.filter(r=>r.diferencia==='Dif Positiva').length,nn=fr.filter(r=>r.diferencia==='Dif Negativa').length; return {familia:fam,skus:new Set(fr.filter(r=>r.sku_wms).map(r=>r.sku_wms)).size,exactitud_pct:fr.length?Math.round(s/fr.length*1000)/10:0,impacto:Math.round(fr.reduce((s,r)=>s+(r.dif_ddp||0),0)*100)/100,sin_dif:s,dif_pos:p,dif_neg:nn}; });
-  const diario=Object.entries(cpd).sort((a,b)=>a[0].localeCompare(b[0])).map(([dia,cantidad])=>({dia,cantidad}));
-  const topImpacto=rows.filter(r=>r.dif_ddp&&r.dif_ddp!==0).sort((a,b)=>Math.abs(b.dif_ddp)-Math.abs(a.dif_ddp)).slice(0,20).map(r=>({id:r.id,sku_wms:r.sku_wms,articulo:r.articulo,dif_ddp:Math.round(r.dif_ddp*100)/100,diferencia:r.diferencia,dif_cont:r.dif_cont,familia:familiaLimpia(r.familia),dia:r.dia}));
-  const fqMap={}; rows.forEach(r=>{ if(!fqMap[r.articulo]) fqMap[r.articulo]={frecuencia:0,familia:''}; fqMap[r.articulo].frecuencia++; fqMap[r.articulo].familia=familiaLimpia(r.familia); });
-  const topFrecuencia=Object.entries(fqMap).sort((a,b)=>b[1].frecuencia-a[1].frecuencia).slice(0,20).map(([a,v])=>({articulo:a,...v}));
-  const latest={}; rows.sort((a,b)=>(a.dia||'').localeCompare(b.dia||'')).forEach(r=>{ latest[r.articulo]=r; });
-  const topNeg=Object.values(latest).filter(r=>(r.dif_cont||0)<0).sort((a,b)=>a.dif_cont-b.dif_cont).slice(0,10).map(r=>({articulo:r.articulo,familia:familiaLimpia(r.familia),diff_unidades:r.dif_cont||0,stock_sistema:r.sistema,dif_ddp:Math.round((r.dif_ddp||0)*100)/100}));
-  const topPos=Object.values(latest).filter(r=>(r.dif_cont||0)>0).sort((a,b)=>b.dif_cont-a.dif_cont).slice(0,10).map(r=>({articulo:r.articulo,familia:familiaLimpia(r.familia),diff_unidades:r.dif_cont||0,stock_sistema:r.sistema,dif_ddp:Math.round((r.dif_ddp||0)*100)/100}));
-  const reincMap={}; rows.forEach(r=>{ if(!reincMap[r.articulo]) reincMap[r.articulo]={con_dif:0,total:0,familia:'',impacto_acum:0}; reincMap[r.articulo].total++; reincMap[r.articulo].familia=familiaLimpia(r.familia); if(r.diferencia!=='Sin Dif'){reincMap[r.articulo].con_dif++;reincMap[r.articulo].impacto_acum=Math.round((reincMap[r.articulo].impacto_acum+Math.abs(r.dif_ddp||0))*100)/100;} });
-  const topReinc=Object.entries(reincMap).filter(([,v])=>v.con_dif>=2).sort((a,b)=>b[1].con_dif-a[1].con_dif).slice(0,10).map(([articulo,v])=>({articulo,conteos_con_diff:v.con_dif,diff_total:v.impacto_acum,familia:v.familia}));
-  const motiMap={}; rows.filter(r=>r.diferencia!=='Sin Dif').forEach(r=>{ const m=r.motivo||'Sin motivo'; motiMap[m]=(motiMap[m]||0)+1; });
-  const motivos=Object.entries(motiMap).sort((a,b)=>b[1]-a[1]).map(([motivo,cantidad])=>({motivo,cantidad}));
-  return {updated_at:new Date().toLocaleString('es-AR'),kpis:{total_conteos:n,skus_unicos:new Set(rows.filter(r=>r.sku_wms).map(r=>r.sku_wms)).size,exactitud_pct:exactitud,dif_positiva:{count:difPos.length,pct:Math.round(difPos.length/n*1000)/10},dif_negativa:{count:difNeg.length,pct:Math.round(difNeg.length/n*1000)/10},impacto_total:impactoTotal,stock_valorizado:stockVal,dias_activos:diasActivos,avg_skus_dia:avgSkusDia,dia_mas_activo:dma},cobertura:{total_elegibles:totalEl,total_contados_unicos:contadosU,cobertura_pct:cobPct,dias_estimados:diasEst},mensual,familias,diario,top_impacto:topImpacto,top_frecuencia:topFrecuencia,top_neg_unidades:topNeg,top_pos_unidades:topPos,top_reincidentes:topReinc,motivos};
-}
-
-async function apiGetArticulos() {
-  const items = await idbGetAll('stock');
-  return items.map(s=>({articulo:s.articulo,sku:s.sku||'',familia:familiaLimpia(s.familia),stock_web:s.stock_web||0,ddp:s.ddp||0}));
-}
-
-async function apiGetConteos(filters={}) {
-  let rows = await idbGetAll('conteos');
-  if (filters.mes)        rows=rows.filter(r=>(r.mes||'').toLowerCase()===filters.mes);
-  if (filters.ano)        rows=rows.filter(r=>r.dia&&r.dia.startsWith(filters.ano));
-  if (filters.familia)    rows=rows.filter(r=>(r.familia||'').toLowerCase().includes(filters.familia.toLowerCase()));
-  if (filters.diferencia) rows=rows.filter(r=>r.diferencia===filters.diferencia);
-  if (filters.q)          rows=rows.filter(r=>(r.articulo||'').toLowerCase().includes(filters.q.toLowerCase())||(r.sku_wms||'').toLowerCase().includes(filters.q.toLowerCase()));
-  rows.sort((a,b)=>(b.dia||'').localeCompare(a.dia||'')||b.id-a.id);
-  const total=rows.length, page=filters.page||1, pp=filters.per_page||50;
-  const pages=Math.ceil(total/pp)||1, start=(page-1)*pp;
-  return {items:rows.slice(start,start+pp).map(r=>({...r,familia:familiaLimpia(r.familia)})),total,page,per_page:pp,pages};
-}
-
-async function apiAddConteo(data) {
-  const {sistema,fisico,ms=0,ddp}=data;
-  const {total,difCont,diferencia,stockDdp,difDdp}=calcularCampos(sistema,fisico,ms,ddp);
-  const d=new Date(data.dia+'T12:00:00'), mes=MESES_ES_ARR[d.getMonth()+1]||'';
-  const rec={sku_wms:data.sku_wms||null,articulo:data.articulo,familia:data.familia||null,sistema,fisico,ms,total,dif_cont:difCont,diferencia,ajustado:'NO',motivo:data.motivo||null,observacion:data.observacion||null,mes,dia:data.dia,ddp:ddp||0,stock_ddp:stockDdp,dif_ddp:difDdp,fecha_ingreso:new Date().toLocaleString('es-AR')};
-  const id=await idbAdd('conteos',rec);
-  return {...rec,id};
-}
-
-async function apiUpdateConteo(id, data) {
-  const existing=await idbGet('conteos',id);
-  if (!existing) throw new Error('Conteo no encontrado');
-  const {sistema,fisico,ms=0,ddp}=data;
-  const {total,difCont,diferencia,stockDdp,difDdp}=calcularCampos(sistema,fisico,ms,ddp);
-  const d=new Date(data.dia+'T12:00:00'), mes=MESES_ES_ARR[d.getMonth()+1]||'';
-  const updated={...existing,...data,total,dif_cont:difCont,diferencia,stock_ddp:stockDdp,dif_ddp:difDdp,mes};
-  await idbPut('conteos',updated);
-  return {...updated,success:true};
-}
-
-async function apiDeleteConteo(id) {
-  await idbDelete('conteos',id);
-  return {success:true};
-}
-
-async function apiGetStockEstado() {
-  const items=await idbGetAll('stock');
-  const activo=s=>s.situacion&&s.situacion.toLowerCase().includes('activo en web')&&!s.situacion.toLowerCase().includes('inactivo');
-  const elegibles=items.filter(s=>activo(s)&&(s.stock_web||0)>0);
-  const ciclo=await getCiclo();
-  return {total_articulos:items.length,total_elegibles:elegibles.length,total_familias:new Set(items.filter(s=>s.familia).map(s=>s.familia)).size,ultima_actualizacion:items[0]?.fecha_actualizacion||null,ciclo_numero:ciclo.ciclo_numero};
-}
-
-async function apiUploadStock(file) {
-  const data=await file.arrayBuffer();
-  const wb=XLSX.read(data,{type:'array'});
-  const ws=wb.Sheets[wb.SheetNames[0]];
-  const rows=XLSX.utils.sheet_to_json(ws,{defval:''});
-  if (!rows.length) throw new Error('El archivo no contiene datos.');
-  const keys=Object.keys(rows[0]);
-  const fc=(...c)=>keys.find(k=>c.some(x=>k.trim().toLowerCase()===x.toLowerCase()));
-  const colArt=fc('descripcion web','descripcion','articulo','descripción web');
-  const colSt=fc('stock web','stock_web','stock');
-  const colDdp=fc('ddp','ddp u$s','ddp u$');
-  const colFam=fc('familia');
-  const colSku=fc('sku wms','sku_wms','sku');
-  const colSit=fc('situacion','situación');
-  if (!colArt||!colSt) throw new Error('Columnas requeridas no encontradas (Descripción Web, Stock Web).');
-  const now=new Date().toLocaleString('es-AR');
-  const items=rows.map(r=>{ const art=String(r[colArt]||'').trim(); if(!art) return null; const sw=parseFloat(String(r[colSt]||'0').replace(/[^0-9.-]/g,''))||0, ddp=parseFloat(String(r[colDdp]||'0').replace(/[^0-9.-]/g,''))||0; return {articulo:art,familia:colFam?String(r[colFam]||'').trim():'',stock_web:sw,ddp,stock_valorizado:Math.round(sw*ddp*100)/100,sku:colSku?String(r[colSku]||'').trim():'',situacion:colSit?String(r[colSit]||'').trim():'activo en web',fecha_actualizacion:now}; }).filter(Boolean);
-  await idbClear('stock'); await idbBulkPut('stock',items);
-  const activo=s=>s.situacion&&s.situacion.toLowerCase().includes('activo en web')&&!s.situacion.toLowerCase().includes('inactivo');
-  const elegibles=items.filter(s=>activo(s)&&s.stock_web>0);
-  const ciclo=await getCiclo(); await idbPut('ciclo',{...ciclo,total_elegibles:elegibles.length});
-  return {total_cargados:items.length,preview:items.slice(0,10).map(s=>({sku_wms:s.sku,articulo:s.articulo,familia:s.familia,stock_web:s.stock_web,ddp:s.ddp}))};
-}
-
-async function exportarDatos() {
-  const [conteos,stock,ciclo,recs]=await Promise.all([idbGetAll('conteos'),idbGetAll('stock'),getCiclo(),idbGetAll('recomendaciones')]);
-  const blob=new Blob([JSON.stringify({conteos,stock,ciclo,recomendaciones:recs,exportado:new Date().toISOString()})],{type:'application/json'});
-  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`ciclico_arg_backup_${isoHoyStr()}.json`; a.click();
-}
-async function importarDatos(file) {
-  const data=JSON.parse(await file.text());
-  if (data.conteos){await idbClear('conteos');await idbBulkPut('conteos',data.conteos);}
-  if (data.stock){await idbClear('stock');await idbBulkPut('stock',data.stock);}
-  if (data.ciclo) await idbPut('ciclo',data.ciclo);
-  if (data.recomendaciones){await idbClear('recomendaciones');await idbBulkPut('recomendaciones',data.recomendaciones);}
-  alert('✅ Datos importados correctamente. Recargá la página para ver los cambios.');
-}
-
-function mostrarAlerta(id, tipo, msg) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.innerHTML = `<div class="alert alert-${tipo} mt-8">${msg}</div>`;
-  setTimeout(() => { if(el) el.innerHTML = ''; }, 4000);
-}
-
-/* ================================================================
-   MODAL ELIMINAR
-   ================================================================ */
-function abrirModalEliminar(id) {
-  idAEliminar = id;
-  document.getElementById('modalEliminar').classList.add('show');
-  document.getElementById('btnConfirmarEliminar').onclick = confirmarEliminar;
-}
-function cerrarModal() {
-  idAEliminar = null;
-  document.getElementById('modalEliminar').classList.remove('show');
-}
-async function confirmarEliminar() {
-  if (!idAEliminar) return;
-  try {
-    await apiDeleteConteo(idAEliminar);
-    cerrarModal();
-    mostrarAlerta('form-alert', 'success', 'Conteo eliminado correctamente.');
-    await cargarTablaConteos();
-  } catch(e) {
-    cerrarModal();
-    mostrarAlerta('form-alert', 'error', 'Error al eliminar: ' + e.message);
-  }
-}
-
-/* ================================================================
-   SECCIÓN DASHBOARD
-   ================================================================ */
-async function loadDashboard() {
-  const el = document.getElementById('dashboard-content');
-  el.innerHTML = `<div class="section-loading"><span class="spinner"></span> Cargando dashboard...</div>`;
-  try {
-    const d = await apiGetDashboard();
-    renderDashboard(d);
-  } catch(e) {
-    el.innerHTML = `<div class="alert alert-error">Error al cargar el dashboard: ${e.message}</div>`;
-  }
-}
-
-function renderDashboard(d) {
-  const k = d.kpis;
-  const cob = d.cobertura;
-  const exactColor = exactitudColor(k.exactitud_pct);
-
-  let html = `
-  <!-- KPIs fila 1 -->
-  <div class="kpi-grid kpi-grid-5">
-    <div class="kpi-card accent-blue">
-      <div class="kpi-label">SKUs únicos contados</div>
-      <div class="kpi-value">${fmt(k.skus_unicos)}</div>
-      <div class="kpi-sub">${fmt(k.total_conteos)} conteos totales</div>
-    </div>
-    <div class="kpi-card accent-green">
-      <div class="kpi-label">Exactitud</div>
-      <div class="kpi-value ${exactColor}">${fmtPct(k.exactitud_pct)}</div>
-      <div class="kpi-sub">Objetivo: 70%</div>
-    </div>
-    <div class="kpi-card accent-orange">
-      <div class="kpi-label">Diferencias Positivas</div>
-      <div class="kpi-value v-orange">${fmt(k.dif_positiva.count)}</div>
-      <div class="kpi-sub">${fmtPct(k.dif_positiva.pct)} del total</div>
-    </div>
-    <div class="kpi-card accent-red">
-      <div class="kpi-label">Diferencias Negativas</div>
-      <div class="kpi-value v-red">${fmt(k.dif_negativa.count)}</div>
-      <div class="kpi-sub">${fmtPct(k.dif_negativa.pct)} del total</div>
-    </div>
-    <div class="kpi-card accent-purple">
-      <div class="kpi-label">Impacto económico total</div>
-      <div class="kpi-value" style="color:var(--purple); font-size:18px;">${fmtU(k.impacto_total)}</div>
-      <div class="kpi-sub">Stock valorizado: ${fmtU(k.stock_valorizado)}</div>
-    </div>
-  </div>
-
-  <!-- KPIs fila 2 -->
-  <div class="kpi-grid kpi-grid-4">
-    <div class="kpi-card accent-blue">
-      <div class="kpi-label">Días activos totales</div>
-      <div class="kpi-value">${fmt(k.dias_activos)}</div>
-    </div>
-    <div class="kpi-card accent-yellow">
-      <div class="kpi-label">Promedio SKUs / día</div>
-      <div class="kpi-value" style="color:var(--yellow);">${fmt(k.avg_skus_dia, 1)}</div>
-    </div>
-    <div class="kpi-card accent-orange">
-      <div class="kpi-label">Día más activo</div>
-      <div class="kpi-value v-orange" style="font-size:16px;">${fmtFecha(k.dia_mas_activo?.fecha)}</div>
-      <div class="kpi-sub">${fmt(k.dia_mas_activo?.cantidad)} conteos</div>
-    </div>
-    <div class="kpi-card accent-green">
-      <div class="kpi-label">Cobertura del ciclo</div>
-      <div class="kpi-value v-green">${fmtPct(cob.cobertura_pct)}</div>
-      <div class="kpi-sub">${fmt(cob.total_contados_unicos)} de ${fmt(cob.total_elegibles)} SKUs</div>
-      <div class="progress-wrap"><div class="progress-fill green" style="width:${Math.min(cob.cobertura_pct,100)}%"></div></div>
-    </div>
-  </div>
-
-  <!-- Gráficos fila 1: exactitud mensual + dona distribución -->
-  <div class="charts-grid-2">
-    <div class="chart-card">
-      <h3>Exactitud por mes (%)</h3>
-      <canvas id="chart-exactitud-mensual"></canvas>
-    </div>
-    <div class="chart-card">
-      <h3>Distribución de diferencias</h3>
-      <canvas id="chart-dona"></canvas>
-    </div>
-  </div>
-
-  <!-- Gráficos fila 2: composición mensual + exactitud por familia -->
-  <div class="charts-grid-2">
-    <div class="chart-card">
-      <h3>Composición mensual (conteos apilados)</h3>
-      <canvas id="chart-composicion"></canvas>
-    </div>
-    <div class="chart-card">
-      <h3>Exactitud por familia (%)</h3>
-      <canvas id="chart-familias-exactitud"></canvas>
-    </div>
-  </div>
-
-  <!-- Gráficos fila 3: impacto por familia + actividad diaria -->
-  <div class="charts-grid-2">
-    <div class="chart-card">
-      <h3>Impacto económico por familia (U$)</h3>
-      <canvas id="chart-impacto-familia"></canvas>
-    </div>
-    <div class="chart-card">
-      <h3>Actividad diaria (conteos por día)</h3>
-      <canvas id="chart-actividad-diaria"></canvas>
-    </div>
-  </div>
-
-  <!-- Tablas -->
-  <div class="charts-grid-2">
-    <div class="chart-card">
-      <h3>Top 10 — Mayor impacto absoluto (U$)</h3>
-      <div class="table-wrap mt-8">${renderTablaTopImpacto(d.top_impacto)}</div>
-    </div>
-    <div class="chart-card">
-      <h3>Resumen por familia</h3>
-      <div class="table-wrap mt-8">${renderTablaFamilias(d.familias)}</div>
-    </div>
-  </div>
-
-  <div class="charts-grid-2" style="margin-top:16px;">
-    <div class="chart-card">
-      <h3>📉 Top 10 Faltantes — mayor diferencia negativa (unidades)</h3>
-      <div class="table-wrap mt-8">${renderTablaTopUnidades(d.top_neg_unidades, 'neg')}</div>
-    </div>
-    <div class="chart-card">
-      <h3>📈 Top 10 Sobrantes — mayor diferencia positiva (unidades)</h3>
-      <div class="table-wrap mt-8">${renderTablaTopUnidades(d.top_pos_unidades, 'pos')}</div>
-    </div>
-  </div>
-
-  <div class="charts-grid-2" style="margin-top:16px;">
-    <div class="chart-card">
-      <h3>🔁 Artículos problemáticos — múltiples conteos con diferencia</h3>
-      <div class="table-wrap mt-8">${renderTablaReincidentes(d.top_reincidentes)}</div>
-    </div>
-    <div class="chart-card">
-      <h3>📋 Motivos de diferencia</h3>
-      ${d.motivos?.length
-        ? `<canvas id="chart-motivos" style="max-height:220px;"></canvas>`
-        : `<div class="empty-state"><div class="icon">📋</div>Sin datos de motivos</div>`}
-    </div>
-  </div>
-
-  <div class="text-muted mt-8" style="font-size:11px; text-align:right;">
-    Actualizado: ${d.updated_at || '—'}
-  </div>
-  `;
-
-  document.getElementById('dashboard-content').innerHTML = html;
-
-  // Construir charts
-  requestAnimationFrame(() => {
-    buildChartExactitudMensual(d.mensual);
-    buildChartDona(d.kpis);
-    buildChartComposicion(d.mensual);
-    buildChartFamiliasExactitud(d.familias);
-    buildChartImpactoFamilia(d.familias);
-    buildChartActividadDiaria(d.diario);
-    buildChartMotivos(d.motivos);
-  });
-}
-
-function renderTablaTopUnidades(items, tipo) {
-  if (!items?.length) return '<div class="empty-state"><div class="icon">📊</div>Sin datos</div>';
-  const clr = tipo === 'neg' ? '#dc2626' : '#16a34a';
-  const rows = items.map(i => `
-    <tr>
-      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${i.articulo}">${i.articulo}</td>
-      <td class="text-muted" style="font-size:11px;">${i.familia||'—'}</td>
-      <td class="right" style="color:${clr};font-weight:700;">${i.dif_cont>=0?'+':''}${fmt(i.dif_cont)}</td>
-      <td class="right" style="font-size:11px;color:${clr};">${fmtU(i.dif_ddp)}</td>
-      <td class="text-muted" style="font-size:11px;">${fmtFecha(i.dia)}</td>
-    </tr>`).join('');
-  return `<table><thead><tr><th>Artículo</th><th>Familia</th><th class="right">Dif Unid.</th><th class="right">Dif U$</th><th>Último conteo</th></tr></thead><tbody>${rows}</tbody></table>`;
-}
-
-function renderTablaReincidentes(items) {
-  if (!items?.length) return '<div class="empty-state"><div class="icon">✅</div>Sin artículos problemáticos</div>';
-  const rows = items.map(i => `
-    <tr>
-      <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${i.articulo}">${i.articulo}</td>
-      <td class="text-muted" style="font-size:11px;">${i.familia||'—'}</td>
-      <td class="center"><span style="background:#dc2626;color:#fff;border-radius:12px;padding:2px 8px;font-size:12px;font-weight:700;">${i.con_dif}x</span></td>
-      <td class="center text-muted">${i.total}</td>
-      <td class="right" style="font-size:11px;color:#dc2626;">${fmtU(i.impacto_acum)}</td>
-    </tr>`).join('');
-  return `<table><thead><tr><th>Artículo</th><th>Familia</th><th class="center">Veces c/dif</th><th class="center">Total conteos</th><th class="right">Impacto acum U$</th></tr></thead><tbody>${rows}</tbody></table>`;
-}
-
-function buildChartMotivos(motivos) {
-  const ctx = document.getElementById('chart-motivos');
-  if (!ctx || !motivos?.length) return;
-  const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
-  const tickClr = isDark ? '#8b949e' : '#636c76';
-  const gridClr = isDark ? '#30363d' : '#d0d7de';
-  new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: motivos.map(m => m.motivo),
-      datasets: [{ data: motivos.map(m => m.count),
-        backgroundColor: ['#dc2626','#f97316','#eab308','#8b5cf6','#06b6d4','#10b981'],
-        borderRadius: 6 }]
-    },
-    options: {
-      indexAxis: 'y', responsive: true,
-      plugins: { legend: { display: false },
-        tooltip: { callbacks: { label: ctx => ` ${ctx.raw} conteos con diferencia` } } },
-      scales: {
-        x: { beginAtZero: true, ticks: { color: tickClr, stepSize: 1 }, grid: { color: gridClr } },
-        y: { ticks: { color: tickClr }, grid: { display: false } }
-      }
-    }
-  });
-}
-
-function renderTablaTopImpacto(items) {
-  if (!items?.length) return '<div class="empty-state"><div class="icon">📊</div>Sin datos</div>';
-  const rows = items.map(i => `
-    <tr>
-      <td style="max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${i.articulo}">${i.articulo}</td>
-      <td>${i.familia || '—'}</td>
-      <td class="right ${i.dif_ddp < 0 ? 'text-red' : 'text-green'}">${fmtU(i.dif_ddp)}</td>
-      <td class="center">${difBadge(i.diferencia)}</td>
-      <td class="right text-muted">${fmtFecha(i.dia)}</td>
-    </tr>`).join('');
-  return `<table><thead><tr><th>Artículo</th><th>Familia</th><th class="right">Dif U$</th><th class="center">Tipo</th><th class="right">Fecha</th></tr></thead><tbody>${rows}</tbody></table>`;
-}
-
-function renderTablaFamilias(items) {
-  if (!items?.length) return '<div class="empty-state"><div class="icon">📊</div>Sin datos</div>';
-  const rows = items.slice(0,15).map(f => `
-    <tr>
-      <td style="max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${f.familia}">${f.familia}</td>
-      <td class="right">${fmt(f.skus)}</td>
-      <td class="right"><span class="${exactitudColor(f.exactitud_pct)}">${fmtPct(f.exactitud_pct)}</span></td>
-      <td class="right ${f.impacto < 0 ? 'text-red' : f.impacto > 0 ? 'text-green' : ''}">${fmtU(f.impacto)}</td>
-    </tr>`).join('');
-  return `<table><thead><tr><th>Familia</th><th class="right">SKUs</th><th class="right">Exactitud</th><th class="right">Impacto U$</th></tr></thead><tbody>${rows}</tbody></table>`;
-}
-
-/* ---- Chart.js helpers ---- */
-function chartColors() {
-  const isDark = document.documentElement.dataset.theme !== 'light';
-  return {
-    grid:  isDark ? 'rgba(48,54,61,.6)' : 'rgba(200,200,200,.5)',
-    text:  isDark ? '#8b949e' : '#636c76',
-    ticks: isDark ? '#8b949e' : '#636c76',
-  };
-}
-
-function baseOpts(legend=false) {
-  const c = chartColors();
-  return {
-    responsive: true,
-    maintainAspectRatio: true,
-    plugins: {
-      legend: { display: legend, labels: { color: c.text, font: { family:'Arial', size:12 }, boxWidth:12 } },
-      tooltip: { callbacks: {} }
-    },
-    scales: {
-      x: { ticks: { color: c.ticks, font: { size:11 } }, grid: { color: c.grid } },
-      y: { ticks: { color: c.ticks, font: { size:11 } }, grid: { color: c.grid } }
-    }
-  };
-}
-
-function buildChartExactitudMensual(mensual) {
-  const ctx = document.getElementById('chart-exactitud-mensual');
-  if (!ctx || !mensual?.length) return;
-  const labels = mensual.map(m => m.mes);
-  const data   = mensual.map(m => m.exactitud_pct);
-  const opts   = baseOpts(false);
-  opts.plugins.tooltip.callbacks.label = ctx2 => fmtPct(ctx2.raw);
-  opts.scales.y.min = 0; opts.scales.y.max = 100;
-  opts.scales.y.ticks.callback = v => v + '%';
-  chartObjs['exactitud-mensual'] = new Chart(ctx, {
-    type: 'line',
-    data: {
-      labels,
-      datasets: [
-        { label: 'Exactitud %', data, borderColor: '#60a5fa', backgroundColor: 'rgba(96,165,250,.15)', tension:.35, pointRadius:4, fill:true },
-        { label: 'Objetivo 70%', data: labels.map(()=>70), borderColor: '#4ade80', borderDash:[6,4], borderWidth:1.5, pointRadius:0, fill:false }
-      ]
-    },
-    options: { ...opts, plugins: { ...opts.plugins, legend: { display:true, labels: { color: chartColors().text, font:{family:'Arial',size:11}, boxWidth:12 } } } }
-  });
-}
-
-function buildChartDona(kpis) {
-  const ctx = document.getElementById('chart-dona');
-  if (!ctx) return;
-  const total = kpis.total_conteos || 1;
-  const sinDif = total - kpis.dif_positiva.count - kpis.dif_negativa.count;
-  chartObjs['dona'] = new Chart(ctx, {
-    type: 'doughnut',
-    data: {
-      labels: ['Sin Dif', 'Dif Positiva', 'Dif Negativa'],
-      datasets: [{ data: [sinDif, kpis.dif_positiva.count, kpis.dif_negativa.count],
-        backgroundColor: ['rgba(74,222,128,.7)','rgba(251,146,60,.7)','rgba(249,113,113,.7)'],
-        borderColor: ['#4ade80','#fb923c','#F97171'], borderWidth:1 }]
-    },
-    options: {
-      responsive:true, maintainAspectRatio:true,
-      cutout:'65%',
-      plugins: {
-        legend: { display:true, position:'bottom', labels:{ color: chartColors().text, font:{family:'Arial',size:11}, boxWidth:12 } },
-        tooltip: { callbacks: { label: ctx2 => `${ctx2.label}: ${fmt(ctx2.raw)} (${fmtPct(ctx2.raw/total*100)})` } }
-      }
-    }
-  });
-}
-
-function buildChartComposicion(mensual) {
-  const ctx = document.getElementById('chart-composicion');
-  if (!ctx || !mensual?.length) return;
-  const labels = mensual.map(m => m.mes);
-  const opts = baseOpts(true);
-  opts.scales.x.stacked = true;
-  opts.scales.y.stacked = true;
-  opts.scales.y.ticks.callback = v => fmt(v);
-  chartObjs['composicion'] = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels,
-      datasets: [
-        { label:'Sin Dif',       data: mensual.map(m=>m.sin_dif),  backgroundColor:'rgba(74,222,128,.65)' },
-        { label:'Dif Positiva',  data: mensual.map(m=>m.dif_pos),  backgroundColor:'rgba(251,146,60,.65)' },
-        { label:'Dif Negativa',  data: mensual.map(m=>m.dif_neg),  backgroundColor:'rgba(249,113,113,.65)' }
-      ]
-    },
-    options: opts
-  });
-}
-
-function buildChartFamiliasExactitud(familias) {
-  const ctx = document.getElementById('chart-familias-exactitud');
-  if (!ctx || !familias?.length) return;
-  const sorted = [...familias].sort((a,b)=>b.exactitud_pct-a.exactitud_pct).slice(0,12);
-  const labels = sorted.map(f => f.familia.length>20 ? f.familia.slice(0,18)+'…' : f.familia);
-  const opts = baseOpts(false);
-  opts.indexAxis = 'y';
-  opts.scales.x.min = 0; opts.scales.x.max = 100;
-  opts.scales.x.ticks.callback = v => v + '%';
-  opts.plugins.tooltip.callbacks.label = ctx2 => fmtPct(ctx2.raw);
-  chartObjs['fam-exactitud'] = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels,
-      datasets: [
-        { label:'Exactitud %', data: sorted.map(f=>f.exactitud_pct),
-          backgroundColor: sorted.map(f => f.exactitud_pct>=70?'rgba(74,222,128,.65)': f.exactitud_pct>=50?'rgba(251,146,60,.65)':'rgba(249,113,113,.65)') },
-        { label:'Objetivo 70%', data: sorted.map(()=>70),
-          type:'line', borderColor:'#4ade80', borderDash:[5,4], borderWidth:1.5, pointRadius:0, fill:false }
-      ]
-    },
-    options: { ...opts, plugins: { ...opts.plugins, legend:{ display:true, labels:{ color:chartColors().text, font:{family:'Arial',size:11}, boxWidth:12 } } } }
-  });
-}
-
-function buildChartImpactoFamilia(familias) {
-  const ctx = document.getElementById('chart-impacto-familia');
-  if (!ctx || !familias?.length) return;
-  const sorted = [...familias].sort((a,b)=>Math.abs(b.impacto)-Math.abs(a.impacto)).slice(0,10);
-  const opts = baseOpts(false);
-  opts.indexAxis = 'y';
-  opts.plugins.tooltip.callbacks.label = ctx2 => fmtU(ctx2.raw);
-  opts.scales.x.ticks.callback = v => 'U$ ' + fmt(v);
-  chartObjs['impacto-fam'] = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: sorted.map(f => f.familia.length>20 ? f.familia.slice(0,18)+'…' : f.familia),
-      datasets: [{ label:'Impacto U$', data: sorted.map(f=>f.impacto),
-        backgroundColor: sorted.map(f => f.impacto >= 0 ? 'rgba(74,222,128,.65)' : 'rgba(249,113,113,.65)') }]
-    },
-    options: opts
-  });
-}
-
-function buildChartActividadDiaria(diario) {
-  const ctx = document.getElementById('chart-actividad-diaria');
-  if (!ctx || !diario?.length) return;
-  const maxVal = Math.max(...diario.map(d=>d.cantidad), 1);
-  const opts = baseOpts(false);
-  opts.scales.x.ticks.maxTicksLimit = 20;
-  opts.scales.x.ticks.maxRotation = 45;
-  opts.plugins.tooltip.callbacks.label = ctx2 => `${fmt(ctx2.raw)} conteos`;
-  chartObjs['actividad'] = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: diario.map(d => fmtFecha(d.dia)),
-      datasets: [{ data: diario.map(d=>d.cantidad),
-        backgroundColor: diario.map(d => {
-          const pct = d.cantidad / maxVal;
-          if (pct > .75) return 'rgba(96,165,250,.85)';
-          if (pct > .4)  return 'rgba(96,165,250,.55)';
-          return 'rgba(96,165,250,.3)';
-        })
-      }]
-    },
-    options: opts
-  });
-}
-
-/* ================================================================
-   SECCIÓN HOY
-   ================================================================ */
-async function loadHoy(preserveContent) {
-  const el = document.getElementById('hoy-content');
-  if (!preserveContent) {
-    el.innerHTML = `<div class="section-loading"><span class="spinner"></span> Cargando lista del día...</div>`;
-  }
-  try {
-    // Cache-busting: timestamp para evitar respuesta cacheada del browser
-    const d = await apiGetHoy();
-    console.log('[HOY] API response — contados:', d.items.filter(i=>i.contado).length, '/', d.items.length,
-      ' | items[0]:', d.items[0]);
-    renderHoy(d);
-  } catch(e) {
-    console.error('[HOY] Error al cargar:', e);
-    el.innerHTML = `<div class="alert alert-error">Error al cargar: ${e.message}</div>`;
-  }
-}
-
-function renderHoy(d) {
-  const fechaFmt = fmtFecha(d.fecha);
-  const laborable = d.es_laborable;
-  const ciclo = d.ciclo;
-  const ayer  = d.ayer;
-
-  let html = `
-  <div class="hoy-header">
-    <div>
-      <div class="hoy-fecha">${fechaFmt}</div>
-      <div class="text-muted mt-8" style="font-size:12px;">Inventario Cíclico — Lista del día</div>
-    </div>
-    <div style="display:flex; gap:8px; align-items:center;">
-      ${laborable
-        ? '<span class="badge badge-green">Día laborable</span>'
-        : '<span class="badge badge-gray">No laborable</span>'}
-      <button class="btn btn-sm" onclick="loadHoy()">↻ Actualizar</button>
-    </div>
-  </div>`;
-
-  if (!laborable) {
-    html += `<div class="alert alert-info"><strong>Hoy no es un día operativo.</strong> No hay artículos programados para contar.</div>`;
-    document.getElementById('hoy-content').innerHTML = html;
-    return;
-  }
-
-  // Cards de ayer
-  if (ayer) {
-    const exactAyerColor = exactitudColor(ayer.exactitud_pct || 0);
-    html += `
-    <div class="hoy-cards-row">
-      <div class="kpi-card accent-blue">
-        <div class="kpi-label">Ayer — ${fmtFecha(ayer.fecha)}</div>
-        <div class="kpi-value">${fmt(ayer.contados)} <span style="font-size:13px; color:var(--text-muted)">/ ${fmt(ayer.recomendados)}</span></div>
-        <div class="kpi-sub">artículos contados</div>
-      </div>
-      <div class="kpi-card accent-green">
-        <div class="kpi-label">Exactitud ayer</div>
-        <div class="kpi-value ${exactAyerColor}">${fmtPct(ayer.exactitud_pct || 0)}</div>
-      </div>
-      <div class="kpi-card accent-orange">
-        <div class="kpi-label">Pendientes de ayer</div>
-        <div class="kpi-value v-orange">${fmt(ayer.pendientes)}</div>
-      </div>
-    </div>`;
-  }
-
-  // Ciclo progress
-  if (ciclo) {
-    const pct = ciclo.pct_avance || 0;
-    html += `
-    <div class="ciclo-progress-card">
-      <div class="ciclo-progress-title">
-        <span>Ciclo ${ciclo.ciclo_numero} — iniciado el ${fmtFecha(ciclo.fecha_inicio)}</span>
-        <span style="color:var(--blue); font-weight:700;">${fmtPct(pct)}</span>
-      </div>
-      <div style="color:var(--text-muted); font-size:12px; margin-bottom:6px;">
-        ${fmt(ciclo.total_elegibles - ciclo.pendientes)} de ${fmt(ciclo.total_elegibles)} elegibles contados — ${fmt(ciclo.pendientes)} pendientes
-      </div>
-      <div class="ciclo-progress-bar">
-        <div class="ciclo-progress-fill" style="width:${Math.min(pct,100)}%"></div>
-      </div>
-    </div>`;
-  }
-
-  // Tabla de hoy
-  const items = d.items || [];
-  if (!items.length) {
-    html += `<div class="empty-state"><div class="icon">📋</div>No hay artículos asignados para hoy.</div>`;
-  } else {
-    const rows = items.map(i => {
-      const trStyle = i.contado ? ' style="background:rgba(22,163,74,.05);"' : '';
-      let fisicoCel, difCel, motivoCel, obsCel;
-      // Data-attrs para edición inline (en el tr)
-      const trData = i.contado
-        ? ` data-conteo-id="${i.conteo_id||''}" data-fisico="${i.fisico_contado??''}" data-sw="${i.stock_web}"
-            data-articulo="${(i.articulo||'').replace(/"/g,'&quot;')}"
-            data-familia="${(i.familia||'').replace(/"/g,'&quot;')}"
-            data-sku="${i.sku||''}" data-ddp="${i.ddp||0}"
-            data-motivo="${(i.motivo_contado||'').replace(/"/g,'&quot;')}"
-            data-obs="${(i.obs_contado||'').replace(/"/g,'&quot;')}"` : '';
-
-      // Fecha del último conteo anterior (para obs)
-      const uvFmt = i.ultima_vez ? fmtFecha(i.ultima_vez) : null;
-
-      if (i.contado) {
-        // Fila ya contada — mostrar valores guardados (fisico puede ser 0)
-        const fv  = i.fisico_contado != null ? fmt(i.fisico_contado) : '—';
-        const dv  = i.fisico_contado != null ? (i.fisico_contado - i.stock_web) : null;
-        const difClr = dv == null ? 'color:var(--text-muted)' : dv < 0 ? 'color:#dc2626' : dv > 0 ? 'color:#16a34a' : 'color:var(--text-muted)';
-        const difTxt = dv != null ? `${dv>=0?'+':''}${fmt(dv)}` : '—';
-        fisicoCel = `<td class="right"><span style="font-weight:700;font-size:14px;color:var(--text)">${fv}</span></td>`;
-        difCel    = `<td class="right diff-cell"><span style="${difClr}">${difTxt}</span></td>`;
-        motivoCel = `<td class="center motivo-cell"><span style="font-size:11px;color:var(--text-muted)">${i.motivo_contado||'—'}</span></td>`;
-        // Obs: muestra último conteo anterior si existe
-        obsCel    = `<td><span style="font-size:11px;color:var(--text-muted)">${uvFmt ? '🕐 ' + uvFmt : ''}</span></td>`;
-      } else {
-        fisicoCel = `<td class="right">
-          <input type="number" min="0" step="1" placeholder="—"
-            data-sw="${i.stock_web}"
-            data-articulo="${(i.articulo||'').replace(/"/g,'&quot;')}"
-            data-familia="${(i.familia||'').replace(/"/g,'&quot;')}"
-            data-sku="${i.sku||''}"
-            data-ddp="${i.ddp||0}"
-            oninput="calcDif(this)"
-            style="width:70px;padding:3px 6px;border:1px solid var(--border);border-radius:6px;text-align:right;font-size:13px;background:var(--card);color:var(--text);">
-        </td>`;
-        difCel    = `<td class="right diff-cell">—</td>`;
-        motivoCel = `<td class="center motivo-cell">
-          <select class="motivo-sel" disabled onchange="onMotivoChange(this)"
-            style="opacity:0.3;width:155px;padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--card);color:var(--text);cursor:not-allowed;">
-            <option value="">— Motivo —</option>
-            <option value="Error Operativo">Error Operativo</option>
-            <option value="Error Administrativo">Error Administrativo</option>
-            <option value="Sin Identificar">Sin Identificar</option>
-          </select>
-        </td>`;
-        // Obs pending: muestra fecha último conteo como info referencia
-        obsCel = `<td>
-          <input type="text" class="obs-input" placeholder="Opcional…" maxlength="200"
-            style="width:160px;padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--card);color:var(--text);">
-          ${uvFmt ? `<div style="font-size:10px;color:var(--text-muted);margin-top:2px;">🕐 ${uvFmt}</div>` : ''}
-        </td>`;
-      }
-
-      // Botón lápiz en Estado (solo para contados)
-      const estadoCell = i.contado
-        ? `✅ <button onclick="editarFila(this)" title="Editar conteo"
-              style="background:none;border:none;cursor:pointer;font-size:13px;padding:0 2px;opacity:.5;vertical-align:middle;">✏️</button>`
-        : '⬜';
-
-      return `<tr${trStyle}${trData}>
-        <td class="center text-muted">${i.n}</td>
-        <td style="max-width:200px;">${i.articulo}</td>
-        <td style="max-width:120px; color:var(--text-muted);">${i.familia || '—'}</td>
-        <td class="right"><span class="${swColor(i.stock_web)}">${fmt(i.stock_web)}</span></td>
-        <td class="right text-muted">${fmtU(i.ddp)}</td>
-        <td class="right">${fmtU(i.valor_ddp)}</td>
-        <td class="center">${tierBadge(i.tier)}</td>
-        ${fisicoCel}${difCel}${motivoCel}${obsCel}
-        <td class="center">${estadoCell}</td>
-      </tr>`;
-    }).join('');
-
-    const contados  = items.filter(i=>i.contado).length;
-    const pendientes = items.length - contados;
-
-    html += `
-    <div class="card">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; flex-wrap:wrap; gap:8px;">
-        <h3>Artículos para hoy — ${items.length} programados</h3>
-        <div style="display:flex; gap:10px; font-size:12px;">
-          <span class="text-green">✅ ${contados} contados</span>
-          <span class="text-muted">⬜ ${pendientes} pendientes</span>
-        </div>
-      </div>
-      <div class="progress-wrap mb-12">
-        <div class="progress-fill green" style="width:${items.length ? (contados/items.length*100) : 0}%"></div>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th class="center">N°</th>
-              <th>Artículo</th>
-              <th>Familia</th>
-              <th class="right">Stock Sistema</th>
-              <th class="right">DDP U$</th>
-              <th class="right">Valor DDP</th>
-              <th class="center">Tier</th>
-              <th class="right">Stock Físico</th>
-              <th class="right">Diferencia</th>
-              <th class="center">Motivo</th>
-              <th>Observación</th>
-              <th class="center">Estado</th>
-            </tr>
-          </thead>
-          <tbody>${rows}</tbody>
-        </table>
-      </div>
-      <div style="margin-top:16px;display:flex;justify-content:flex-end;align-items:center;gap:14px;flex-wrap:wrap;">
-        <span id="guardar-msg" style="font-size:12px;"></span>
-        <button onclick="guardarConteoHoy()"
-          style="background:#2563eb;color:#fff;font-weight:700;padding:9px 22px;border:none;border-radius:8px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;">
-          💾 Guardar Conteo
-        </button>
-      </div>
-    </div>`;
-  }
-
-  document.getElementById('hoy-content').innerHTML = html;
-}
-
-/* ================================================================
-   SECCIÓN CARGA
-   ================================================================ */
-async function loadCarga() {
-  // Inicializar fecha
-  const fechaInput = document.getElementById('f-fecha');
-  if (fechaInput && !fechaInput.value) fechaInput.value = isoHoy();
-
-  // Registrar listeners cálculo en tiempo real
-  ['f-fisico','f-ms','f-sistema','f-ddp'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.addEventListener('input', actualizarPreview);
-  });
-
-  // Cargar opciones de familias / meses para filtros
-  poblarFiltrosCarga();
-  // Cargar tabla
-  await cargarTablaConteos();
-  // Cargar todos los artículos del stock para autocompletar
-  await cargarDatalistArticulos();
-  // Listener autocompletado al seleccionar artículo
-  const fa = document.getElementById('f-articulo');
-  if (fa) {
-    fa.addEventListener('change', autocompletarArticulo);
-    fa.addEventListener('blur',   autocompletarArticulo);
-  }
-}
-
-let _stockData = {};
-
-async function cargarDatalistArticulos() {
-  try {
-    const items = await apiGetArticulos();
-    _stockData = {};
-    const dl = document.getElementById('articulo-list');
-    if (dl && Array.isArray(items)) {
-      items.forEach(i => { _stockData[i.articulo] = i; });
-      dl.innerHTML = items.map(i => `<option value="${i.articulo}">`).join('');
-    }
-  } catch(e) { /* silencioso */ }
-}
-
-function autocompletarArticulo() {
-  const editId = document.getElementById('edit-id')?.value;
-  if (editId) return; // no pisar datos al editar
-  const val = document.getElementById('f-articulo')?.value.trim();
-  const it = val ? _stockData[val] : null;
-  if (!it) return;
-  const fill = (id, v) => {
-    const el = document.getElementById(id);
-    if (!el || el.value !== '') return; // no pisar si ya tiene valor
-    el.value = v ?? '';
-    el.style.transition = 'background .2s';
-    el.style.background = 'rgba(74,222,128,.15)';
-    setTimeout(() => { el.style.background = ''; }, 1200);
-  };
-  fill('f-sku',     it.sku     || '');
-  fill('f-familia', it.familia || '');
-  fill('f-sistema', it.stock_web ?? '');
-  // DDP visible = total (unit × stock_web); hidden = unit para cálculos
-  const ddpTotal = it.ddp != null && it.stock_web != null
-    ? Math.round(it.ddp * it.stock_web * 100) / 100 : '';
-  fill('f-ddp', ddpTotal);
-  document.getElementById('f-ddp-unit').value = it.ddp ?? '';
-  actualizarPreview();
-}
-
-function actualizarPreview() {
-  const fisico   = parseFloat(document.getElementById('f-fisico')?.value)    || 0;
-  const ms       = parseFloat(document.getElementById('f-ms')?.value)        || 0;
-  const sistema  = parseFloat(document.getElementById('f-sistema')?.value)   || 0;
-  const ddpTotal = parseFloat(document.getElementById('f-ddp')?.value)       || 0;
-  // Usar precio unitario del hidden; si no hay (entrada manual), derivar del total / sistema
-  const ddpUnit  = parseFloat(document.getElementById('f-ddp-unit')?.value)
-               || (sistema > 0 && ddpTotal > 0 ? ddpTotal / sistema : 0);
-
-  const total    = fisico + ms;
-  const difCont  = total - sistema;
-  const difDdp   = ddpUnit ? difCont * ddpUnit : null;
-
-  let tipo = '';
-  if (difCont === 0)      tipo = 'Sin Dif';
-  else if (difCont > 0)   tipo = 'Dif Positiva';
-  else                     tipo = 'Dif Negativa';
-
-  document.getElementById('prev-total').textContent    = fmt(total);
-  document.getElementById('prev-dif-cont').textContent = (difCont >= 0 ? '+' : '') + fmt(difCont);
-  document.getElementById('prev-dif-ddp').textContent  = difDdp !== null ? fmtU(difDdp) : '—';
-  document.getElementById('prev-badge-wrap').innerHTML = difBadge(tipo);
-}
-
-async function poblarFiltrosCarga() {
-  try {
-    // meses se pueblan estáticamente
-  } catch(e){}
-  // Poblar con datos conocidos - se actualizan con los conteos reales
-  const meses = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-  const selMes = document.getElementById('fil-mes');
-  if (selMes && selMes.options.length <= 1) {
-    meses.forEach(m => {
-      const o = document.createElement('option');
-      o.value = m; o.textContent = m.charAt(0).toUpperCase() + m.slice(1);
-      selMes.appendChild(o);
-    });
-  }
-}
-
-async function cargarTablaConteos(pagina=1) {
-  paginaActual = pagina;
-  const wrap = document.getElementById('tabla-conteos-wrap');
-  if (wrap) wrap.innerHTML = `<div class="section-loading"><span class="spinner"></span></div>`;
-
-  const q         = document.getElementById('fil-q')?.value || '';
-  const mes       = document.getElementById('fil-mes')?.value || '';
-  const familia   = document.getElementById('fil-familia')?.value || '';
-  const diferencia= document.getElementById('fil-diferencia')?.value || '';
-
-  const params = new URLSearchParams({ page: pagina, per_page: 50 });
-  if (q)          params.set('q', q);
-  if (mes)        params.set('mes', mes);
-  if (familia)    params.set('familia', familia);
-  if (diferencia) params.set('diferencia', diferencia);
-
-  try {
-    const d = await apiGetConteos({q, mes, familia, diferencia, page:pagina, per_page:50});
-    totalPaginas = d.pages || 1;
-    renderTablaConteos(d);
-  } catch(e) {
-    if (wrap) wrap.innerHTML = `<div class="alert alert-error">Error al cargar conteos: ${e.message}</div>`;
-  }
-}
-
-function renderTablaConteos(d) {
-  const wrap = document.getElementById('tabla-conteos-wrap');
-  if (!wrap) return;
-
-  if (!d.items?.length) {
-    wrap.innerHTML = `<div class="empty-state"><div class="icon">📭</div>No hay conteos con esos filtros.</div>`;
-    document.getElementById('paginacion').innerHTML = '';
-    return;
-  }
-
-  // Poblar familias en datalist y filtro
-  const familias = [...new Set(d.items.map(i=>i.familia).filter(Boolean))].sort();
-  const dlFam = document.getElementById('familia-list');
-  if (dlFam) dlFam.innerHTML = familias.map(f=>`<option value="${f}">`).join('');
-  const selFam = document.getElementById('fil-familia');
-  if (selFam && selFam.options.length <= 1) {
-    familias.forEach(f => {
-      const o = document.createElement('option');
-      o.value = f; o.textContent = f;
-      selFam.appendChild(o);
-    });
-  }
-
-  const rows = d.items.map(i => `
-    <tr>
-      <td class="text-muted" style="min-width:80px;">${fmtFecha(i.dia)}</td>
-      <td style="max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${i.articulo}">${i.articulo}</td>
-      <td style="max-width:110px; color:var(--text-muted); font-size:11px;">${i.familia || '—'}</td>
-      <td class="right">${fmt(i.sistema)}</td>
-      <td class="right">${fmt(i.fisico)}</td>
-      <td class="right ${i.dif_cont < 0 ? 'text-red' : i.dif_cont > 0 ? 'text-green' : ''}">${(i.dif_cont>=0?'+':'')+fmt(i.dif_cont)}</td>
-      <td class="center">${difBadge(i.diferencia)}</td>
-      <td class="right text-muted">${i.ddp ? fmtU(i.ddp) : '—'}</td>
-      <td class="right ${i.dif_ddp < 0 ? 'text-red' : i.dif_ddp > 0 ? 'text-green' : ''}">${i.dif_ddp ? fmtU(i.dif_ddp) : '—'}</td>
-      <td class="center" style="min-width:70px;">
-        <button class="action-btn edit" onclick="editarConteo(${i.id})" title="Editar">✏️</button>
-        <button class="action-btn del"  onclick="abrirModalEliminar(${i.id})" title="Eliminar">🗑️</button>
-      </td>
-    </tr>`).join('');
-
-  wrap.innerHTML = `
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>Fecha</th><th>Artículo</th><th>Familia</th>
-            <th class="right">Sistema</th><th class="right">Físico</th>
-            <th class="right">Dif Cont</th><th class="center">Tipo</th>
-            <th class="right">DDP</th><th class="right">Dif U$</th>
-            <th class="center">Acciones</th>
-          </tr>
-        </thead>
-        <tbody>${rows}</tbody>
-      </table>
-    </div>
-    <div style="font-size:12px; color:var(--text-muted); margin-top:8px;">
-      ${fmt(d.total)} registros totales — Página ${d.page} de ${d.pages}
-    </div>`;
-
-  renderPaginacion(d.page, d.pages);
-}
-
-function renderPaginacion(page, pages) {
-  const el = document.getElementById('paginacion');
-  if (!el || pages <= 1) { if(el) el.innerHTML=''; return; }
-
-  let html = `<span class="page-info">Pág. ${page} / ${pages}</span>`;
-  html += `<button class="btn btn-sm" ${page<=1?'disabled':''} onclick="cargarTablaConteos(1)">«</button>`;
-  html += `<button class="btn btn-sm" ${page<=1?'disabled':''} onclick="cargarTablaConteos(${page-1})">‹</button>`;
-
-  const start = Math.max(1, page-2);
-  const end   = Math.min(pages, page+2);
-  for (let i=start; i<=end; i++) {
-    html += `<button class="btn btn-sm ${i===page?'btn-primary':''}" onclick="cargarTablaConteos(${i})">${i}</button>`;
-  }
-
-  html += `<button class="btn btn-sm" ${page>=pages?'disabled':''} onclick="cargarTablaConteos(${page+1})">›</button>`;
-  html += `<button class="btn btn-sm" ${page>=pages?'disabled':''} onclick="cargarTablaConteos(${pages})">»</button>`;
-  el.innerHTML = html;
-}
-
-function debounceFilter() {
-  clearTimeout(debounceTimer);
-  debounceTimer = setTimeout(() => aplicarFiltros(), 400);
-}
-function aplicarFiltros() { cargarTablaConteos(1); }
-function limpiarFiltros() {
-  ['fil-q','fil-mes','fil-familia','fil-diferencia'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = '';
-  });
-  cargarTablaConteos(1);
-}
-
-async function editarConteo(id) {
-  // Buscar en la tabla cargada o hacer fetch individual
-  try {
-    const item = await idbGet('conteos', id);
-    item && (item.familia = familiaLimpia(item.familia));
-    if (!item) { mostrarAlerta('form-alert','error','No se encontró el registro.'); return; }
-
-    document.getElementById('edit-id').value      = id;
-    document.getElementById('f-articulo').value   = item.articulo || '';
-    document.getElementById('f-sku').value        = item.sku_wms || '';
-    document.getElementById('f-familia').value    = item.familia || '';
-    document.getElementById('f-sistema').value    = item.sistema ?? '';
-    document.getElementById('f-fisico').value     = item.fisico ?? '';
-    document.getElementById('f-ms').value         = item.ms ?? 0;
-    document.getElementById('f-ddp').value        = item.stock_ddp ?? (item.ddp ?? '');
-    document.getElementById('f-ddp-unit').value   = item.ddp ?? '';
-    document.getElementById('f-ajustado').value   = item.ajustado || 'NO';
-    document.getElementById('f-motivo').value     = item.motivo || '';
-    document.getElementById('f-observacion').value= item.observacion || '';
-    document.getElementById('f-fecha').value      = item.dia || isoHoy();
-
-    document.getElementById('form-titulo').textContent = 'Editar conteo #' + id;
-    document.getElementById('btn-guardar-txt').textContent = 'Guardar cambios';
-    actualizarPreview();
-
-    // Scroll al formulario
-    document.getElementById('form-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
-  } catch(e) {
-    mostrarAlerta('form-alert','error','Error al cargar el registro: ' + e.message);
-  }
-}
-
-async function guardarConteo() {
-  const editId = document.getElementById('edit-id').value;
-  const body = {
-    articulo:    document.getElementById('f-articulo').value.trim(),
-    sku_wms:     document.getElementById('f-sku').value.trim(),
-    familia:     document.getElementById('f-familia').value.trim(),
-    sistema:     parseFloat(document.getElementById('f-sistema').value) || 0,
-    fisico:      parseFloat(document.getElementById('f-fisico').value)  || 0,
-    ms:          parseFloat(document.getElementById('f-ms').value)      || 0,
-    ddp:         (() => {
-                   const unit = parseFloat(document.getElementById('f-ddp-unit').value);
-                   if (unit) return unit;
-                   const total = parseFloat(document.getElementById('f-ddp').value) || 0;
-                   const sis   = parseFloat(document.getElementById('f-sistema').value) || 0;
-                   return sis > 0 && total > 0 ? total / sis : (total || null);
-                 })(),
-    ajustado:    document.getElementById('f-ajustado').value,
-    motivo:      document.getElementById('f-motivo').value.trim(),
-    observacion: document.getElementById('f-observacion').value.trim(),
-    dia:         document.getElementById('f-fecha').value || isoHoy(),
-  };
-
-  if (!body.articulo) { mostrarAlerta('form-alert','error','El campo Artículo es obligatorio.'); return; }
-
-  const icon = document.getElementById('btn-guardar-icon');
-  const txt  = document.getElementById('btn-guardar-txt');
-  icon.innerHTML = '<span class="spinner" style="width:14px;height:14px;"></span>';
-  txt.textContent = 'Guardando...';
-
-  try {
-    if (editId) {
-      await apiUpdateConteo(parseInt(editId), body);
-      mostrarAlerta('form-alert','success','Conteo actualizado correctamente.');
-    } else {
-      await apiAddConteo(body);
-      mostrarAlerta('form-alert','success','Conteo registrado correctamente.');
-    }
-    resetForm();
-    await cargarTablaConteos(paginaActual);
-  } catch(e) {
-    mostrarAlerta('form-alert','error','Error al guardar: ' + e.message);
-  } finally {
-    icon.textContent = '💾';
-    txt.textContent = editId ? 'Guardar cambios' : 'Guardar conteo';
-  }
-}
-
-function resetForm() {
-  document.getElementById('edit-id').value = '';
-  ['f-articulo','f-sku','f-familia','f-sistema','f-fisico','f-motivo','f-observacion'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = '';
-  });
-  document.getElementById('f-ms').value         = '0';
-  document.getElementById('f-ddp').value        = '';
-  document.getElementById('f-ddp-unit').value   = '';
-  document.getElementById('f-ajustado').value   = 'NO';
-  document.getElementById('f-fecha').value    = isoHoy();
-  document.getElementById('form-titulo').textContent    = 'Nuevo conteo';
-  document.getElementById('btn-guardar-txt').textContent = 'Guardar conteo';
-  document.getElementById('prev-total').textContent     = '—';
-  document.getElementById('prev-dif-cont').textContent  = '—';
-  document.getElementById('prev-dif-ddp').textContent   = '—';
-  document.getElementById('prev-badge-wrap').innerHTML  = '';
-}
-
-/* ================================================================
-   SECCIÓN STOCK
-   ================================================================ */
-async function loadStock() {
-  await cargarEstadoStock();
-  cargarBotonesBackup();
-}
-
-async function cargarEstadoStock() {
-  const el = document.getElementById('stock-estado-card');
-  try {
-    const d = await apiGetStockEstado();
-    el.innerHTML = `
-      <h3>Estado actual del stock</h3>
-      <div class="kpi-grid kpi-grid-4 mt-12">
-        <div class="kpi-card accent-blue">
-          <div class="kpi-label">Última actualización</div>
-          <div class="kpi-value" style="font-size:15px;">${(d.ultima_actualizacion||d.updated_at) ? fmtFecha(d.ultima_actualizacion||d.updated_at) : '—'}</div>
-        </div>
-        <div class="kpi-card accent-green">
-          <div class="kpi-label">Total artículos</div>
-          <div class="kpi-value">${fmt(d.total_articulos)}</div>
-        </div>
-        <div class="kpi-card accent-orange">
-          <div class="kpi-label">Elegibles (activos en web)</div>
-          <div class="kpi-value v-orange">${fmt(d.total_elegibles)}</div>
-        </div>
-        <div class="kpi-card accent-purple">
-          <div class="kpi-label">Familias</div>
-          <div class="kpi-value" style="color:var(--purple);">${fmt(d.total_familias||'—')}</div>
-        </div>
-      </div>`;
-  } catch(e) {
-    el.innerHTML = `<div class="alert alert-error">Error al cargar estado del stock: ${e.message}</div>`;
-  }
-}
-
-// Drag & Drop
-const dz = document.getElementById('dropzone');
-if (dz) {
-  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
-  dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
-  dz.addEventListener('drop', e => {
-    e.preventDefault();
-    dz.classList.remove('drag-over');
-    const file = e.dataTransfer?.files?.[0];
-    if (file) subirStock(file);
-  });
-}
-
-async function subirStock(file) {
-  if (!file) return;
-  if (!file.name.endsWith('.xlsx')) {
-    document.getElementById('upload-result').innerHTML = `<div class="alert alert-error">El archivo debe ser .xlsx</div>`;
-    return;
-  }
-
-  const progressEl = document.getElementById('upload-progress');
-  const resultEl   = document.getElementById('upload-result');
-  const previewEl  = document.getElementById('stock-preview');
-
-  progressEl.style.display = 'flex';
-  resultEl.innerHTML = '';
-  previewEl.innerHTML = '';
-
-  try {
-    const data = await apiUploadStock(file);
-    progressEl.style.display = 'none';
-
-    if (!data) {
-      resultEl.innerHTML = `<div class="alert alert-error">Error al procesar el archivo.</div>`;
-      return;
-    }
-
-    resultEl.innerHTML = `<div class="alert alert-success">
-      ✅ Stock actualizado correctamente. <strong>${fmt(data.total_cargados)}</strong> artículos cargados.
-    </div>`;
-
-    // Preview primeros 10
-    if (data.preview?.length) {
-      const rows = data.preview.slice(0,10).map(a => `
-        <tr>
-          <td>${a.sku_wms || '—'}</td>
-          <td>${a.articulo}</td>
-          <td>${a.familia || '—'}</td>
-          <td class="right">${fmt(a.stock_web)}</td>
-          <td class="right">${fmtU(a.ddp)}</td>
-        </tr>`).join('');
-      previewEl.innerHTML = `
-        <div class="card">
-          <h3>Preview — primeros ${data.preview.length} artículos cargados</h3>
-          <div class="table-wrap mt-8">
-            <table>
-              <thead><tr><th>SKU</th><th>Artículo</th><th>Familia</th><th class="right">Stock Web</th><th class="right">DDP U$</th></tr></thead>
-              <tbody>${rows}</tbody>
-            </table>
-          </div>
-        </div>`;
-    }
-
-    // Refrescar estado
-    await cargarEstadoStock();
-  } catch(e) {
-    progressEl.style.display = 'none';
-    resultEl.innerHTML = `<div class="alert alert-error">Error inesperado: ${e.message}</div>`;
-  }
-}
-
-/* ================================================================
-   EXPORTAR EXCEL
-   ================================================================ */
-async function exportarHoyExcel() {
-  const d = await apiGetHoy();
-  if (!d.items?.length) { alert('No hay artículos en la lista de hoy.'); return; }
-  const header = ['#','Artículo','SKU WMS','Familia','Stock Sistema','Valor DDP (U$)','Estado','Físico','Dif Uds','Tipo Diferencia','Motivo'];
-  const filas = d.items.map((it, i) => [
-    i+1, it.articulo, it.sku||'', it.familia||'',
-    it.stockWeb||0, it.ddpVal||0,
-    it.contado ? 'Contado' : 'Pendiente',
-    it.fisico != null ? it.fisico : '',
-    it.dif_cont != null ? it.dif_cont : '',
-    it.diferencia||'', it.motivo||''
-  ]);
-  const ws = XLSX.utils.aoa_to_sheet([header, ...filas]);
-  ws['!cols'] = [{wch:4},{wch:42},{wch:14},{wch:22},{wch:14},{wch:16},{wch:12},{wch:10},{wch:10},{wch:16},{wch:22}];
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Conteo Hoy');
-  XLSX.writeFile(wb, `conteo_hoy_ARG_${isoHoyStr()}.xlsx`);
-}
-
-async function exportarDashboardExcel() {
-  const rows = await idbGetAll('conteos');
-  if (!rows.length) { alert('No hay conteos registrados para exportar.'); return; }
-  const header = ['ID','Fecha','Artículo','SKU WMS','Familia','Sistema','Físico','MS','Total','Dif Conteo','Diferencia','Motivo','Observación','DDP Unit (U$)','Stock DDP (U$)','Dif DDP (U$)','Ajustado','Fecha Ingreso'];
-  const filas = rows
-    .sort((a,b)=>(b.dia||'').localeCompare(a.dia||''))
-    .map(r => [
-      r.id, r.dia||'', r.articulo||'', r.sku_wms||'', familiaLimpia(r.familia)||'',
-      r.sistema??'', r.fisico??'', r.ms??0, r.total??'',
-      r.dif_cont??'', r.diferencia||'', r.motivo||'', r.observacion||'',
-      r.ddp||0,
-      Math.round((r.stock_ddp||0)*100)/100,
-      Math.round((r.dif_ddp||0)*100)/100,
-      r.ajustado||'', r.fecha_ingreso||''
-    ]);
-  const ws = XLSX.utils.aoa_to_sheet([header, ...filas]);
-  ws['!cols'] = [{wch:6},{wch:12},{wch:42},{wch:14},{wch:22},{wch:10},{wch:10},{wch:6},{wch:10},{wch:12},{wch:14},{wch:22},{wch:28},{wch:14},{wch:16},{wch:14},{wch:10},{wch:20}];
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Conteos ARG');
-  XLSX.writeFile(wb, `ciclico_ARG_conteos_${isoHoyStr()}.xlsx`);
-}
-
-/* ================================================================
-   INICIO: cargar tab por defecto
-   ================================================================ */
-window.addEventListener('DOMContentLoaded', () => {
-  // Cargar dashboard por defecto (standalone o dentro del portal)
-  // El portal puede llamar switchTab() después para cambiar de sección
-  setTimeout(() => { if (!activeTab) window.switchTab('dashboard'); }, 200);
-});
-function cargarBotonesBackup() {
-  const el = document.getElementById('backup-section');
-  if (!el) return;
-  el.innerHTML = `
-    <div class="card mt-16">
-      <h3>💾 Backup de datos</h3>
-      <p class="text-muted mt-8" style="font-size:12px;">Exportá los datos para hacer backup o transferirlos a otro dispositivo.</p>
-      <div style="display:flex; gap:8px; margin-top:12px;">
-        <button class="btn btn-primary" onclick="exportarDatos()">⬇️ Exportar JSON</button>
-        <label class="btn" style="cursor:pointer;">
-          ⬆️ Importar JSON
-          <input type="file" accept=".json" style="display:none" onchange="importarDatos(this.files[0]).then(()=>loadStock())">
-        </label>
-      </div>
-    </div>`;
-}
-
-/* ================================================================
-   NAVEGACIÓN INTERNA — switchTab
-   ================================================================ */
-let activeTab = '';
-window.switchTab = function(name) {
-  activeTab = name;
-  document.querySelectorAll('.section').forEach(function(s){ s.classList.remove('active'); });
-  var sec = document.getElementById('section-' + name);
-  if (sec) sec.classList.add('active');
-  document.querySelectorAll('.spa-nav-btn').forEach(function(b){ b.classList.remove('active'); });
-  var btn = document.getElementById('nav-' + name);
-  if (btn) btn.classList.add('active');
-  if (name === 'dashboard') loadDashboard();
-  else if (name === 'hoy') loadHoy();
-  else if (name === 'carga') loadCarga();
-  else if (name === 'stock') loadStock();
-  else if (name === 'conteos') initConteos();
-};
-
-function initConteos() {
-  var input = document.getElementById('conteos-fecha-input');
-  if (input && !input.value) input.value = isoHoyStr();
-  loadConteosDia();
-}
-
-async function loadConteosDia() {
-  var input = document.getElementById('conteos-fecha-input');
-  var fecha = input ? input.value : isoHoyStr();
-  if (!fecha) return;
-
-  var resEl = document.getElementById('conteos-resumen');
-  var tabEl = document.getElementById('conteos-tabla');
-  resEl.innerHTML = '<div class="section-loading"><span class="spinner"></span> Cargando...</div>';
-  tabEl.innerHTML = '';
-
-  var allRows = await idbGetAll('conteos');
-  var rows = allRows.filter(function(r){ return r.dia === fecha; });
-
-  if (!rows.length) {
-    var fechaFmt = fmtFecha ? fmtFecha(fecha) : fecha;
-    resEl.innerHTML = '<div class="empty-state"><div class="icon">&#128505;</div><div>No hay conteos registrados para el ' + fechaFmt + '.</div></div>';
-    return;
-  }
-
-  var total    = rows.length;
-  var conDif   = rows.filter(function(r){ return r.diferencia !== 'Sin Dif'; }).length;
-  var exactitud = total > 0 ? Math.round((total - conDif) / total * 100) : 100;
-  var impacto  = rows.reduce(function(acc,r){ return acc + Math.abs(r.dif_ddp||0); }, 0);
-  var impPos   = rows.reduce(function(acc,r){ return acc + (r.dif_ddp > 0 ? r.dif_ddp : 0); }, 0);
-  var impNeg   = rows.reduce(function(acc,r){ return acc + (r.dif_ddp < 0 ? Math.abs(r.dif_ddp) : 0); }, 0);
-  var exactColor = exactitud >= 95 ? 'var(--green)' : exactitud >= 80 ? 'var(--orange)' : 'var(--red)';
-  var fechaFmt = fmtFecha ? fmtFecha(fecha) : fecha;
-
-  resEl.innerHTML =
-    '<div class="kpi-grid kpi-grid-4 mb-16">' +
-    '<div class="kpi-card accent-blue">' +
-      '<div class="kpi-label">Artículos contados</div>' +
-      '<div class="kpi-value">' + total + '</div>' +
-      '<div class="kpi-sub">' + fechaFmt + '</div>' +
-    '</div>' +
-    '<div class="kpi-card accent-green">' +
-      '<div class="kpi-label">Exactitud</div>' +
-      '<div class="kpi-value" style="color:' + exactColor + '">' + exactitud + '%</div>' +
-      '<div class="kpi-sub">' + (total - conDif) + ' sin diferencia</div>' +
-    '</div>' +
-    '<div class="kpi-card accent-red">' +
-      '<div class="kpi-label">Con diferencia</div>' +
-      '<div class="kpi-value" style="color:' + (conDif > 0 ? 'var(--red)' : 'var(--green)') + '">' + conDif + '</div>' +
-      '<div class="kpi-sub">de ' + total + ' conteos</div>' +
-    '</div>' +
-    '<div class="kpi-card accent-yellow">' +
-      '<div class="kpi-label">Impacto DDU$</div>' +
-      '<div class="kpi-value">$' + impacto.toFixed(0) + '</div>' +
-      '<div class="kpi-sub">+$' + impPos.toFixed(0) + ' / -$' + impNeg.toFixed(0) + '</div>' +
-    '</div>' +
-    '</div>';
-
-  var sorted = rows.slice().sort(function(a, b){
-    var da = a.diferencia === 'Sin Dif' ? 1 : 0;
-    var db = b.diferencia === 'Sin Dif' ? 1 : 0;
-    return da - db;
-  });
-
-  var filas = sorted.map(function(r, i){
-    var difCl   = r.diferencia === 'Sin Dif' ? 'text-green' : r.diferencia === 'Dif Positiva' ? 'text-orange' : 'text-red';
-    var ajCl    = r.ajustado === 'SI' ? 'text-green' : r.ajustado === 'ADM' ? 'text-orange' : '';
-    var difCont = r.dif_cont != null ? (r.dif_cont > 0 ? '+' + r.dif_cont : r.dif_cont) : '—';
-    var difCCl  = r.dif_cont > 0 ? 'text-orange' : r.dif_cont < 0 ? 'text-red' : 'text-green';
-    var impactoStr = r.dif_ddp != null ? (r.dif_ddp >= 0 ? '+$' + r.dif_ddp.toFixed(2) : '$' + r.dif_ddp.toFixed(2)) : '—';
-    var impactoCl = (r.dif_ddp||0) > 0 ? 'text-orange' : (r.dif_ddp||0) < 0 ? 'text-red' : 'text-green';
-    var fam = familiaLimpia ? familiaLimpia(r.familia) : (r.familia||'—');
-    var mot = (r.motivo||'').replace(/"/g, '&quot;');
-    return '<tr>' +
-      '<td class="text-muted" style="font-size:11px">' + (i+1) + '</td>' +
-      '<td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + (r.articulo||'') + '">' + (r.articulo||'—') + '</td>' +
-      '<td style="font-family:monospace;font-size:11px;color:var(--text-muted)">' + (r.sku_wms||'—') + '</td>' +
-      '<td style="font-size:11px">' + fam + '</td>' +
-      '<td style="text-align:center">' + (r.sistema!=null?r.sistema:'—') + '</td>' +
-      '<td style="text-align:center">' + (r.fisico!=null?r.fisico:'—') + '</td>' +
-      '<td style="text-align:center;color:var(--text-muted)">' + (r.ms||0) + '</td>' +
-      '<td style="text-align:center;font-weight:700">' + (r.total!=null?r.total:'—') + '</td>' +
-      '<td style="text-align:center" class="' + difCCl + '">' + difCont + '</td>' +
-      '<td class="' + difCl + '">' + (r.diferencia||'—') + '</td>' +
-      '<td style="font-family:monospace;font-size:11px">' + (r.ddp!=null?'$'+r.ddp:'—') + '</td>' +
-      '<td class="' + impactoCl + '" style="font-family:monospace;font-size:11px">' + impactoStr + '</td>' +
-      '<td class="' + ajCl + '">' + (r.ajustado||'NO') + '</td>' +
-      '<td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + mot + '">' + (r.motivo||'—') + '</td>' +
-    '</tr>';
-  }).join('');
-
-  tabEl.innerHTML =
-    '<div class="card">' +
-    '<h3>Detalle del conteo — ' + fechaFmt + ' (' + total + ' artículos)</h3>' +
-    '<div class="table-wrap mt-12">' +
-    '<table>' +
-    '<thead><tr>' +
-    '<th>#</th><th>Artículo</th><th>SKU WMS</th><th>Familia</th>' +
-    '<th style="text-align:center">Sistema</th><th style="text-align:center">Físico</th>' +
-    '<th style="text-align:center">MS</th><th style="text-align:center">Total</th>' +
-    '<th style="text-align:center">Dif</th><th>Resultado</th>' +
-    '<th>DDP U$</th><th>Impacto $</th><th>Ajustado</th><th>Motivo</th>' +
-    '</tr></thead>' +
-    '<tbody>' + filas + '</tbody>' +
-    '</table></div></div>';
-}
-
+  var b=document.getElementById('themeBtn');
+  if(b)b.textContent=nowDark?'\u2600\uFE0F':'\u{1F319}';
+}
+(function(){
+  var t=localStorage.getItem('theme')||'light';
+  var b=document.getElementById('themeBtn');
+  if(b) b.textContent=t==='dark'?'\u2600\uFE0F':'\u{1F319}';
+})();
 </script>
-</body>
-</html>
+</body></html>
