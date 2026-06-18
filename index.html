@@ -7,35 +7,42 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-/* ── VARIABLES ── */
+/* ── VARIABLES — DARK (default) ── */
 :root {
-  --sb-bg: rgba(10,14,26,.97);
-  --sb-hover: rgba(255,255,255,.045);
-  --sb-active: rgba(249,113,113,.12);
+  --sb-bg: rgba(16,24,44,.97);
+  --sb-hover: rgba(255,255,255,.05);
+  --sb-active: rgba(249,113,113,.13);
   --sb-border: rgba(255,255,255,.07);
   --sb-accent: #F97171;
   --sb-text-dim: rgba(255,255,255,.24);
   --sb-text-mid: rgba(255,255,255,.52);
   --sb-text: rgba(255,255,255,.88);
   --sb-section: rgba(255,255,255,.22);
-  --portal-bg: #080B15;
-  --dot: rgba(255,255,255,.022);
+  --portal-bg: #101828;
+  --dot: rgba(255,255,255,.018);
   --toggle-bg: rgba(255,255,255,.05);
-  --toggle-hover: rgba(255,255,255,.09);
+  --toggle-hover: rgba(255,255,255,.1);
+  /* splash text (content area) */
+  --content-dim: rgba(255,255,255,.3);
+  --content-mid: rgba(255,255,255,.55);
 }
+
+/* ── LIGHT MODE: sidebar navy + contenido claro (como la referencia) ── */
 body.light {
-  --sb-bg: rgba(255,255,255,.97);
-  --sb-hover: rgba(249,113,113,.05);
-  --sb-active: rgba(249,113,113,.09);
-  --sb-border: #E2E8F2;
-  --sb-text-dim: #A8B4C8;
-  --sb-text-mid: #5A6880;
-  --sb-text: #0D1826;
-  --sb-section: #8896B0;
+  --sb-bg: rgba(22,33,54,.97);
+  --sb-hover: rgba(255,255,255,.06);
+  --sb-active: rgba(249,113,113,.16);
+  --sb-border: rgba(255,255,255,.09);
+  --sb-text-dim: rgba(255,255,255,.27);
+  --sb-text-mid: rgba(255,255,255,.56);
+  --sb-text: rgba(255,255,255,.92);
+  --sb-section: rgba(255,255,255,.24);
   --portal-bg: #EEF1F8;
-  --dot: rgba(0,0,0,.03);
-  --toggle-bg: rgba(0,0,0,.04);
-  --toggle-hover: rgba(0,0,0,.07);
+  --dot: rgba(100,116,139,.06);
+  --toggle-bg: rgba(255,255,255,.07);
+  --toggle-hover: rgba(255,255,255,.13);
+  --content-dim: #94A3B8;
+  --content-mid: #475569;
 }
 
 /* ── RESET ── */
@@ -50,7 +57,7 @@ body {
   background-color: var(--portal-bg);
   background-image: radial-gradient(var(--dot) 1px, transparent 1px);
   background-size: 28px 28px;
-  transition: background-color .3s;
+  transition: background-color .35s;
 }
 
 /* ── SIDEBAR ── */
@@ -66,10 +73,13 @@ body {
   overflow: hidden;
   flex-shrink: 0;
   border-right: 1px solid var(--sb-border);
-  box-shadow: 4px 0 28px rgba(0,0,0,.22);
+  box-shadow: 4px 0 32px rgba(0,0,0,.28);
   position: relative;
   z-index: 10;
-  transition: background .25s, border-color .25s;
+  transition: width .26s cubic-bezier(.4,0,.2,1),
+              min-width .26s cubic-bezier(.4,0,.2,1),
+              background .3s,
+              border-color .3s;
 }
 .sidebar::after {
   content: '';
@@ -81,17 +91,35 @@ body {
   pointer-events: none;
 }
 
+/* ── COLLAPSED STATE ── */
+.sidebar.collapsed {
+  width: 58px;
+  min-width: 58px;
+}
+
 /* ── BRAND ── */
 .brand {
-  padding: 17px 14px 15px;
+  padding: 15px 12px 13px;
   border-bottom: 1px solid var(--sb-border);
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 9px;
   flex-shrink: 0;
-  transition: border-color .25s;
+  transition: border-color .3s, padding .26s;
 }
-.brand-text { line-height: 1.2; flex: 1; min-width: 0; }
+.sidebar.collapsed .brand {
+  padding: 15px 0 13px;
+  justify-content: center;
+}
+.brand-text {
+  line-height: 1.2;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  opacity: 1;
+  transition: opacity .15s;
+}
+.sidebar.collapsed .brand-text { display: none; }
 .brand-name {
   font-size: 15px;
   font-weight: 700;
@@ -100,6 +128,7 @@ body {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  white-space: nowrap;
 }
 .brand-sub {
   font-size: 10px;
@@ -107,7 +136,8 @@ body {
   margin-top: 2px;
   letter-spacing: .4px;
   text-transform: uppercase;
-  transition: color .25s;
+  transition: color .3s;
+  white-space: nowrap;
 }
 .brand-version {
   font-size: 9.5px;
@@ -121,20 +151,49 @@ body {
   flex-shrink: 0;
   letter-spacing: .2px;
 }
+.sidebar.collapsed .brand-version { display: none; }
+
+/* ── TOGGLE BUTTON ── */
+.sb-toggle {
+  width: 26px; height: 26px;
+  border-radius: 7px;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.1);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--sb-text-mid);
+  flex-shrink: 0;
+  transition: background .15s, color .15s;
+  padding: 0;
+}
+.sb-toggle:hover { background: rgba(255,255,255,.14); color: var(--sb-text); }
+.sb-toggle svg {
+  width: 14px; height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: transform .26s cubic-bezier(.4,0,.2,1);
+}
+.sidebar.collapsed .sb-toggle svg { transform: rotate(180deg); }
+.sidebar.collapsed .sb-toggle {
+  margin: 0 auto;
+  display: flex;
+}
 
 /* ── NAV ── */
 .nav {
   flex: 1;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 6px 0 4px;
   scrollbar-width: thin;
   scrollbar-color: rgba(255,255,255,.08) transparent;
 }
-body.light .nav { scrollbar-color: rgba(0,0,0,.1) transparent; }
 .nav::-webkit-scrollbar { width: 3px; }
 .nav::-webkit-scrollbar-track { background: transparent; }
 .nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 3px; }
-body.light .nav::-webkit-scrollbar-thumb { background: rgba(0,0,0,.1); }
 
 /* ── SECTION HEADERS ── */
 .section { margin-bottom: 2px; }
@@ -148,12 +207,17 @@ body.light .nav::-webkit-scrollbar-thumb { background: rgba(0,0,0,.1); }
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: .8px;
-  transition: background .12s, color .12s;
+  transition: background .12s, color .12s, padding .26s;
   user-select: none;
   gap: 8px;
 }
 .sec-header:hover { background: var(--sb-hover); color: var(--sb-text); }
 .sec-header.open { color: var(--sb-text); }
+.sidebar.collapsed .sec-header {
+  padding: 9px;
+  justify-content: center;
+  gap: 0;
+}
 .sec-ico {
   width: 14px; height: 14px;
   fill: currentColor;
@@ -163,14 +227,17 @@ body.light .nav::-webkit-scrollbar-thumb { background: rgba(0,0,0,.1); }
 }
 .sec-header.open .sec-ico { opacity: 1; fill: var(--sb-accent); }
 .sec-header:hover .sec-ico { opacity: .9; }
-.sec-label { flex: 1; }
+.sec-label { flex: 1; overflow: hidden; white-space: nowrap; }
+.sidebar.collapsed .sec-label { display: none; }
 .chevron {
   font-size: 11px;
   color: var(--sb-text-dim);
   transition: transform .2s, color .12s;
   line-height: 1;
+  flex-shrink: 0;
 }
 .sec-header.open .chevron { transform: rotate(90deg); color: var(--sb-text-mid); }
+.sidebar.collapsed .chevron { display: none; }
 
 /* ── SECTION ITEMS ── */
 .sec-items {
@@ -179,6 +246,7 @@ body.light .nav::-webkit-scrollbar-thumb { background: rgba(0,0,0,.1); }
   transition: max-height .22s ease;
 }
 .sec-header.open + .sec-items { max-height: 400px; }
+.sidebar.collapsed .sec-items { max-height: 0 !important; }
 
 /* ── NAV ITEMS ── */
 .nav-item {
@@ -195,6 +263,8 @@ body.light .nav::-webkit-scrollbar-thumb { background: rgba(0,0,0,.1); }
   gap: 8px;
   border-radius: 0 6px 6px 0;
   margin-right: 8px;
+  white-space: nowrap;
+  overflow: hidden;
 }
 .nav-item:hover {
   background: var(--sb-hover);
@@ -226,8 +296,9 @@ body.light .nav::-webkit-scrollbar-thumb { background: rgba(0,0,0,.1); }
   padding: 10px 12px;
   border-top: 1px solid var(--sb-border);
   flex-shrink: 0;
-  transition: border-color .25s;
+  transition: border-color .3s, padding .26s;
 }
+.sidebar.collapsed .sb-footer { padding: 10px 7px; }
 .theme-btn {
   display: flex;
   align-items: center;
@@ -245,9 +316,13 @@ body.light .nav::-webkit-scrollbar-thumb { background: rgba(0,0,0,.1); }
   border: 1px solid var(--sb-border);
   text-align: left;
   font-family: inherit;
+  overflow: hidden;
+  white-space: nowrap;
 }
 .theme-btn:hover { background: var(--toggle-hover); color: var(--sb-text); }
-.theme-ico { font-size: 14px; }
+.theme-ico { font-size: 14px; flex-shrink: 0; }
+.sidebar.collapsed .theme-btn { padding: 7px; justify-content: center; }
+.sidebar.collapsed #theme-lbl { display: none; }
 
 /* ── MAIN CONTENT ── */
 .main {
@@ -256,20 +331,9 @@ body.light .nav::-webkit-scrollbar-thumb { background: rgba(0,0,0,.1); }
   overflow: hidden;
   background: transparent;
 }
-
-.frame-wrap {
-  position: absolute;
-  inset: 0;
-  display: none;
-}
+.frame-wrap { position: absolute; inset: 0; display: none; }
 .frame-wrap.active { display: block; }
-
-iframe {
-  width: 100%;
-  height: 100%;
-  border: none;
-  display: block;
-}
+iframe { width: 100%; height: 100%; border: none; display: block; }
 
 /* ── SPLASH ── */
 .splash {
@@ -282,7 +346,7 @@ iframe {
   background-color: var(--portal-bg);
   background-image: radial-gradient(var(--dot) 1px, transparent 1px);
   background-size: 28px 28px;
-  color: var(--sb-text-dim);
+  color: var(--content-dim);
   font-size: 12.5px;
   gap: 14px;
   transition: opacity .3s;
@@ -302,11 +366,7 @@ iframe {
   box-shadow: 0 4px 20px rgba(249,113,113,.35);
   animation: splashPulse 1.8s ease-in-out infinite;
 }
-.splash-label {
-  color: var(--sb-text-mid);
-  font-size: 13px;
-  letter-spacing: .2px;
-}
+.splash-label { color: var(--content-mid); font-size: 13px; letter-spacing: .2px; }
 @keyframes splashPulse {
   0%, 100% { transform: scale(1);    box-shadow: 0 4px 20px rgba(249,113,113,.35); }
   50%       { transform: scale(1.07); box-shadow: 0 6px 28px rgba(249,113,113,.55); }
@@ -319,53 +379,69 @@ iframe {
   display: flex; align-items: center;
   padding: 10px 14px 4px; cursor: pointer;
   gap: 7px; user-select: none;
+  transition: padding .26s;
 }
-.country-flag { font-size: 13px; line-height:1; }
+.sidebar.collapsed .country-hdr {
+  padding: 8px;
+  justify-content: center;
+  gap: 0;
+}
+.country-flag { font-size: 13px; line-height: 1; flex-shrink: 0; }
+.sidebar.collapsed .country-flag { font-size: 16px; }
 .country-name {
   font-size: 9px; font-weight: 800;
   text-transform: uppercase; letter-spacing: 1.3px;
   color: var(--sb-text-dim); flex: 1;
   transition: color .12s;
+  white-space: nowrap; overflow: hidden;
 }
+.sidebar.collapsed .country-name { display: none; }
 .country-chev {
   font-size: 10px; color: var(--sb-text-dim);
-  transition: transform .2s, color .12s; line-height: 1;
+  transition: transform .2s, color .12s; line-height: 1; flex-shrink: 0;
 }
 .country-hdr:hover .country-name { color: var(--sb-text-mid); }
 .country-hdr:hover .country-chev { color: var(--sb-text-mid); }
 .country-hdr.open .country-chev { transform: rotate(90deg); color: var(--sb-text-mid); }
-.country-body {
-  overflow: hidden; max-height: 0;
-  transition: max-height .28s ease;
-}
-.country-hdr.open + .country-body { max-height: 1100px; }
+.sidebar.collapsed .country-chev { display: none; }
+.country-body { overflow: hidden; max-height: 0; transition: max-height .28s ease; }
+.country-hdr.open + .country-body { max-height: 1200px; }
+.sidebar.collapsed .country-hdr.open + .country-body { max-height: 0 !important; }
+
 .nav-divider {
   height: 1px; background: var(--sb-border);
-  margin: 5px 14px 5px;
+  margin: 5px 14px;
+  transition: margin .26s;
 }
-/* Standalone nav item (sin sección padre) */
+.sidebar.collapsed .nav-divider { margin: 5px 10px; }
+
+/* ── STANDALONE NAV ITEM ── */
 .nav-solo {
   display: flex; align-items: center;
   padding: 8px 14px; cursor: pointer;
   font-size: 11px; font-weight: 700;
   text-transform: uppercase; letter-spacing: .8px;
   color: var(--sb-text-mid);
-  transition: background .12s, color .12s;
+  transition: background .12s, color .12s, padding .26s, margin .26s;
   gap: 8px; user-select: none;
   margin: 4px 8px 4px 4px;
   border-radius: 7px;
   border-left: 2.5px solid transparent;
+  overflow: hidden;
+  white-space: nowrap;
 }
 .nav-solo:hover { background: var(--sb-hover); color: var(--sb-text); border-left-color: rgba(249,113,113,.35); }
 .nav-solo.active { background: var(--sb-active); color: var(--sb-text); border-left-color: var(--sb-accent); }
-.nav-solo .sec-ico { width:14px; height:14px; fill:currentColor; opacity:.6; flex-shrink:0; }
-.nav-solo.active .sec-ico { opacity:1; fill: var(--sb-accent); }
+.nav-solo .sec-ico { width: 14px; height: 14px; fill: currentColor; opacity: .6; flex-shrink: 0; }
+.nav-solo.active .sec-ico { opacity: 1; fill: var(--sb-accent); }
+.sidebar.collapsed .nav-solo { padding: 9px; margin: 4px; justify-content: center; gap: 0; }
+.sidebar.collapsed .nav-solo-lbl { display: none; }
 </style>
 </head>
 <body>
 
 <!-- ═══ SIDEBAR ═══ -->
-<div class="sidebar">
+<div class="sidebar" id="sidebar">
 
   <!-- Brand -->
   <div class="brand">
@@ -378,6 +454,11 @@ iframe {
       <div class="brand-sub">Portal de Gestión</div>
     </div>
     <div class="brand-version">AR 4.0</div>
+    <button class="sb-toggle" onclick="toggleSidebar()" title="Colapsar menú">
+      <svg viewBox="0 0 24 24">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+    </button>
   </div>
 
   <!-- Navigation -->
@@ -385,7 +466,7 @@ iframe {
 
   <!-- ── 🇦🇷 ZECAT ARGENTINA ── -->
   <div class="country-group">
-    <div class="country-hdr open" onclick="toggleCountry(this)">
+    <div class="country-hdr open" onclick="onCountryClick(this)">
       <span class="country-flag">🇦🇷</span>
       <span class="country-name">Zecat Argentina</span>
       <span class="country-chev">›</span>
@@ -394,7 +475,7 @@ iframe {
 
       <!-- Productividad -->
       <div class="section">
-        <div class="sec-header open" onclick="toggleSection(this)">
+        <div class="sec-header open" onclick="onSectionClick(this)">
           <svg class="sec-ico" viewBox="0 0 24 24"><path d="M5 9.2h3V19H5V9.2zm5.6-4.2h2.8v14h-2.8V5zM16 13h3v6h-3v-6z"/></svg>
           <span class="sec-label">Productividad</span>
           <span class="chevron">›</span>
@@ -405,13 +486,15 @@ iframe {
           <div class="nav-item" data-module="productividad" data-tab="muestra" onclick="navigate(this)"><span class="nav-dot"></span>Muestra Simple</div>
           <div class="nav-item" data-module="productividad" data-tab="reclamos" onclick="navigate(this)"><span class="nav-dot"></span>Reclamos</div>
           <div class="nav-item" data-module="productividad" data-tab="control" onclick="navigate(this)"><span class="nav-dot"></span>Control</div>
+          <div class="nav-item" data-module="productividad" data-tab="maquinistas" onclick="navigate(this)"><span class="nav-dot"></span>Maquinistas</div>
+          <div class="nav-item" data-module="productividad" data-tab="liquidacion" onclick="navigate(this)"><span class="nav-dot"></span>Liquidación</div>
           <div class="nav-item" data-module="productividad" data-tab="resumen" onclick="navigate(this)"><span class="nav-dot"></span>Resumen General</div>
         </div>
       </div>
 
       <!-- Asistencia -->
       <div class="section">
-        <div class="sec-header" onclick="toggleSection(this)">
+        <div class="sec-header" onclick="onSectionClick(this)">
           <svg class="sec-ico" viewBox="0 0 24 24"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg>
           <span class="sec-label">Asistencia</span>
           <span class="chevron">›</span>
@@ -427,7 +510,7 @@ iframe {
 
       <!-- Inventario Cíclico -->
       <div class="section">
-        <div class="sec-header" onclick="toggleSection(this)">
+        <div class="sec-header" onclick="onSectionClick(this)">
           <svg class="sec-ico" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 3c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm7 13H5v-.23c0-.62.28-1.2.76-1.58C7.47 15.82 9.64 15 12 15s4.53.82 6.24 2.19c.48.38.76.97.76 1.58V19z"/></svg>
           <span class="sec-label">Inventario Cíclico</span>
           <span class="chevron">›</span>
@@ -439,7 +522,7 @@ iframe {
 
       <!-- Transporte -->
       <div class="section">
-        <div class="sec-header" onclick="toggleSection(this)">
+        <div class="sec-header" onclick="onSectionClick(this)">
           <svg class="sec-ico" viewBox="0 0 24 24"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg>
           <span class="sec-label">Transporte</span>
           <span class="chevron">›</span>
@@ -464,14 +547,14 @@ iframe {
 
   <!-- ── 🇨🇱 ZECAT CHILE ── -->
   <div class="country-group">
-    <div class="country-hdr open" onclick="toggleCountry(this)">
+    <div class="country-hdr open" onclick="onCountryClick(this)">
       <span class="country-flag">🇨🇱</span>
       <span class="country-name">Zecat Chile</span>
       <span class="country-chev">›</span>
     </div>
     <div class="country-body">
       <div class="section">
-        <div class="sec-header open" onclick="toggleSection(this)">
+        <div class="sec-header open" onclick="onSectionClick(this)">
           <svg class="sec-ico" viewBox="0 0 24 24"><path d="M5 9.2h3V19H5V9.2zm5.6-4.2h2.8v14h-2.8V5zM16 13h3v6h-3v-6z"/></svg>
           <span class="sec-label">Productividad</span>
           <span class="chevron">›</span>
@@ -480,15 +563,25 @@ iframe {
           <div class="nav-item" data-module="productividadchile" onclick="navigate(this)"><span class="nav-dot"></span>Productividad Picking</div>
         </div>
       </div>
+      <div class="section">
+        <div class="sec-header" onclick="onSectionClick(this)">
+          <svg class="sec-ico" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 3c1.93 0 3.5 1.57 3.5 3.5S13.93 13 12 13s-3.5-1.57-3.5-3.5S10.07 6 12 6zm7 13H5v-.23c0-.62.28-1.2.76-1.58C7.47 15.82 9.64 15 12 15s4.53.82 6.24 2.19c.48.38.76.97.76 1.58V19z"/></svg>
+          <span class="sec-label">Inventario Cíclico</span>
+          <span class="chevron">›</span>
+        </div>
+        <div class="sec-items">
+          <div class="nav-item" data-module="ciclicochile" onclick="navigate(this)"><span class="nav-dot"></span>Dashboard Cíclico CL</div>
+        </div>
+      </div>
     </div>
   </div>
 
   <div class="nav-divider"></div>
 
-  <!-- ── PERSONAL ARG/CH (standalone) ── -->
+  <!-- ── PERSONAL ARG/CH ── -->
   <div class="nav-solo" data-module="personal" onclick="navigateSolo(this)">
     <svg class="sec-ico" viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
-    Personal ARG/CH
+    <span class="nav-solo-lbl">Personal ARG/CH</span>
   </div>
 
   </nav>
@@ -565,6 +658,18 @@ iframe {
     </iframe>
   </div>
 
+  <!-- Inventario Cíclico Chile frame -->
+  <div class="frame-wrap" id="fw-ciclicochile">
+    <div class="splash" id="splash-ciclicochile">
+      <div class="splash-icon">Z</div>
+      <span class="splash-label">Cargando Inventario Cíclico Chile…</span>
+    </div>
+    <iframe id="ifr-ciclicochile"
+      src="./inventario-ciclico-chile/index.html"
+      onload="onLoad('ciclicochile')">
+    </iframe>
+  </div>
+
   <!-- Productividad Chile frame -->
   <div class="frame-wrap" id="fw-productividadchile">
     <div class="splash" id="splash-productividadchile">
@@ -580,7 +685,6 @@ iframe {
 </div>
 
 <script>
-// ── CSS to inject into each iframe to hide its own navigation ──
 const INJECT = {
   productividad: `
     .tab-nav { display: none !important; }
@@ -609,10 +713,13 @@ const INJECT = {
     .header { display: none !important; }
     .filters { position: sticky !important; top: 0 !important; z-index: 10 !important; }
     body { overflow: auto !important; }
+  `,
+  ciclicochile: `
+    #themeBtn { display: none !important; }
+    body { overflow: auto !important; }
   `
 };
 
-// Map page names → nav-item IDs in Logistica4
 const PAGE_ID = {
   upload: 'ni-upload', resumen: 'ni-resumen', empresas: 'ni-emp',
   conductores: 'ni-cond', viajes: 'ni-vj', visitas: 'ni-vis',
@@ -621,13 +728,12 @@ const PAGE_ID = {
 
 let currentModule = 'productividad';
 let isDark = true;
-const loaded = { productividad: false, asistencia: false, ciclico: false, transporte: false, personal: false, productividadchile: false };
-// Queue: pending navigation calls waiting for iframe to finish loading
+let isSidebarCollapsed = false;
+const loaded = { productividad: false, asistencia: false, ciclico: false, transporte: false, personal: false, productividadchile: false, ciclicochile: false };
 const pending = {};
 
 function onLoad(module) {
   loaded[module] = true;
-  // Inject CSS to hide the app's own nav
   try {
     const doc = document.getElementById('ifr-' + module).contentDocument;
     if (!doc.getElementById('_portal_css')) {
@@ -636,26 +742,57 @@ function onLoad(module) {
       s.textContent = INJECT[module];
       doc.head.appendChild(s);
     }
-    // Apply dark mode if active and module supports it
     if (isDark && module === 'productividad') {
       doc.body.classList.add('dark');
     }
   } catch(e) {}
 
-  // Hide splash
   const splash = document.getElementById('splash-' + module);
   if (splash) splash.classList.add('hidden');
   setTimeout(() => { if (splash) splash.style.display = 'none'; }, 350);
 
-  // Execute any pending navigation
   if (pending[module]) {
     pending[module]();
     delete pending[module];
   }
 }
 
-function toggleSection(header) {
-  header.classList.toggle('open');
+/* ── SIDEBAR COLLAPSE ── */
+function toggleSidebar() {
+  isSidebarCollapsed = !isSidebarCollapsed;
+  document.getElementById('sidebar').classList.toggle('collapsed', isSidebarCollapsed);
+}
+
+function expandSidebar() {
+  if (isSidebarCollapsed) {
+    isSidebarCollapsed = false;
+    document.getElementById('sidebar').classList.remove('collapsed');
+  }
+}
+
+/* ── SECTION / COUNTRY HANDLERS ── */
+function onSectionClick(header) {
+  if (isSidebarCollapsed) {
+    expandSidebar();
+    if (!header.classList.contains('open')) header.classList.add('open');
+    // Expand parent country group too
+    const countryBody = header.closest('.country-body');
+    if (countryBody) {
+      const countryHdr = countryBody.previousElementSibling;
+      if (countryHdr && !countryHdr.classList.contains('open')) countryHdr.classList.add('open');
+    }
+  } else {
+    header.classList.toggle('open');
+  }
+}
+
+function onCountryClick(hdr) {
+  if (isSidebarCollapsed) {
+    expandSidebar();
+    if (!hdr.classList.contains('open')) hdr.classList.add('open');
+  } else {
+    hdr.classList.toggle('open');
+  }
 }
 
 function navigate(item) {
@@ -666,20 +803,17 @@ function navigate(item) {
   const tab    = item.dataset.tab;
   const page   = item.dataset.page;
 
-  // Expand parent section if collapsed
   const section = item.closest('.section');
   if (section) {
     const secHeader = section.querySelector('.sec-header');
     if (secHeader && !secHeader.classList.contains('open')) secHeader.classList.add('open');
   }
-  // Expand parent country group if collapsed
   const countryBody = item.closest('.country-body');
   if (countryBody) {
     const countryHdr = countryBody.previousElementSibling;
     if (countryHdr && !countryHdr.classList.contains('open')) countryHdr.classList.add('open');
   }
 
-  // Switch visible frame
   if (module !== currentModule) {
     document.getElementById('fw-' + currentModule).classList.remove('active');
     document.getElementById('fw-' + module).classList.add('active');
@@ -695,9 +829,6 @@ function navigate(item) {
 
 function navigateSolo(el) {
   navigate(el);
-}
-function toggleCountry(hdr) {
-  hdr.classList.toggle('open');
 }
 
 function switchContent(module, tab, page) {
@@ -719,7 +850,6 @@ function toggleTheme() {
   document.getElementById('theme-ico').textContent = isDark ? '🌙' : '☀️';
   document.getElementById('theme-lbl').textContent  = isDark ? 'Modo oscuro' : 'Modo claro';
 
-  // Sync productividad iframe (soporta body.dark nativamente)
   try {
     const doc = document.getElementById('ifr-productividad').contentDocument;
     doc.body.classList.toggle('dark', isDark);
