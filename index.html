@@ -826,6 +826,12 @@ function navigate(item) {
     document.getElementById('fw-' + currentModule).classList.remove('active');
     document.getElementById('fw-' + module).classList.add('active');
     currentModule = module;
+    setTimeout(() => {
+      try {
+        const win = document.getElementById('ifr-' + module).contentWindow;
+        if (win.Chart) Object.values(win.Chart.instances).forEach(c => c.resize());
+      } catch(e) {}
+    }, 80);
   }
 
   if (tab !== undefined || page !== undefined) {
