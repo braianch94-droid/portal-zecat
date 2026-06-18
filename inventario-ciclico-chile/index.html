@@ -861,6 +861,10 @@ function calcularCampos(sistema,fisico,ms,ddp) {
 }
 function isoHoyStr() { return new Date().toISOString().slice(0,10); }
 const isoHoy = isoHoyStr; // alias para compatibilidad
+function fmt(n) { return (+(n||0)).toLocaleString('es-CL'); }
+function fmtPct(n) { return (+(n||0)).toFixed(1)+'%'; }
+function fmtU(n) { return 'U$ '+(+(n||0)).toLocaleString('es-CL',{maximumFractionDigits:0}); }
+function exactitudColor(pct) { return (+(pct||0))>=90?'text-green':(+(pct||0))>=75?'text-orange':'text-red'; }
 function esLaborable(s) { const d=new Date(s+'T12:00:00'),dow=d.getDay(); return dow!==0&&dow!==6&&!FERIADOS_SET.has(s); }
 function diaLaborableAnterior(s) {
   let d=new Date(s+'T12:00:00'); d.setDate(d.getDate()-1);
