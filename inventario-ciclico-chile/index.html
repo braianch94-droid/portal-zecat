@@ -1013,9 +1013,9 @@ async function apiUploadStock(file) {
   if (!rows.length) throw new Error('El archivo no contiene datos.');
   const keys=Object.keys(rows[0]);
   const fc=(...c)=>keys.find(k=>c.some(x=>k.trim().toLowerCase()===x.toLowerCase()));
-  const colArt=fc('descripcion web','descripcion','articulo','descripción web');
-  const colSt=fc('stock web','stock_web','stock');
-  const colDdp=fc('ddp','ddp u$s','ddp u$');
+  const colArt=fc('descripcion web','descripcion','articulo','descripción web','artículo','articulo');
+  const colSt=fc('stock web','stock_web','stock','stock para web');
+  const colDdp=fc('ddp','ddp u$s','ddp u$','unitario ddp (pr.)','unitario ddp (pr)');
   const colFam=fc('familia');
   const colSku=fc('sku wms','sku_wms','sku');
   const colSit=fc('situacion','situación');
