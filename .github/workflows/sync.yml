@@ -36,11 +36,8 @@ jobs:
           git clone --depth 1 https://github.com/braianch94-droid/reporte-personal-zecat.git reporte-personal-zecat
           rm -rf reporte-personal-zecat/.git
 
-      - name: Sync inventario-ciclico-zecat
-        run: |
-          rm -rf inventario-ciclico-zecat
-          git clone --depth 1 https://github.com/braianch94-droid/inventario-ciclico-zecat.git inventario-ciclico-zecat
-          rm -rf inventario-ciclico-zecat/.git
+      # inventario-ciclico-zecat se actualiza directamente via Actualizar_Dashboard.ps1
+      # (NO sincronizar desde el repo fuente — el script pushea index.html al portal directamente)
 
       - name: Commit si hay cambios
         run: |

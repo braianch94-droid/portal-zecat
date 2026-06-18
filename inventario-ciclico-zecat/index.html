@@ -952,6 +952,12 @@ function fmt(n) { return (+(n||0)).toLocaleString('es-AR'); }
 function fmtPct(n) { return (+(n||0)).toFixed(1)+'%'; }
 function fmtU(n) { return 'U$ '+(+(n||0)).toLocaleString('es-AR',{maximumFractionDigits:0}); }
 function exactitudColor(pct) { return (+(pct||0))>=90?'text-green':(+(pct||0))>=75?'text-orange':'text-red'; }
+function difBadge(d) {
+  if (d==='Sin Dif')      return '<span class="badge badge-green">Sin Dif</span>';
+  if (d==='Dif Positiva') return '<span class="badge badge-orange">Dif +</span>';
+  if (d==='Dif Negativa') return '<span class="badge badge-red">Dif −</span>';
+  return '<span class="badge badge-gray">'+(d||'—')+'</span>';
+}
 function esLaborable(s) { const d=new Date(s+'T12:00:00'),dow=d.getDay(); return dow!==0&&dow!==6&&!FERIADOS_SET.has(s); }
 function diaLaborableAnterior(s) {
   let d=new Date(s+'T12:00:00'); d.setDate(d.getDate()-1);
