@@ -609,7 +609,7 @@ iframe { width: 100%; height: 100%; border: none; display: block; }
       <span class="splash-label">Cargando Asistencia…</span>
     </div>
     <iframe id="ifr-asistencia"
-      src="./reporte-personal-zecat/index.html"
+      data-src="./reporte-personal-zecat/index.html"
       onload="onLoad('asistencia')">
     </iframe>
   </div>
@@ -621,7 +621,7 @@ iframe { width: 100%; height: 100%; border: none; display: block; }
       <span class="splash-label">Cargando Inventario Cíclico…</span>
     </div>
     <iframe id="ifr-ciclico"
-      src="./inventario-ciclico-zecat/index.html"
+      data-src="./inventario-ciclico-zecat/index.html"
       onload="onLoad('ciclico')">
     </iframe>
   </div>
@@ -633,7 +633,7 @@ iframe { width: 100%; height: 100%; border: none; display: block; }
       <span class="splash-label">Cargando Transporte…</span>
     </div>
     <iframe id="ifr-transporte"
-      src="./Logistica4/index.html"
+      data-src="./Logistica4/index.html"
       onload="onLoad('transporte')">
     </iframe>
   </div>
@@ -645,7 +645,7 @@ iframe { width: 100%; height: 100%; border: none; display: block; }
       <span class="splash-label">Cargando Personal…</span>
     </div>
     <iframe id="ifr-personal"
-      src="./personal-zecat/index.html"
+      data-src="./personal-zecat/index.html"
       onload="onLoad('personal')">
     </iframe>
   </div>
@@ -657,7 +657,7 @@ iframe { width: 100%; height: 100%; border: none; display: block; }
       <span class="splash-label">Cargando Inventario Cíclico Chile…</span>
     </div>
     <iframe id="ifr-ciclicochile"
-      src="./inventario-ciclico-chile/index.html"
+      data-src="./inventario-ciclico-chile/index.html"
       onload="onLoad('ciclicochile')">
     </iframe>
   </div>
@@ -669,7 +669,7 @@ iframe { width: 100%; height: 100%; border: none; display: block; }
       <span class="splash-label">Cargando Productividad Chile…</span>
     </div>
     <iframe id="ifr-productividadchile"
-      src="./productividad-chile-zecat/index.html"
+      data-src="./productividad-chile-zecat/index.html"
       onload="onLoad('productividadchile')">
     </iframe>
   </div>
@@ -804,6 +804,12 @@ function navigate(item) {
   if (countryBody) {
     const countryHdr = countryBody.previousElementSibling;
     if (countryHdr && !countryHdr.classList.contains('open')) countryHdr.classList.add('open');
+  }
+
+  // Lazy load: iniciar carga del iframe la primera vez que se visita
+  const ifr = document.getElementById('ifr-' + module);
+  if (ifr && !ifr.getAttribute('src') && ifr.dataset.src) {
+    ifr.src = ifr.dataset.src;
   }
 
   if (module !== currentModule) {
