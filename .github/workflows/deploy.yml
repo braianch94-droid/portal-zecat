@@ -48,7 +48,7 @@ jobs:
           python3 << 'EOF'
           import subprocess, os, json
           token = os.environ['CF_TOKEN'].lstrip('﻿').strip()
-          account_id = os.environ['CF_ACCOUNT_ID'].strip()
+          account_id = os.environ['CF_ACCOUNT_ID'].lstrip('﻿').strip()
           r = subprocess.run([
             'curl', '-s', '-X', 'PATCH',
             f'https://api.cloudflare.com/client/v4/accounts/{account_id}/pages/projects/portal-zecat',
