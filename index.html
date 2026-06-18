@@ -815,7 +815,7 @@ function navigate(item) {
         const win = document.getElementById('ifr-' + module).contentWindow;
         if (win.Chart) Object.values(win.Chart.instances).forEach(c => c.resize());
       } catch(e) {}
-    }, 80);
+    }, 300);
   }
 
   if (tab !== undefined || page !== undefined) {

@@ -194,7 +194,7 @@ h3 { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 10px;
   padding: 16px;
   box-shadow: var(--shadow);
 }
-.chart-card canvas { max-height: 260px; }
+.chart-card canvas { height: 220px; max-height: 260px; }
 
 /* ============================================================
    TABLAS
@@ -1320,7 +1320,9 @@ function renderDashboard(d) {
 
   document.getElementById('dashboard-content').innerHTML = html;
 
-  // Construir charts
+  // Destruir instancias previas y reconstruir
+  Object.values(chartObjs).forEach(c => { try { c.destroy(); } catch(e){} });
+  chartObjs = {};
   requestAnimationFrame(() => {
     buildChartExactitudMensual(d.mensual);
     buildChartDona(d.kpis);
@@ -1411,6 +1413,8 @@ function renderTablaFamilias(items) {
 }
 
 /* ---- Chart.js helpers ---- */
+let chartObjs = {};
+
 function chartColors() {
   const isDark = document.documentElement.dataset.theme !== 'light';
   return {
@@ -1424,7 +1428,7 @@ function baseOpts(legend=false) {
   const c = chartColors();
   return {
     responsive: true,
-    maintainAspectRatio: true,
+    maintainAspectRatio: false,
     plugins: {
       legend: { display: legend, labels: { color: c.text, font: { family:'Arial', size:12 }, boxWidth:12 } },
       tooltip: { callbacks: {} }
@@ -1472,7 +1476,7 @@ function buildChartDona(kpis) {
         borderColor: ['#4ade80','#fb923c','#F97171'], borderWidth:1 }]
     },
     options: {
-      responsive:true, maintainAspectRatio:true,
+      responsive:true, maintainAspectRatio:false,
       cutout:'65%',
       plugins: {
         legend: { display:true, position:'bottom', labels:{ color: chartColors().text, font:{family:'Arial',size:11}, boxWidth:12 } },
