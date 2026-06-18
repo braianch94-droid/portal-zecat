@@ -536,6 +536,19 @@ th.center, td.center { text-align: center; }
   text-align: center;
   color: var(--text-muted);
 }
+.snapshot-banner {
+  background: linear-gradient(90deg,rgba(30,58,95,.18),rgba(30,45,79,.12));
+  border: 1px solid rgba(59,130,246,.35);
+  border-radius: 10px;
+  padding: 10px 18px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+.snapshot-banner strong { color: #60a5fa; }
+.snapshot-banner span { color: var(--text-muted); font-size: 12px; }
 
 /* ============================================================
    MODAL CONFIRMACIÓN
@@ -847,6 +860,82 @@ async function idbBulkPut(st, items) {
   });
 }
 
+/* ================================================================
+   SNAPSHOT — datos históricos Mar–May 2026 (fallback cuando IndexedDB vacío)
+   ================================================================ */
+const SNAPSHOT_DATA = {
+  updated_at: '26/05/2026 08:32',
+  _is_snapshot: true,
+  kpis: {
+    total_conteos: 875,
+    skus_unicos: 790,
+    exactitud_pct: 55.4,
+    dif_positiva: { count: 252, pct: 28.8 },
+    dif_negativa: { count: 138, pct: 15.8 },
+    impacto_total: 14454,
+    stock_valorizado: 764383,
+    dias_activos: 24,
+    avg_skus_dia: 36.5,
+    dia_mas_activo: { fecha: '2026-03-31', cantidad: 233 }
+  },
+  cobertura: {
+    total_elegibles: 1597,
+    total_contados_unicos: 790,
+    cobertura_pct: 49.5,
+    dias_estimados: 41
+  },
+  mensual: [
+    { mes: 'Marzo 2026',  conteos: 502, exactitud_pct: 57.0, sin_dif: 286, dif_pos: 157, dif_neg: 59 },
+    { mes: 'Abril 2026',  conteos: 156, exactitud_pct: 41.0, sin_dif: 64,  dif_pos: 50,  dif_neg: 42 },
+    { mes: 'Mayo 2026',   conteos: 217, exactitud_pct: 62.2, sin_dif: 135, dif_pos: 45,  dif_neg: 37 }
+  ],
+  familias: [
+    { familia: 'Apparel',           skus: 351, exactitud_pct: 67.8, impacto:  4847.26, sin_dif: 238, dif_pos: 73,  dif_neg: 40 },
+    { familia: 'Drinkware',         skus: 159, exactitud_pct: 47.8, impacto:  4577.00, sin_dif: 76,  dif_pos: 54,  dif_neg: 29 },
+    { familia: 'Bolsos y Mochilas', skus: 137, exactitud_pct: 45.3, impacto:  2540.83, sin_dif: 62,  dif_pos: 49,  dif_neg: 26 },
+    { familia: 'Gorros',            skus: 67,  exactitud_pct: 44.8, impacto:  1874.99, sin_dif: 30,  dif_pos: 24,  dif_neg: 13 },
+    { familia: 'Escritorio',        skus: 42,  exactitud_pct: 47.6, impacto:   143.29, sin_dif: 20,  dif_pos: 14,  dif_neg:  8 },
+    { familia: 'Escritura',         skus: 38,  exactitud_pct: 52.6, impacto:   108.10, sin_dif: 20,  dif_pos: 12,  dif_neg:  6 },
+    { familia: 'Hogar y Tiempo Lib',skus: 33,  exactitud_pct: 39.4, impacto:   238.35, sin_dif: 13,  dif_pos: 13,  dif_neg:  7 },
+    { familia: 'Tecnología',        skus: 16,  exactitud_pct: 75.0, impacto:   202.38, sin_dif: 12,  dif_pos:  3,  dif_neg:  1 },
+    { familia: 'Paraguas',          skus: 16,  exactitud_pct: 43.8, impacto:    27.36, sin_dif:  7,  dif_pos:  6,  dif_neg:  3 },
+    { familia: 'Llaveros',          skus: 11,  exactitud_pct: 18.2, impacto:  -105.73, sin_dif:  2,  dif_pos:  4,  dif_neg:  5 },
+    { familia: 'Packaging',         skus:  4,  exactitud_pct:100.0, impacto:     0.00, sin_dif:  4,  dif_pos:  0,  dif_neg:  0 },
+    { familia: 'Imanes',            skus:  1,  exactitud_pct:  0.0, impacto:     0.00, sin_dif:  0,  dif_pos:  1,  dif_neg:  0 }
+  ],
+  diario: [],
+  top_impacto: [
+    { articulo: 'Mochila Arrecifes Azúl Negro .',                          sku_wms: 'A0210000555', familia: 'Bolsos y Mochilas', diferencia: 'Dif Positiva', dif_cont:  238, dif_ddp:  2327.64, dia: '2026-03-31' },
+    { articulo: 'CHALECO STREAM MEN Large Negro Poliestileno',                   sku_wms: 'A0110002022', familia: 'Apparel',           diferencia: 'Dif Positiva', dif_cont:  167, dif_ddp:  2074.06, dia: '2026-04-15' },
+    { articulo: 'Jarro Titan Gris Claro Gris Claro ABS',                        sku_wms: 'A0410000368', familia: 'Drinkware',          diferencia: 'Dif Positiva', dif_cont:  249, dif_ddp:  1407.10, dia: '2026-03-31' },
+    { articulo: 'Botella JIM Blanco Blanco Aluminio/Zamac',                      sku_wms: 'A0410000402', familia: 'Drinkware',          diferencia: 'Dif Positiva', dif_cont:  577, dif_ddp:  1230.74, dia: '2026-05-26' },
+    { articulo: 'Mochila FELD Gris Oscuro Negro .',                              sku_wms: 'A0210000321', familia: 'Bolsos y Mochilas', diferencia: 'Dif Negativa', dif_cont:  -86, dif_ddp:  -891.73, dia: '2026-03-31' },
+    { articulo: 'Campera Softshell Race Hombre Small Negro Poliestileno',         sku_wms: 'A0110001409', familia: 'Apparel',           diferencia: 'Dif Positiva', dif_cont:   62, dif_ddp:   886.51, dia: '2026-05-20' },
+    { articulo: 'Campera Softshell Race Mujer X Large Negro Poliestileno',        sku_wms: 'A0110001396', familia: 'Apparel',           diferencia: 'Dif Positiva', dif_cont:   45, dif_ddp:   737.06, dia: '2026-05-20' },
+    { articulo: 'Jarro Daten Negro Negro A.Inox/Hier',                           sku_wms: 'A0410000171', familia: 'Drinkware',          diferencia: 'Dif Positiva', dif_cont:  100, dif_ddp:   694.50, dia: '2026-05-15' },
+    { articulo: 'Mate ORIGEN c/Bombilla Negro Negro Acero',                      sku_wms: 'A0410000204', familia: 'Drinkware',          diferencia: 'Dif Positiva', dif_cont:  104, dif_ddp:   515.63, dia: '2026-03-31' },
+    { articulo: 'Campera Polar Volley X Small Azul',                             sku_wms: 'A0110000050', familia: 'Apparel',           diferencia: 'Dif Positiva', dif_cont:   42, dif_ddp:   510.95, dia: '2026-03-31' }
+  ],
+  top_frecuencia: [
+    { articulo: 'Botella Viper Rojo Rojo Plastico',          frecuencia: 3, familia: 'Drinkware' },
+    { articulo: 'Gorro ACE Negro Gris Claro Algodon 100%',   frecuencia: 2, familia: 'Gorros' },
+    { articulo: 'Jarro Break Gris Ceramica .',               frecuencia: 2, familia: 'Drinkware' },
+    { articulo: 'Cooler Dakota Gris / Negro',                frecuencia: 2, familia: 'Drinkware' }
+  ],
+  top_neg_unidades: [
+    { articulo: 'Mochila FELD Gris Oscuro Negro .', familia: 'Bolsos y Mochilas', dif_cont: -86, diff_unidades: -86, stock_sistema: 200, dif_ddp: -891.73, dia: '2026-03-31' }
+  ],
+  top_pos_unidades: [
+    { articulo: 'Botella JIM Blanco Blanco Aluminio/Zamac',    familia: 'Drinkware',         dif_cont: 577, diff_unidades: 577, stock_sistema: 100, dif_ddp: 1230.74, dia: '2026-05-26' },
+    { articulo: 'Jarro Titan Gris Claro Gris Claro ABS',       familia: 'Drinkware',         dif_cont: 249, diff_unidades: 249, stock_sistema:  50, dif_ddp: 1407.10, dia: '2026-03-31' },
+    { articulo: 'Mochila Arrecifes Azúl Negro .',         familia: 'Bolsos y Mochilas', dif_cont: 238, diff_unidades: 238, stock_sistema: 100, dif_ddp: 2327.64, dia: '2026-03-31' }
+  ],
+  top_reincidentes: [
+    { articulo: 'Botella Viper Rojo Rojo Plastico', familia: 'Drinkware', con_dif: 2, conteos_con_diff: 2, total: 3, diff_total: 0, impacto_acum: 0 }
+  ],
+  motivos: []
+};
+
 /* -- Business logic -- */
 const MESES_ES_ARR = ['','enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 const FERIADOS_SET = new Set(['2025-01-01','2025-03-03','2025-03-04','2025-03-24','2025-04-02','2025-04-18','2025-05-01','2025-05-25','2025-06-16','2025-06-20','2025-07-09','2025-08-18','2025-10-13','2025-11-24','2025-12-08','2025-12-25','2026-01-01','2026-02-16','2026-02-17','2026-03-24','2026-04-02','2026-04-03','2026-05-01','2026-05-25','2026-06-15','2026-06-20','2026-07-09','2026-08-17','2026-10-12','2026-11-23','2026-12-08','2026-12-25']);
@@ -1077,7 +1166,11 @@ async function loadDashboard() {
   el.innerHTML = `<div class="section-loading"><span class="spinner"></span> Cargando dashboard...</div>`;
   try {
     const d = await apiGetDashboard();
-    renderDashboard(d);
+    if (!d.kpis.total_conteos) {
+      renderDashboard(SNAPSHOT_DATA);
+    } else {
+      renderDashboard(d);
+    }
   } catch(e) {
     el.innerHTML = `<div class="alert alert-error">Error al cargar el dashboard: ${e.message}</div>`;
   }
@@ -1089,6 +1182,7 @@ function renderDashboard(d) {
   const exactColor = exactitudColor(k.exactitud_pct);
 
   let html = `
+  ${d._is_snapshot ? `<div class="snapshot-banner">📊 <strong>Datos históricos — Mar–May 2026</strong> <span>Sin datos en vivo. Ingresá conteos o cargá un Excel de stock para comenzar.</span></div>` : ''}
   <!-- KPIs fila 1 -->
   <div class="kpi-grid kpi-grid-5">
     <div class="kpi-card accent-blue">
