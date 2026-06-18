@@ -488,6 +488,24 @@ body.dark .heat-section-title{color:#cbd5e1!important}
   <div class="nodata" style="margin-top:0">&#128269; La secci&oacute;n Control est&aacute; en desarrollo.<br><br>Cuando la pesta&ntilde;a Control del Excel fuente tenga datos, los indicadores aparecer&aacute;n aqu&iacute; autom&aacute;ticamente.</div>
 </div><!-- /sec-control -->
 
+<!-- ===== SECCION: MAQUINISTAS ===== -->
+<div id="sec-maquinistas" class="sec">
+<h2 style="font-size:16px;font-weight:700;margin:0 0 14px;color:#1e40af">&#128295; Maquinistas &mdash; Movimientos por mes</h2>
+<div id="maqNoData" style="display:none;padding:32px;text-align:center;color:#888;font-size:14px">Sin datos de Maquinistas en el archivo fuente.</div>
+<div id="maqTable" style="overflow-x:auto"></div>
+</div><!-- /sec-maquinistas -->
+
+<!-- ===== SECCION: LIQUIDACION ===== -->
+<div id="sec-liquidacion" class="sec">
+<h2 style="font-size:16px;font-weight:700;margin:0 0 4px;color:#1e40af">&#128176; Liquidaci&oacute;n &mdash; Bonos por Productividad</h2>
+<p style="font-size:12px;color:#888;margin:0 0 14px">Calcula bono seg&uacute;n cumplimiento individual vs target: PRES &#8805; 60% = 5% &nbsp;|&nbsp; N1 &#8805; 80% = 7,5% &nbsp;|&nbsp; N2 &#8805; 100% = 10%</p>
+<div style="margin-bottom:12px">
+  <label style="font-size:12px;font-weight:600">Mes:</label>&nbsp;
+  <select id="selLiqMes" onchange="buildLiquidacion()" style="border:1px solid #ccc;border-radius:6px;padding:4px 8px;font-size:12px"></select>
+</div>
+<div id="liqTable" style="overflow-x:auto"></div>
+</div><!-- /sec-liquidacion -->
+
 <!-- ===== SECCION: RESUMEN GENERAL ===== -->
 <div id="sec-resumen" class="sec">
 
@@ -630,11 +648,14 @@ var _rsGrp='all';
 function switchTab(name){
   document.querySelectorAll('.sec').forEach(function(s){s.classList.remove('active');});
   document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
-  document.getElementById('sec-'+name).classList.add('active');
-  document.getElementById('btn-'+name).classList.add('active');
-  // Mostrar filtro de operario en Picking y Reclamos
+  var secEl=document.getElementById('sec-'+name);
+  var btnEl=document.getElementById('btn-'+name);
+  if(secEl) secEl.classList.add('active');
+  if(btnEl) btnEl.classList.add('active');
   document.getElementById('opFilterWrap').style.display=(name==='picking'||name==='reclamos')?'':'none';
   if(name==='resumen') buildResumen();
+  if(name==='maquinistas') buildMaquinistas();
+  if(name==='liquidacion') initLiquidacion();
 }
 
 // Poblar selector de anios
@@ -1477,6 +1498,99 @@ function buildResumen(){
   chartResRec.data.datasets[0].backgroundColor=recArr.map(function(r){return r.recCnt<=2?'#d97706':'#dc2626';});
   document.getElementById('rs-rec-sub').textContent=recArr.length?'Top '+recArr.length+' operarios con reclamos':'Sin reclamos en el período';
   chartResRec.update();
+}
+
+// ===== MAQUINISTAS =====
+function buildMaquinistas(){
+  var noDataEl=document.getElementById('maqNoData');
+  var tableEl=document.getElementById('maqTable');
+  if(!maqData||!maqData.length||!maqNamesArr||!maqNamesArr.length){
+    if(noDataEl) noDataEl.style.display='';
+    return;
+  }
+  if(noDataEl) noDataEl.style.display='none';
+  var isDark=document.body.classList.contains('dark');
+  var html='<table style="width:100%;border-collapse:collapse;font-size:12.5px">';
+  html+='<thead><tr style="background:'+(isDark?'#1e293b':'#f5f5f5')+'">';
+  html+='<th style="padding:8px 12px;text-align:left;border-bottom:2px solid #e0e0e0;white-space:nowrap">Mes</th>';
+  html+='<th style="padding:8px 12px;text-align:right;border-bottom:2px solid #e0e0e0">D&iacute;as</th>';
+  maqNamesArr.forEach(function(nm){
+    html+='<th style="padding:8px 12px;text-align:right;border-bottom:2px solid #e0e0e0;white-space:nowrap">'+nm+'</th>';
+  });
+  html+='</tr></thead><tbody>';
+  var alt=false;
+  maqData.forEach(function(row){
+    var bg=alt?(isDark?'#1e293b':'#f9f9f9'):(isDark?'#0f172a':'#fff'); alt=!alt;
+    var maxDias=0;
+    row.ops.forEach(function(op){if(op.dias>maxDias) maxDias=op.dias;});
+    html+='<tr style="background:'+bg+'">';
+    html+='<td style="padding:7px 12px;font-weight:600;white-space:nowrap">'+row.lbl+'</td>';
+    html+='<td style="padding:7px 12px;text-align:right;color:#888">'+maxDias+'</td>';
+    row.ops.forEach(function(op){
+      var clr=op.mov>100?'#16a34a':op.mov>30?'#d97706':op.mov>0?'#dc2626':'#ccc';
+      var fw=op.mov>0?'700':'400';
+      html+='<td style="padding:7px 12px;text-align:right;color:'+clr+';font-weight:'+fw+'">'+(op.mov>0?op.mov.toLocaleString():'&mdash;')+'</td>';
+    });
+    html+='</tr>';
+  });
+  html+='</tbody></table>';
+  if(tableEl) tableEl.innerHTML=html;
+}
+
+// ===== LIQUIDACION =====
+function initLiquidacion(){
+  var sel=document.getElementById('selLiqMes');
+  if(!sel) return;
+  sel.innerHTML='';
+  var mons=Object.keys(resumeData).sort().reverse();
+  mons.forEach(function(m){
+    var o=document.createElement('option');
+    o.value=m;
+    var p=m.split('-');
+    o.textContent=MES[parseInt(p[1])]+' '+p[0];
+    sel.appendChild(o);
+  });
+  buildLiquidacion();
+}
+function buildLiquidacion(){
+  var sel=document.getElementById('selLiqMes');
+  var mon=sel?sel.value:null;
+  var el=document.getElementById('liqTable');
+  if(!mon||!resumeData[mon]){if(el) el.innerHTML='<p style="color:#aaa;padding:20px">Sin datos para este per&iacute;odo.</p>'; return;}
+  var d=resumeData[mon];
+  var ops=(d.picking||[]).filter(function(op){return op.dias>0;});
+  if(!ops.length){if(el) el.innerHTML='<p style="color:#aaa;padding:20px">Sin operarios con datos en este mes.</p>'; return;}
+  var isDark=document.body.classList.contains('dark');
+  var thBg=isDark?'#1e3a5f':'#1e40af';
+  var html='<table style="width:100%;border-collapse:collapse;font-size:12.5px">';
+  html+='<thead><tr style="background:'+thBg+';color:#fff">';
+  html+='<th style="padding:9px 12px;text-align:left">Operario</th>';
+  html+='<th style="padding:9px 12px;text-align:right">D&iacute;as</th>';
+  html+='<th style="padding:9px 12px;text-align:right">L&iacute;neas</th>';
+  html+='<th style="padding:9px 12px;text-align:right">L/D&iacute;a</th>';
+  html+='<th style="padding:9px 12px;text-align:right">Cumpl.</th>';
+  html+='<th style="padding:9px 12px;text-align:center">Nivel</th>';
+  html+='<th style="padding:9px 12px;text-align:right">% Bono</th>';
+  html+='</tr></thead><tbody>';
+  var alt=false;
+  ops.forEach(function(op){
+    var cum=op.cumpl||0;
+    var nivel=cum>=100?'N2':cum>=80?'N1':cum>=60?'PRES':'&mdash;';
+    var pct=cum>=100?'10%':cum>=80?'7,5%':cum>=60?'5%':'&mdash;';
+    var clr=cum>=100?'#16a34a':cum>=80?'#2563eb':cum>=60?'#d97706':'#dc2626';
+    var bg=alt?(isDark?'#1e293b':'#f9f9f9'):(isDark?'#0f172a':'#fff'); alt=!alt;
+    html+='<tr style="background:'+bg+'">';
+    html+='<td style="padding:8px 12px;font-weight:600">'+op.resp+'</td>';
+    html+='<td style="padding:8px 12px;text-align:right">'+op.dias+'</td>';
+    html+='<td style="padding:8px 12px;text-align:right">'+((op.lineas||0).toLocaleString())+'</td>';
+    html+='<td style="padding:8px 12px;text-align:right">'+((op.ld||0).toFixed(0))+'</td>';
+    html+='<td style="padding:8px 12px;text-align:right;font-weight:700;color:'+clr+'">'+(cum.toFixed(0))+'%</td>';
+    html+='<td style="padding:8px 12px;text-align:center;font-weight:700;color:'+clr+'">'+nivel+'</td>';
+    html+='<td style="padding:8px 12px;text-align:right;font-weight:700;color:'+clr+'">'+pct+'</td>';
+    html+='</tr>';
+  });
+  html+='</tbody></table>';
+  if(el) el.innerHTML=html;
 }
 
 // ===== DARK / LIGHT THEME =====
