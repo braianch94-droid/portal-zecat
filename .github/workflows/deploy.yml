@@ -40,12 +40,30 @@ jobs:
       deployments: write
     steps:
       - uses: actions/checkout@v4
-      - name: Check Cloudflare project production branch
+      - name: Set Cloudflare production branch to master
+        env:
+          CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
-          echo "=== CF Project Info ==="
-          curl -s "https://api.cloudflare.com/client/v4/accounts/${{ secrets.CLOUDFLARE_ACCOUNT_ID }}/pages/projects/portal-zecat" \
-            -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
-            | python3 -c "import sys,json; d=json.load(sys.stdin); r=d.get('result',{}); print('production_branch:', r.get('canonical_deployment',{}).get('deployment_trigger',{}).get('metadata',{}).get('branch','?')); print('source_config:', json.dumps(r.get('source',{}),indent=2))" 2>/dev/null || true
+          python3 << 'EOF'
+          import subprocess, os, json
+          token = os.environ['CF_TOKEN'].lstrip('﻿').strip()
+          account_id = os.environ['CF_ACCOUNT_ID'].strip()
+          r = subprocess.run([
+            'curl', '-s', '-X', 'PATCH',
+            f'https://api.cloudflare.com/client/v4/accounts/{account_id}/pages/projects/portal-zecat',
+            '-H', f'Authorization: Bearer {token}',
+            '-H', 'Content-Type: application/json',
+            '-d', '{"production_branch":"master"}'
+          ], capture_output=True, text=True)
+          try:
+            d = json.loads(r.stdout)
+            print('success:', d.get('success'))
+            if not d.get('success'):
+              print('errors:', d.get('errors'))
+          except Exception as e:
+            print('parse error:', e, '| raw:', r.stdout[:200])
+          EOF
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/pages-action@v1
         with:
@@ -54,4 +72,4 @@ jobs:
           projectName: portal-zecat
           directory: .
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
-          branch: main
+          branch: master
