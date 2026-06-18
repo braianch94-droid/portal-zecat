@@ -1084,6 +1084,20 @@ async function loadDashboard() {
   el.innerHTML = `<div class="section-loading"><span class="spinner"></span> Cargando dashboard...</div>`;
   try {
     const d = await apiGetDashboard();
+    if (d.kpis.total_conteos === 0) {
+      el.innerHTML = `
+        <div style="background:#fff;border-radius:12px;padding:40px 32px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.06);max-width:600px;margin:32px auto;">
+          <div style="font-size:48px;margin-bottom:16px">🇨🇱</div>
+          <h2 style="font-size:20px;font-weight:700;color:#1a1a2e;margin-bottom:8px">Sin datos de inventario cíclico Chile</h2>
+          <p style="color:#6b7280;font-size:14px;margin-bottom:24px">Todavía no hay conteos registrados para Chile. Para comenzar:</p>
+          <div style="text-align:left;background:#f8fafc;border-radius:8px;padding:20px;font-size:13px;color:#374151;line-height:2">
+            <div>1. Ir a <strong>Subir Stock</strong> y cargar el archivo <code>Stock CL.xlsx</code></div>
+            <div>2. Ir a <strong>Conteo de Hoy</strong> para ver los artículos asignados</div>
+            <div>3. Ir a <strong>Cargar Conteo</strong> para registrar los conteos del día</div>
+          </div>
+        </div>`;
+      return;
+    }
     renderDashboard(d);
   } catch(e) {
     el.innerHTML = `<div class="alert alert-error">Error al cargar el dashboard: ${e.message}</div>`;
