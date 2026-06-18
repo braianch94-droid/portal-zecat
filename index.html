@@ -720,9 +720,19 @@ const PAGE_ID = {
 
 let currentModule = 'productividad';
 let isDark = true;
+// Fallback: si productividad no carga en 6s, revelar igual
+setTimeout(() => revealModule('productividad'), 6000);
 let isSidebarCollapsed = false;
 const loaded = { productividad: false, asistencia: false, ciclico: false, transporte: false, personal: false, productividadchile: false, ciclicochile: false };
 const pending = {};
+
+function revealModule(module) {
+  const splash = document.getElementById('splash-' + module);
+  if (splash && !splash.classList.contains('hidden')) {
+    splash.classList.add('hidden');
+    setTimeout(() => { if (splash) splash.style.display = 'none'; }, 350);
+  }
+}
 
 function onLoad(module) {
   loaded[module] = true;
@@ -739,9 +749,7 @@ function onLoad(module) {
     }
   } catch(e) {}
 
-  const splash = document.getElementById('splash-' + module);
-  if (splash) splash.classList.add('hidden');
-  setTimeout(() => { if (splash) splash.style.display = 'none'; }, 350);
+  revealModule(module);
 
   if (pending[module]) {
     pending[module]();
@@ -811,6 +819,8 @@ function navigate(item) {
   if (ifr && !ifr.getAttribute('src') && ifr.dataset.src) {
     ifr.src = ifr.dataset.src;
   }
+  // Fallback: revelar iframe después de 6s aunque no haya cargado del todo
+  setTimeout(() => revealModule(module), 6000);
 
   if (module !== currentModule) {
     document.getElementById('fw-' + currentModule).classList.remove('active');
