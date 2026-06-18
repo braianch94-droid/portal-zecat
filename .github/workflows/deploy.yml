@@ -48,3 +48,4 @@ jobs:
           projectName: portal-zecat
           directory: .
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          branch: master
