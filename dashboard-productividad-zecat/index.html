@@ -2212,14 +2212,8 @@ function toggleTheme(){
   document.getElementById('themeIcon').innerHTML=dark?'&#9728;':'&#9790;';
   updateChartColors(dark);
 }
-// Aplicar tema guardado al cargar (antes del try de init)
-(function(){
-  if(localStorage.getItem('zecat-theme')==='dark'){
-    document.body.classList.add('dark');
-    document.getElementById('themeIcon').innerHTML='&#9728;';
-    // Los charts se actualizan después del init
-  }
-})();
+// Siempre arrancar en modo claro
+localStorage.removeItem('zecat-theme');
 
 // Inicializar tab y filtro al ultimo mes disponible
 try {
