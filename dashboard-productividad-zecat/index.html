@@ -1571,8 +1571,9 @@ function buildResumen(){
   document.getElementById('rs-rec-sub').textContent=recArr.length?'Top '+recArr.length+' operarios con reclamos':'Sin reclamos en el período';
   chartResRec.update();
 
-  // KPI Control (mes mas reciente con datos en el periodo seleccionado)
+  // KPI Control — fallback al ultimo mes disponible si el periodo no tiene datos
   var lastCtrlYm=selKeys.slice().reverse().find(function(k){return ctrlExcelData[k]&&ctrlExcelData[k].length;});
+  if(!lastCtrlYm) lastCtrlYm=Object.keys(ctrlExcelData).sort().filter(function(k){return ctrlExcelData[k]&&ctrlExcelData[k].length;}).pop();
   var ctrlOps=lastCtrlYm?(ctrlExcelData[lastCtrlYm]||[]).filter(function(op){return op.dias>0;}):[];
   var rsCtrlOpsEl=document.getElementById('rs-ctrl-ops');
   var rsCtrlSubEl=document.getElementById('rs-ctrl-sub');
@@ -1581,13 +1582,15 @@ function buildResumen(){
     if(ctrlOps.length){
       var totCtrlUnd=ctrlOps.reduce(function(s,o){return s+o.und;},0);
       var totCtrlDias=ctrlOps.reduce(function(s,o){return s+o.dias;},0);
-      rsCtrlSubEl.textContent=totCtrlDias?Math.round(totCtrlUnd/totCtrlDias).toLocaleString('es-AR')+' und/día prom':'Sin datos';
+      var ctrlP=lastCtrlYm.split('-');
+      rsCtrlSubEl.textContent=(totCtrlDias?Math.round(totCtrlUnd/totCtrlDias).toLocaleString('es-AR')+' und/día':'Sin datos')+' ('+( MES[parseInt(ctrlP[1])]||'')+ ')';
     } else { rsCtrlSubEl.textContent='Sin datos'; }
   }
 
-  // KPI Maquinistas (mes mas reciente con datos)
+  // KPI Maquinistas — fallback al ultimo mes disponible
   var lastMaqRow=null;
   selKeys.slice().reverse().forEach(function(k){if(!lastMaqRow){var r=(maqData||[]).find(function(m){return m.ym===k;}); if(r&&r.ops.some(function(o){return o.dias>0;})) lastMaqRow=r;}});
+  if(!lastMaqRow) lastMaqRow=(maqData||[]).slice().reverse().find(function(r){return r.ops.some(function(o){return o.dias>0;});});
   var rsMaqOpsEl=document.getElementById('rs-maq-ops');
   var rsMaqSubEl=document.getElementById('rs-maq-sub');
   if(rsMaqOpsEl) rsMaqOpsEl.textContent=lastMaqRow?lastMaqRow.ops.filter(function(o){return o.dias>0;}).length||'—':'—';
@@ -1595,12 +1598,14 @@ function buildResumen(){
     if(lastMaqRow){
       var actMaqOps=lastMaqRow.ops.filter(function(o){return o.dias>0;});
       var avgMov=actMaqOps.length?Math.round(actMaqOps.reduce(function(s,o){return s+o.mov/o.dias;},0)/actMaqOps.length*10)/10:0;
-      rsMaqSubEl.textContent=avgMov?avgMov+' mov/día prom':'Sin datos';
+      var maqP=lastMaqRow.ym.split('-');
+      rsMaqSubEl.textContent=(avgMov?avgMov+' mov/día':' Sin datos')+' ('+(MES[parseInt(maqP[1])]||'')+')';
     } else { rsMaqSubEl.textContent='Sin datos'; }
   }
 
-  // Panel de bonos (solo si hay mes unico seleccionado)
-  buildRsBonosPanel(selKeys.length===1?selKeys[0]:null);
+  // Panel de bonos: usar mes del filtro si es unico, sino el ultimo mes con datos de picking
+  var bonoYm=selKeys.length===1?selKeys[0]:selKeys.slice().reverse().find(function(k){return resumeData[k]&&resumeData[k].picking&&resumeData[k].picking.length;});
+  buildRsBonosPanel(bonoYm||null);
 }
 
 // ===== MAQUINISTAS =====
@@ -2085,8 +2090,10 @@ function buildRsBonosPanel(ym){
     h+='</tr>';
   });
 
-  // Control
-  var ctrlOps=(ctrlExcelData[ym]||[]).filter(function(op){return op.dias>0;});
+  // Control — fallback al ultimo mes con datos si el mes seleccionado no tiene
+  var ctrlYmBonus=ctrlExcelData[ym]&&ctrlExcelData[ym].length?ym:Object.keys(ctrlExcelData).sort().filter(function(k){return ctrlExcelData[k]&&ctrlExcelData[k].length;}).pop();
+  var ctrlOps=(ctrlExcelData[ctrlYmBonus]||[]).filter(function(op){return op.dias>0;});
+  var ctrlLabel=ctrlYmBonus&&ctrlYmBonus!==ym?' ('+(MES[parseInt(ctrlYmBonus.split('-')[1])]||'')+')':'';
   ctrlOps.forEach(function(op){
     var undDia=op.dias?Math.round(op.und/op.dias):0;
     var nivel=undDia>=3500?2:undDia>=2000?1:0;
@@ -2094,7 +2101,7 @@ function buildRsBonosPanel(ym){
     var udClr=undDia>=3500?'#16a34a':undDia>=2000?'#2563eb':undDia>=1000?'#d97706':'#dc2626';
     var bg=alt?(isDark?'#1e293b':'#f9f9f9'):(isDark?'#0f172a':'#fff'); alt=!alt;
     h+='<tr style="background:'+bg+'">';
-    h+='<td style="padding:7px 12px"><span style="background:#64748b22;color:#64748b;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600">&#128269; Control</span></td>';
+    h+='<td style="padding:7px 12px"><span style="background:#64748b22;color:#64748b;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600">&#128269; Control'+ctrlLabel+'</span></td>';
     h+='<td style="padding:7px 12px;font-weight:600">'+op.nm+'</td>';
     h+='<td style="padding:7px 12px;text-align:right;color:'+udClr+';font-weight:700">'+undDia.toLocaleString('es-AR')+' und/d</td>';
     h+='<td style="padding:7px 12px;text-align:right">'+efNivelBadge(nivel)+'</td>';
@@ -2214,6 +2221,8 @@ function toggleTheme(){
 }
 // Siempre arrancar en modo claro
 localStorage.removeItem('zecat-theme');
+document.body.classList.remove('dark');
+document.getElementById('themeIcon').innerHTML='&#9790;';
 
 // Inicializar tab y filtro al ultimo mes disponible
 try {
