@@ -582,8 +582,8 @@ iframe { width: 100%; height: 100%; border: none; display: block; }
   <!-- Footer: theme toggle -->
   <div class="sb-footer">
     <button class="theme-btn" onclick="toggleTheme()">
-      <span class="theme-ico" id="theme-ico">☀️</span>
-      <span id="theme-lbl">Modo claro</span>
+      <span class="theme-ico" id="theme-ico">🌙</span>
+      <span id="theme-lbl">Modo oscuro</span>
     </button>
   </div>
 </div>
@@ -720,7 +720,8 @@ const PAGE_ID = {
 };
 
 let currentModule = 'productividad';
-let isDark = true;
+let isDark = false;
+document.body.classList.add('light');
 // Fallback: si productividad no carga en 6s, revelar igual
 setTimeout(() => revealModule('productividad'), 6000);
 let isSidebarCollapsed = false;
