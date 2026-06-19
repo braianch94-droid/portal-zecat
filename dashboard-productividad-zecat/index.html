@@ -677,6 +677,16 @@ body.dark .heat-section-title{color:#cbd5e1!important}
   </div>
   <div class="kpi-grid g4" id="ctrl-kpis" style="margin-bottom:16px"></div>
   <div id="ctrlContent"></div>
+<div id="ctrlCharts" style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:16px">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px">
+    <h3 style="margin:0 0 10px;font-size:13px;font-weight:700;color:var(--text-muted)">&#128202; Und/D&iacute;a por operario</h3>
+    <canvas id="chartCtrlBar" style="max-height:180px"></canvas>
+  </div>
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px">
+    <h3 style="margin:0 0 10px;font-size:13px;font-weight:700;color:var(--text-muted)">&#127919; Distribuci&oacute;n de niveles</h3>
+    <canvas id="chartCtrlPie" style="max-height:180px"></canvas>
+  </div>
+</div>
 </div><!-- /sec-control -->
 
 <!-- ===== SECCION: MAQUINISTAS ===== -->
@@ -691,6 +701,16 @@ body.dark .heat-section-title{color:#cbd5e1!important}
 <div class="kpi-grid g4" id="maq-kpis" style="margin-bottom:16px"></div>
 <div id="maqNoData" style="display:none;padding:32px;text-align:center;color:#888;font-size:14px">Sin datos de Maquinistas en el archivo fuente.</div>
 <div id="maqTable" style="overflow-x:auto"></div>
+<div id="maqCharts" style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:16px">
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px">
+    <h3 style="margin:0 0 10px;font-size:13px;font-weight:700;color:var(--text-muted)">&#128202; Movimientos del mes</h3>
+    <canvas id="chartMaqBar" style="max-height:180px"></canvas>
+  </div>
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px">
+    <h3 style="margin:0 0 10px;font-size:13px;font-weight:700;color:var(--text-muted)">&#128200; Evoluci&oacute;n hist&oacute;rica</h3>
+    <canvas id="chartMaqEvol" style="max-height:180px"></canvas>
+  </div>
+</div>
 </div><!-- /sec-maquinistas -->
 
 
@@ -1882,6 +1902,7 @@ function buildControl(){
   });
   html+='</tbody></table>';
   contentEl.innerHTML=html;
+  buildCtrlCharts(ops,isDark);
 }
 
 // ===== MAQUINISTAS =====
@@ -1971,6 +1992,124 @@ function buildMaquinistas(){
   );
   html+='</tbody></table>';
   if(tableEl) tableEl.innerHTML=html;
+  buildMaqCharts(refRow);
+}
+
+
+// ===== GRÁFICOS CONTROL =====
+function buildCtrlCharts(ops,isDark){
+  var gridColor=isDark?'rgba(255,255,255,.08)':'rgba(0,0,0,.06)';
+  var txtColor=isDark?'#94a3b8':'#475569';
+  var ctrlChartsEl=document.getElementById('ctrlCharts');
+  if(!ops||!ops.length){
+    if(ctrlChartsEl) ctrlChartsEl.style.display='none';
+    return;
+  }
+  if(ctrlChartsEl) ctrlChartsEl.style.display='';
+
+  // Bar: und/día por operario
+  var barCtx=document.getElementById('chartCtrlBar');
+  if(barCtx){
+    var existBar=Chart.getChart?Chart.getChart('chartCtrlBar'):null;
+    if(existBar) existBar.destroy();
+    var barLabels=ops.map(function(op){var p=op.nm.split(' '); return p[0];});
+    var barData=ops.map(function(op){return op.dias?Math.round(op.und/op.dias):0;});
+    var barColors=barData.map(function(v){return v>3500?'#16a34a':v>3000?'#2563eb':v>2500?'#d97706':'#dc2626';});
+    var cb=new Chart(barCtx,{
+      type:'bar',
+      data:{labels:barLabels,datasets:[{
+        label:'Und/Día',data:barData,backgroundColor:barColors,borderRadius:6,borderSkipped:false
+      }]},
+      options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{display:false},
+        tooltip:{callbacks:{title:function(items){return ops[items[0].dataIndex].nm;}}}},
+        scales:{x:{ticks:{color:txtColor,font:{size:11}},grid:{color:gridColor}},
+          y:{ticks:{color:txtColor,font:{size:11}},grid:{color:gridColor},beginAtZero:true,
+            title:{display:true,text:'Und/Día',color:txtColor,font:{size:11}}}}}
+    });
+    if(_allCharts.indexOf(cb)===-1) _allCharts.push(cb);
+  }
+
+  // Donut: distribución de niveles (N2 / N1 / Sin nivel)
+  var pieCtx=document.getElementById('chartCtrlPie');
+  if(pieCtx){
+    var existPie=Chart.getChart?Chart.getChart('chartCtrlPie'):null;
+    if(existPie) existPie.destroy();
+    var n2=ops.filter(function(op){return op.und>3500&&op.rec===0;}).length;
+    var n1=ops.filter(function(op){var niv=op.und>3500&&op.rec===0?2:op.und>3000&&op.rec<=1?1:0; return niv===1;}).length;
+    var n0=ops.filter(function(op){var niv=op.und>3500&&op.rec===0?2:op.und>3000&&op.rec<=1?1:0; return niv===0;}).length;
+    var cp=new Chart(pieCtx,{
+      type:'doughnut',
+      data:{
+        labels:['N2 — 10%','N1 — 7,5%','Sin nivel'],
+        datasets:[{data:[n2,n1,n0],backgroundColor:['#16a34a','#2563eb','#9ca3af'],borderWidth:0,hoverOffset:6}]
+      },
+      options:{responsive:true,maintainAspectRatio:true,cutout:'58%',
+        plugins:{legend:{position:'bottom',labels:{color:txtColor,boxWidth:10,padding:8,font:{size:10}}}}}
+    });
+    if(_allCharts.indexOf(cp)===-1) _allCharts.push(cp);
+  }
+}
+
+// ===== GRÁFICOS MAQUINISTAS =====
+function buildMaqCharts(refRow){
+  if(!refRow||!maqData||!maqData.length) return;
+  var isDark=document.body.classList.contains('dark');
+  var gridColor=isDark?'rgba(255,255,255,.08)':'rgba(0,0,0,.06)';
+  var txtColor=isDark?'#94a3b8':'#475569';
+
+  // Bar: movimientos del mes de referencia por maquinista
+  var barCtx=document.getElementById('chartMaqBar');
+  if(barCtx){
+    var existBar=Chart.getChart?Chart.getChart('chartMaqBar'):null;
+    if(existBar) existBar.destroy();
+    var barLabels=refRow.ops.map(function(op){return op.nm.split(' ')[0];});
+    var barData=refRow.ops.map(function(op){return op.mov;});
+    var barColors=['#2563eb','#059669','#d97706','#dc2626'];
+    var cb=new Chart(barCtx,{
+      type:'bar',
+      data:{labels:barLabels,datasets:[{
+        label:'Movimientos',data:barData,
+        backgroundColor:barData.map(function(_,i){return barColors[i%barColors.length]+'cc';}),
+        borderColor:barData.map(function(_,i){return barColors[i%barColors.length];}),
+        borderWidth:2,borderRadius:6,borderSkipped:false
+      }]},
+      options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{display:false},
+        tooltip:{callbacks:{title:function(items){return refRow.ops[items[0].dataIndex].nm;}}}},
+        scales:{x:{ticks:{color:txtColor},grid:{color:gridColor}},
+          y:{ticks:{color:txtColor},grid:{color:gridColor},beginAtZero:true,
+            title:{display:true,text:'Movimientos',color:txtColor,font:{size:11}}}}}
+    });
+    if(_allCharts.indexOf(cb)===-1) _allCharts.push(cb);
+  }
+
+  // Line: evolución histórica de movimientos por maquinista
+  var evolCtx=document.getElementById('chartMaqEvol');
+  if(evolCtx){
+    var existEvol=Chart.getChart?Chart.getChart('chartMaqEvol'):null;
+    if(existEvol) existEvol.destroy();
+    var lineColors=['#2563eb','#059669','#d97706','#dc2626'];
+    var datasets=maqNamesArr.map(function(nm,i){
+      var c=lineColors[i%lineColors.length];
+      return {
+        label:nm.split(' ')[0],
+        data:maqData.map(function(r){var op=r.ops.find(function(o){return o.nm===nm;}); return op?op.mov:0;}),
+        borderColor:c,backgroundColor:c+'22',fill:false,tension:0.35,
+        pointRadius:4,pointHoverRadius:6,borderWidth:2
+      };
+    });
+    var evolLabels=maqData.map(function(r){
+      var p=r.ym.split('-'); return (MES[parseInt(p[1])]||'').slice(0,3)+' '+p[0].slice(2);
+    });
+    var ce=new Chart(evolCtx,{
+      type:'line',
+      data:{labels:evolLabels,datasets:datasets},
+      options:{responsive:true,maintainAspectRatio:true,
+        plugins:{legend:{position:'bottom',labels:{color:txtColor,boxWidth:10,padding:8,font:{size:10}}}},
+        scales:{x:{ticks:{color:txtColor,font:{size:10}},grid:{color:gridColor}},
+          y:{ticks:{color:txtColor},grid:{color:gridColor},beginAtZero:true}}}
+    });
+    if(_allCharts.indexOf(ce)===-1) _allCharts.push(ce);
+  }
 }
 
 // ===== LIQUIDACION =====
