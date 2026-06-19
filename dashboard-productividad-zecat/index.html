@@ -40,11 +40,29 @@ function initEficiencia(){
 }
 function switchEficTab(tab){
   eficCurTab=tab;
-  ['pick','maq','ctrl','pie'].forEach(function(t){
+  var isLiq=(tab==='liq');
+  // Mostrar/ocultar secciones según tab
+  var liqWrap=document.getElementById('eficLiqWrap');
+  var eficCont=document.getElementById('eficContent');
+  var eficMesSel=document.getElementById('efMesSelWrap');
+  var efSubtitle=document.getElementById('efSubtitle');
+  var efGrupalWrap=document.getElementById('efGrupalWrap');
+  if(liqWrap) liqWrap.style.display=isLiq?'':'none';
+  if(eficCont) eficCont.style.display=isLiq?'none':'';
+  if(eficMesSel) eficMesSel.style.display=isLiq?'none':'';
+  if(efSubtitle) efSubtitle.textContent=isLiq?'Bono según cumplimiento individual vs target picking':'Presentismo 5% | N1 +2,5% | N2 +4,5% | Grupal +3% | Máx 15%';
+  if(efGrupalWrap) efGrupalWrap.style.display=isLiq?'none':'';
+  // Estilos botones
+  var liqColor='#059669';
+  ['liq','pick','maq','ctrl','pie'].forEach(function(t){
     var btn=document.getElementById('ebt-'+t);if(!btn)return;
-    var a=(t===tab);btn.style.background=a?'#2563eb':'transparent';btn.style.color=a?'#fff':'#888';btn.style.borderColor=a?'#2563eb':'#ccc';
+    var a=(t===tab);
+    var ac=t==='liq'?liqColor:'#2563eb';
+    btn.style.background=a?ac:'transparent';
+    btn.style.color=a?'#fff':'#888';
+    btn.style.borderColor=a?ac:'#ccc';
   });
-  buildEficiencia();
+  if(isLiq){ initLiquidacion(); } else { buildEficiencia(); }
 }
 function calcBonoEfic(nivel,grupal){var b=5;if(nivel>=1)b+=2.5;if(nivel>=2)b+=4.5;if(grupal)b+=3;return b;}
 function efNivelBadge(n){
@@ -379,8 +397,7 @@ body.dark .heat-section-title{color:#cbd5e1!important}
   <button class="tab-btn" onclick="switchTab('control')" id="btn-control">&#128269; Control</button>
   <button class="tab-btn" onclick="switchTab('resumen')" id="btn-resumen">&#128202; Resumen General</button>
   <button class="tab-btn" onclick="switchTab('maquinistas')" id="btn-maquinistas">&#128295; Maquinistas</button>
-  <button class="tab-btn" onclick="switchTab('liquidacion')" id="btn-liquidacion">&#128176; Liquidaci&oacute;n</button>
-  <button class="tab-btn" onclick="switchTab('eficiencia')" id="btn-eficiencia">&#9889; Eficiencia</button>
+  <button class="tab-btn" onclick="switchTab('eficiencia')" id="btn-eficiencia">&#128176; Bonos</button>
 </nav>
 
 <div class="container">
@@ -652,45 +669,63 @@ body.dark .heat-section-title{color:#cbd5e1!important}
 
 <!-- ===== SECCION: CONTROL ===== -->
 <div id="sec-control" class="sec">
-  <div class="nodata" style="margin-top:0">&#128269; La secci&oacute;n Control est&aacute; en desarrollo.<br><br>Cuando la pesta&ntilde;a Control del Excel fuente tenga datos, los indicadores aparecer&aacute;n aqu&iacute; autom&aacute;ticamente.</div>
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap">
+    <h2 style="margin:0;font-size:16px;font-weight:700;color:#475569">&#9881; Control &mdash; Indicadores</h2>
+    <span style="font-size:11px;color:#888">Datos cargados desde Eficiencia &rsaquo; Control (almacenados localmente)</span>
+    <span style="margin-left:auto;font-size:12px;color:#888;font-weight:600">Mes:</span>
+    <select id="ctrlMesSel" onchange="buildControl()" style="border:1px solid #ccc;border-radius:6px;padding:4px 10px;font-size:12px"></select>
+  </div>
+  <div class="kpi-grid g4" id="ctrl-kpis" style="margin-bottom:16px"></div>
+  <div id="ctrlContent"></div>
 </div><!-- /sec-control -->
 
 <!-- ===== SECCION: MAQUINISTAS ===== -->
 <div id="sec-maquinistas" class="sec">
-<h2 style="font-size:16px;font-weight:700;margin:0 0 14px;color:#1e40af">&#128295; Maquinistas &mdash; Movimientos por mes</h2>
+<div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap">
+  <h2 style="margin:0;font-size:16px;font-weight:700;color:#1e40af">&#128295; Maquinistas &mdash; Movimientos</h2>
+  <span style="margin-left:auto;font-size:12px;color:#888;font-weight:600">Mes para KPIs:</span>
+  <select id="maqMesSel" onchange="buildMaquinistas()" style="border:1px solid #ccc;border-radius:6px;padding:4px 10px;font-size:12px">
+    <option value="">&#218;ltimo disponible</option>
+  </select>
+</div>
+<div class="kpi-grid g4" id="maq-kpis" style="margin-bottom:16px"></div>
 <div id="maqNoData" style="display:none;padding:32px;text-align:center;color:#888;font-size:14px">Sin datos de Maquinistas en el archivo fuente.</div>
 <div id="maqTable" style="overflow-x:auto"></div>
 </div><!-- /sec-maquinistas -->
 
-<!-- ===== SECCION: LIQUIDACION ===== -->
-<div id="sec-liquidacion" class="sec">
-<h2 style="font-size:16px;font-weight:700;margin:0 0 4px;color:#1e40af">&#128176; Liquidaci&oacute;n &mdash; Bonos por Productividad</h2>
-<p style="font-size:12px;color:#888;margin:0 0 14px">Calcula bono seg&uacute;n cumplimiento individual vs target: PRES &#8805; 60% = 5% &nbsp;|&nbsp; N1 &#8805; 80% = 7,5% &nbsp;|&nbsp; N2 &#8805; 100% = 10%</p>
-<div style="margin-bottom:12px">
-  <label style="font-size:12px;font-weight:600">Mes:</label>&nbsp;
-  <select id="selLiqMes" onchange="buildLiquidacion()" style="border:1px solid #ccc;border-radius:6px;padding:4px 8px;font-size:12px"></select>
-</div>
-<div id="liqTable" style="overflow-x:auto"></div>
-</div><!-- /sec-liquidacion --><
-<!-- ===== SECCION: EFICIENCIA ===== -->
+
+<!-- ===== SECCION: BONOS (ex Eficiencia + Liquidación) ===== -->
 <div id="sec-eficiencia" class="sec">
 <div style="display:flex;align-items:center;gap:16px;margin-bottom:14px;flex-wrap:wrap">
-  <h2 style="margin:0;font-size:16px;font-weight:700;color:#1e40af">&#9889; Eficiencia &mdash; Bonos</h2>
-  <span style="font-size:11px;color:#888">Presentismo 5% | N1 +2,5% | N2 +4,5% | Grupal +3% | M&aacute;x 15%</span>
-  <label style="margin-left:auto;display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-weight:600">
+  <h2 style="margin:0;font-size:16px;font-weight:700;color:#1e40af">&#128176; Bonos</h2>
+  <span id="efSubtitle" style="font-size:11px;color:#888">Presentismo 5% | N1 +2,5% | N2 +4,5% | Grupal +3% | M&aacute;x 15%</span>
+  <label id="efGrupalWrap" style="margin-left:auto;display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-weight:600">
     <input type="checkbox" id="efGrupalCheck" onchange="buildEficiencia()">Bono Grupal activo (+3%)
   </label>
 </div>
 <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">
-  <button onclick="switchEficTab('pick')" id="ebt-pick" style="background:#2563eb;color:#fff;border:1px solid #2563eb;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600">&#128293; Pickeadores</button>
+  <button onclick="switchEficTab('liq')" id="ebt-liq" style="background:transparent;color:#888;border:1px solid #ccc;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600">&#128176; Liquidaci&oacute;n</button>
+  <button onclick="switchEficTab('pick')" id="ebt-pick" style="background:#2563eb;color:#fff;border:1px solid #2563eb;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600">&#128293; Picking</button>
   <button onclick="switchEficTab('maq')" id="ebt-maq" style="background:transparent;color:#888;border:1px solid #ccc;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600">&#128295; Maquinistas</button>
   <button onclick="switchEficTab('ctrl')" id="ebt-ctrl" style="background:transparent;color:#888;border:1px solid #ccc;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600">&#9881; Control</button>
-  <button onclick="switchEficTab('pie')" id="ebt-pie" style="background:transparent;color:#888;border:1px solid #ccc;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600">&#128736; Pie de M&aacute;quina</button>
+  <button onclick="switchEficTab('pie')" id="ebt-pie" style="background:transparent;color:#888;border:1px solid #ccc;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600">&#128736; Pie</button>
 </div>
-<div style="margin-bottom:14px;display:flex;align-items:center;gap:8px">
+<!-- Mes selector para eficiencia (Picking / Maq / Ctrl / Pie) -->
+<div id="efMesSelWrap" style="margin-bottom:14px;display:flex;align-items:center;gap:8px">
   <span style="font-size:12px;color:#888;font-weight:600">Mes:</span>
   <select id="efMesSel" onchange="buildEficiencia()" style="border:1px solid #ccc;border-radius:6px;padding:4px 10px;font-size:12px"></select>
 </div>
+<!-- Contenido Liquidación (tab liq) -->
+<div id="eficLiqWrap" style="display:none">
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+    <span style="font-size:12px;color:#888;font-weight:600">Mes:</span>
+    <select id="selLiqMes" onchange="buildLiquidacion()" style="border:1px solid #ccc;border-radius:6px;padding:4px 8px;font-size:12px"></select>
+  </div>
+  <p style="font-size:12px;color:#888;margin:0 0 12px">PRES &#8805;60% = 5% &nbsp;|&nbsp; N1 &#8805;80% = 7,5% &nbsp;|&nbsp; N2 &#8805;100% = 10%</p>
+  <div class="kpi-grid g4" id="liq-kpis" style="margin-bottom:14px"></div>
+  <div id="liqTable" style="overflow-x:auto"></div>
+</div>
+<!-- Contenido Eficiencia (tabs picking/maq/ctrl/pie) -->
 <div id="eficContent"></div>
 </div><!-- /sec-eficiencia -->
 
@@ -714,9 +749,9 @@ body.dark .heat-section-title{color:#cbd5e1!important}
     <div class="kpi-sub" id="rs-lez-sub">Sin datos</div>
   </div>
   <div class="kpi-card slate">
-    <div class="kpi-label">&#128269; Control</div>
-    <div class="kpi-value">&#8212;</div>
-    <div class="kpi-sub">Sin datos a&uacute;n</div>
+    <div class="kpi-label">&#128295; Maquinistas</div>
+    <div class="kpi-value" id="rs-maq-ops">&#8212;</div>
+    <div class="kpi-sub" id="rs-maq-sub">Sin datos</div>
   </div>
 </div>
 
@@ -762,6 +797,12 @@ body.dark .heat-section-title{color:#cbd5e1!important}
     <div class="chart-subtitle" id="rs-rec-sub">Mes seleccionado</div>
     <div style="position:relative;height:230px"><canvas id="chartResRec"></canvas></div>
   </div>
+</div>
+
+<div class="table-card" style="margin-top:18px">
+  <div class="rank-title">&#128176; Resumen de Bonos &mdash; Mes seleccionado</div>
+  <div class="rank-sub" id="rs-bonos-sub">Liquidaci&oacute;n + Eficiencia picking</div>
+  <div id="rs-bonos-content" style="overflow-x:auto"></div>
 </div>
 
 </div><!-- /sec-resumen -->
@@ -843,8 +884,9 @@ function switchTab(name){
   document.getElementById('opFilterWrap').style.display=(name==='picking'||name==='reclamos')?'':'none';
   if(name==='resumen') buildResumen();
   if(name==='maquinistas') buildMaquinistas();
-  if(name==='liquidacion') initLiquidacion();
+  if(name==='liquidacion'){ var s=document.getElementById('sec-eficiencia'); var b=document.getElementById('btn-eficiencia'); document.querySelectorAll('.sec').forEach(function(x){x.classList.remove('active');}); document.querySelectorAll('.tab-btn').forEach(function(x){x.classList.remove('active');}); if(s) s.classList.add('active'); if(b) b.classList.add('active'); initEficiencia(); switchEficTab('liq'); return; }
   if(name==='eficiencia') initEficiencia();
+  if(name==='control') initControl();
 }
 
 // Poblar selector de anios
@@ -1680,6 +1722,20 @@ function buildResumen(){
   var pLabel=selKeys.length===1?monLabels[idx[0]]:(selKeys.length+' meses');
   document.getElementById('rs-sub').textContent='Período: '+pLabel+' — '+rows.length+' operario'+(rows.length!==1?'s':'');
 
+  // 4to KPI: Maquinistas (usa último mes disponible o el seleccionado)
+  var maqRefYm=selKeys.length===1?selKeys[0]:(maqData&&maqData.length?maqData[maqData.length-1].ym:null);
+  var maqRef=maqRefYm&&maqData?maqData.find(function(m){return m.ym===maqRefYm;}):null;
+  if(!maqRef&&maqData&&maqData.length) maqRef=maqData[maqData.length-1];
+  var maqActivos=maqRef?maqRef.ops.filter(function(op){return op.mov>0;}).length:0;
+  var maqAvgMD=maqRef&&maqActivos?(Math.round(maqRef.ops.filter(function(op){return op.mov>0;}).reduce(function(s,op){return s+(op.dias?op.mov/op.dias:0);},0)/maqActivos*10)/10):0;
+  var maqEl=document.getElementById('rs-maq-ops');
+  var maqSub=document.getElementById('rs-maq-sub');
+  if(maqEl) maqEl.textContent=maqActivos||'—';
+  if(maqSub) maqSub.textContent=maqActivos?'Prom: '+maqAvgMD+' mov/día':'Sin datos';
+
+  // Panel bonos del mes
+  buildRsBonosPanel(selKeys.length===1?selKeys[0]:null);
+
   // Chart reclamos
   var recArr=rows.filter(function(r){return r.recCnt>0;}).sort(function(a,b){return b.recCnt-a.recCnt;}).slice(0,12);
   chartResRec.data.labels=recArr.map(function(r){return r.resp;});
@@ -1689,39 +1745,230 @@ function buildResumen(){
   chartResRec.update();
 }
 
+// ===== PANEL BONOS (Resumen) =====
+function buildRsBonosPanel(ym){
+  var el=document.getElementById('rs-bonos-content');
+  var sub=document.getElementById('rs-bonos-sub');
+  if(!el) return;
+  if(!ym){el.innerHTML='<p style="padding:16px;color:#aaa;font-size:13px">Seleccioná un mes específico para ver el resumen de bonos.</p>';return;}
+  var p=ym.split('-');
+  var label=MES[parseInt(p[1])]+' '+p[0];
+  if(sub) sub.textContent='Liquidación + Eficiencia · '+label;
+  var isDark=document.body.classList.contains('dark');
+  var thBg=isDark?'#0f172a':'#f8fafc';
+  var html='<table style="width:100%;border-collapse:collapse;font-size:12.5px;margin-top:4px">';
+  html+='<thead><tr style="background:'+thBg+';border-bottom:2px solid #e2e8f0">';
+  html+='<th style="padding:8px 14px;text-align:left;color:#64748b">Operario</th>';
+  html+='<th style="padding:8px 14px;text-align:center;color:#64748b">Grupo</th>';
+  html+='<th style="padding:8px 14px;text-align:right;color:#64748b">L/D&iacute;a</th>';
+  html+='<th style="padding:8px 14px;text-align:right;color:#64748b">Cumpl.</th>';
+  html+='<th style="padding:8px 14px;text-align:right;color:#64748b">% Liq.</th>';
+  html+='<th style="padding:8px 14px;text-align:right;color:#64748b">% Efic.</th>';
+  html+='</tr></thead><tbody>';
+  var d=resumeData[ym];
+  var allOps=[];
+  if(d){
+    (['picking','pie','muestra']).forEach(function(g){
+      (d[g]||[]).filter(function(op){return op.dias>0;}).forEach(function(op){
+        var cum=op.cumpl||0;
+        var liqPct=g==='picking'?(cum>=100?10:cum>=80?7.5:cum>=60?5:0):null;
+        var eficNiv=cum>=120?2:cum>=100?1:0;
+        var eficPct=calcBonoEfic(eficNiv,false);
+        allOps.push({resp:op.resp,grupo:g,ld:op.ld||0,cum:cum,liqPct:liqPct,eficPct:eficPct});
+      });
+    });
+  }
+  if(!allOps.length){html+='<tr><td colspan="6" style="padding:20px;text-align:center;color:#aaa">Sin datos para este mes</td></tr>';}
+  var gc={picking:'#2563eb',pie:'#d97706',muestra:'#7c3aed'};
+  var gn={picking:'Picking',pie:'Pie Maq.',muestra:'Muestra'};
+  allOps.sort(function(a,b){return b.ld-a.ld;});
+  var alt=false;
+  allOps.forEach(function(op){
+    var bg=alt?(isDark?'#1e293b':'#f9f9f9'):(isDark?'#0f172a':'#fff'); alt=!alt;
+    var cc=op.cum>=100?'#059669':op.cum>=80?'#2563eb':op.cum>=60?'#d97706':'#dc2626';
+    html+='<tr style="background:'+bg+'">';
+    html+='<td style="padding:7px 14px;font-weight:600">'+op.resp+'</td>';
+    html+='<td style="padding:7px 14px;text-align:center"><span style="background:'+(gc[op.grupo]||'#64748b')+'22;color:'+(gc[op.grupo]||'#64748b')+';padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600">'+(gn[op.grupo]||op.grupo)+'</span></td>';
+    html+='<td style="padding:7px 14px;text-align:right;font-weight:600">'+op.ld.toFixed(1)+'</td>';
+    html+='<td style="padding:7px 14px;text-align:right;color:'+cc+';font-weight:600">'+op.cum.toFixed(1)+'%</td>';
+    html+='<td style="padding:7px 14px;text-align:right;font-weight:700;color:'+(op.liqPct>0?'#059669':'#dc2626')+'">'+(op.liqPct!==null?op.liqPct+'%':'&mdash;')+'</td>';
+    html+='<td style="padding:7px 14px;text-align:right;font-weight:700;color:'+(op.eficPct>=7.5?'#2563eb':op.eficPct>=5?'#d97706':'#aaa')+'">'+op.eficPct+'%</td>';
+    html+='</tr>';
+  });
+  html+='</tbody></table>';
+  el.innerHTML=html;
+}
+
+// ===== CONTROL =====
+function initControl(){
+  var sel=document.getElementById('ctrlMesSel');
+  if(!sel) return;
+  if(!sel.options.length){
+    var months={};
+    Object.keys(resumeData||{}).forEach(function(m){var p=m.split('-');months[m]=MES[parseInt(p[1])]+' '+p[0];});
+    (maqData||[]).forEach(function(m){if(!months[m.ym]) months[m.ym]=m.lbl;});
+    Object.keys(months).sort().reverse().forEach(function(ym){
+      var o=document.createElement('option'); o.value=ym; o.textContent=months[ym]; sel.appendChild(o);
+    });
+  }
+  buildControl();
+}
+function buildControl(){
+  var sel=document.getElementById('ctrlMesSel');
+  var ym=sel?sel.value:null;
+  var kpisEl=document.getElementById('ctrl-kpis');
+  var contentEl=document.getElementById('ctrlContent');
+  if(!ym||!contentEl) return;
+  var store=getCtrlStore();
+  var ymData=store[ym]||{};
+  var ops=Object.entries(ymData).map(function(e){
+    return {nm:e[0],dias:e[1].dias||0,und:e[1].und||0,rec:e[1].rec||0};
+  }).filter(function(op){return op.dias>0;});
+  var grupal=!!(document.getElementById('efGrupalCheck')&&document.getElementById('efGrupalCheck').checked);
+  // KPIs
+  var numOps=ops.length;
+  var conBono=ops.filter(function(op){return op.und>3000&&op.rec<=1;}).length;
+  var avgUnd=numOps?Math.round(ops.reduce(function(s,op){return s+(op.dias?op.und/op.dias:0);},0)/numOps):0;
+  var avgBono=numOps?(ops.reduce(function(s,op){
+    var niv=op.und>3500&&op.rec===0?2:op.und>3000&&op.rec<=1?1:0;
+    return s+calcBonoEfic(niv,grupal);
+  },0)/numOps).toFixed(1):0;
+  if(kpisEl){
+    kpisEl.innerHTML='<div class="kpi-card slate">'
+      +'<div class="kpi-label">&#9881; Operarios ingresados</div>'
+      +'<div class="kpi-value">'+numOps+'</div>'
+      +'<div class="kpi-sub">'+(sel&&sel.options[sel.selectedIndex]?sel.options[sel.selectedIndex].text:'')+'</div></div>'
+    +'<div class="kpi-card blue">'
+      +'<div class="kpi-label">&#128230; Prom. Und/D&iacute;a</div>'
+      +'<div class="kpi-value">'+avgUnd.toLocaleString()+'</div>'
+      +'<div class="kpi-sub">entre operarios activos</div></div>'
+    +'<div class="kpi-card green">'
+      +'<div class="kpi-label">&#9989; Con bono eficiencia</div>'
+      +'<div class="kpi-value" style="color:#059669">'+conBono+'</div>'
+      +'<div class="kpi-sub">de '+numOps+' operarios</div></div>'
+    +'<div class="kpi-card amber">'
+      +'<div class="kpi-label">&#128176; Bono prom. equipo</div>'
+      +'<div class="kpi-value" style="color:#d97706">'+avgBono+'%</div>'
+      +'<div class="kpi-sub">incluye presentismo base</div></div>';
+  }
+  if(!numOps){
+    contentEl.innerHTML='<div style="padding:32px;text-align:center;color:#888;font-size:13px">Sin datos para este per&iacute;odo.<br><br><small>Carg&aacute; datos desde <strong>Eficiencia &rsaquo; Control</strong>.</small></div>';
+    return;
+  }
+  var isDark=document.body.classList.contains('dark');
+  var thBg=isDark?'#334155':'#475569';
+  var html='<table style="width:100%;border-collapse:collapse;font-size:12.5px">';
+  html+='<thead><tr style="background:'+thBg+';color:#fff">';
+  ['Operario','D&iacute;as','Und/D&iacute;a','Reclamos','Nivel','% Bono'].forEach(function(c,i){
+    html+='<th style="padding:9px 12px;text-align:'+(i===0?'left':'right')+'">'+c+'</th>';
+  });
+  html+='</tr></thead><tbody>';
+  var alt=false;
+  ops.sort(function(a,b){var au=a.dias?a.und/a.dias:0; var bu=b.dias?b.und/b.dias:0; return bu-au;});
+  ops.forEach(function(op){
+    var bg=alt?(isDark?'#1e293b':'#f9f9f9'):(isDark?'#0f172a':'#fff'); alt=!alt;
+    var ud=op.dias?Math.round(op.und/op.dias):0;
+    var niv=op.und>3500&&op.rec===0?2:op.und>3000&&op.rec<=1?1:0;
+    var bono=calcBonoEfic(niv,grupal);
+    var udC=ud>3500?'#16a34a':ud>3000?'#2563eb':ud>2500?'#d97706':'#dc2626';
+    html+='<tr style="background:'+bg+'">';
+    html+='<td style="padding:8px 12px;font-weight:600">'+op.nm+'</td>';
+    html+='<td style="padding:8px 12px;text-align:right;color:#888">'+op.dias+'</td>';
+    html+='<td style="padding:8px 12px;text-align:right;color:'+udC+';font-weight:700">'+ud.toLocaleString()+'</td>';
+    html+='<td style="padding:8px 12px;text-align:right;color:'+(op.rec===0?'#16a34a':op.rec<=1?'#d97706':'#dc2626')+';font-weight:700">'+op.rec+'</td>';
+    html+='<td style="padding:8px 12px;text-align:right">'+efNivelBadge(niv)+'</td>';
+    html+='<td style="padding:8px 12px;text-align:right">'+efBonoBadge(bono)+'</td>';
+    html+='</tr>';
+  });
+  html+='</tbody></table>';
+  contentEl.innerHTML=html;
+}
+
 // ===== MAQUINISTAS =====
 function buildMaquinistas(){
   var noDataEl=document.getElementById('maqNoData');
   var tableEl=document.getElementById('maqTable');
+  var kpisEl=document.getElementById('maq-kpis');
   if(!maqData||!maqData.length||!maqNamesArr||!maqNamesArr.length){
     if(noDataEl) noDataEl.style.display='';
+    if(kpisEl) kpisEl.style.display='none';
     return;
   }
   if(noDataEl) noDataEl.style.display='none';
+
+  // Poblar selector de mes si está vacío
+  var maqSel=document.getElementById('maqMesSel');
+  if(maqSel && maqSel.options.length<=1){
+    maqData.forEach(function(row){
+      var o=document.createElement('option'); o.value=row.ym; o.textContent=row.lbl; maqSel.appendChild(o);
+    });
+  }
+  var selYm=maqSel?maqSel.value:'';
+  // Elegir fila de referencia para KPIs: mes seleccionado o último
+  var refRow=selYm?maqData.find(function(r){return r.ym===selYm;}):maqData[maqData.length-1];
+
+  // KPIs del mes de referencia
+  if(kpisEl && refRow){
+    kpisEl.style.display='';
+    var activos=refRow.ops.filter(function(op){return op.mov>0;});
+    var totalMov=refRow.ops.reduce(function(s,op){return s+op.mov;},0);
+    var topOp=activos.length?activos.reduce(function(best,op){return op.mov>best.mov?op:best;},activos[0]):null;
+    var avgMovDia=activos.length&&refRow.ops[0]&&refRow.ops[0].dias>0
+      ?Math.round(activos.reduce(function(s,op){return s+(op.dias?op.mov/op.dias:0);},0)/activos.length*10)/10:0;
+    var kHtml='<div class="kpi-card blue">'
+      +'<div class="kpi-label">&#128295; Maquinistas activos</div>'
+      +'<div class="kpi-value">'+activos.length+'</div>'
+      +'<div class="kpi-sub">'+refRow.lbl+'</div></div>'
+    +'<div class="kpi-card amber">'
+      +'<div class="kpi-label">&#128260; Total movimientos</div>'
+      +'<div class="kpi-value">'+totalMov.toLocaleString()+'</div>'
+      +'<div class="kpi-sub">en el mes</div></div>'
+    +'<div class="kpi-card green">'
+      +'<div class="kpi-label">&#127942; Top performer</div>'
+      +'<div class="kpi-value" style="font-size:15px;font-weight:700">'+(topOp?topOp.nm:'&mdash;')+'</div>'
+      +'<div class="kpi-sub">'+(topOp?topOp.mov.toLocaleString()+' mov':'sin datos')+'</div></div>'
+    +'<div class="kpi-card slate">'
+      +'<div class="kpi-label">&#128200; Prom. Mov/D&iacute;a</div>'
+      +'<div class="kpi-value">'+avgMovDia+'</div>'
+      +'<div class="kpi-sub">entre activos</div></div>';
+    kpisEl.innerHTML=kHtml;
+  }
+
+  // Tabla histórica completa
   var isDark=document.body.classList.contains('dark');
   var html='<table style="width:100%;border-collapse:collapse;font-size:12.5px">';
-  html+='<thead><tr style="background:'+(isDark?'#1e293b':'#f5f5f5')+'">';
-  html+='<th style="padding:8px 12px;text-align:left;border-bottom:2px solid #e0e0e0;white-space:nowrap">Mes</th>';
-  html+='<th style="padding:8px 12px;text-align:right;border-bottom:2px solid #e0e0e0">D&iacute;as</th>';
+  html+='<thead><tr style="background:'+(isDark?'#1e3a5f':'#1e40af')+';color:#fff">';
+  html+='<th style="padding:8px 12px;text-align:left;white-space:nowrap">Mes</th>';
+  html+='<th style="padding:8px 12px;text-align:right">D&iacute;as</th>';
   maqNamesArr.forEach(function(nm){
-    html+='<th style="padding:8px 12px;text-align:right;border-bottom:2px solid #e0e0e0;white-space:nowrap">'+nm+'</th>';
+    html+='<th style="padding:8px 12px;text-align:right;white-space:nowrap">'+nm+'</th>';
   });
   html+='</tr></thead><tbody>';
   var alt=false;
   maqData.forEach(function(row){
-    var bg=alt?(isDark?'#1e293b':'#f9f9f9'):(isDark?'#0f172a':'#fff'); alt=!alt;
+    var isRef=row.ym===refRow.ym;
+    var bg=isRef?(isDark?'#1e3a2f':'#f0fdf4'):alt?(isDark?'#1e293b':'#f9f9f9'):(isDark?'#0f172a':'#fff'); alt=!alt;
     var maxDias=0;
     row.ops.forEach(function(op){if(op.dias>maxDias) maxDias=op.dias;});
-    html+='<tr style="background:'+bg+'">';
-    html+='<td style="padding:7px 12px;font-weight:600;white-space:nowrap">'+row.lbl+'</td>';
+    html+='<tr style="background:'+bg+(isRef?';font-weight:600':'')+'">';
+    html+='<td style="padding:7px 12px;font-weight:600;white-space:nowrap'+(isRef?';color:#059669':'')+'">'+(isRef?'&#9658; ':'')+row.lbl+'</td>';
     html+='<td style="padding:7px 12px;text-align:right;color:#888">'+maxDias+'</td>';
     row.ops.forEach(function(op){
       var clr=op.mov>100?'#16a34a':op.mov>30?'#d97706':op.mov>0?'#dc2626':'#ccc';
       var fw=op.mov>0?'700':'400';
       html+='<td style="padding:7px 12px;text-align:right;color:'+clr+';font-weight:'+fw+'">'+(op.mov>0?op.mov.toLocaleString():'&mdash;')+'</td>';
     });
+    // Totales por fila
+    var rowTotal=row.ops.reduce(function(s,op){return s+op.mov;},0);
+    html+='<td style="padding:7px 12px;text-align:right;font-weight:700;color:#475569;border-left:1px solid #e0e0e0">'+(rowTotal>0?rowTotal.toLocaleString():'&mdash;')+'</td>';
     html+='</tr>';
   });
+  // Header extra para columna Total
+  var hRow=document.createElement('tr');
+  html=html.replace(
+    maqNamesArr.map(function(nm){return '<th style="padding:8px 12px;text-align:right;white-space:nowrap">'+nm+'</th>';}).join('')+'</tr></thead>',
+    maqNamesArr.map(function(nm){return '<th style="padding:8px 12px;text-align:right;white-space:nowrap">'+nm+'</th>';}).join('')+'<th style="padding:8px 12px;text-align:right;white-space:nowrap;border-left:1px solid rgba(255,255,255,.3)">Total</th></tr></thead>'
+  );
   html+='</tbody></table>';
   if(tableEl) tableEl.innerHTML=html;
 }
@@ -1745,12 +1992,46 @@ function buildLiquidacion(){
   var sel=document.getElementById('selLiqMes');
   var mon=sel?sel.value:null;
   var el=document.getElementById('liqTable');
-  if(!mon||!resumeData[mon]){if(el) el.innerHTML='<p style="color:#aaa;padding:20px">Sin datos para este per&iacute;odo.</p>'; return;}
+  var kpisEl=document.getElementById('liq-kpis');
+  if(!mon||!resumeData[mon]){
+    if(el) el.innerHTML='<p style="color:#aaa;padding:20px">Sin datos para este per&iacute;odo.</p>';
+    if(kpisEl) kpisEl.innerHTML='';
+    return;
+  }
   var d=resumeData[mon];
   var ops=(d.picking||[]).filter(function(op){return op.dias>0;});
-  if(!ops.length){if(el) el.innerHTML='<p style="color:#aaa;padding:20px">Sin operarios con datos en este mes.</p>'; return;}
+  if(!ops.length){
+    if(el) el.innerHTML='<p style="color:#aaa;padding:20px">Sin operarios con datos en este mes.</p>';
+    if(kpisEl) kpisEl.innerHTML='';
+    return;
+  }
+  // === KPIs ===
+  var conBono=ops.filter(function(op){return (op.cumpl||0)>=60;}).length;
+  var sinBono=ops.length-conBono;
+  var bonoPcts=ops.map(function(op){var c=op.cumpl||0;return c>=100?10:c>=80?7.5:c>=60?5:0;});
+  var avgBono=(bonoPcts.reduce(function(s,b){return s+b;},0)/ops.length).toFixed(1);
+  var n2=ops.filter(function(op){return (op.cumpl||0)>=100;}).length;
+  if(kpisEl){
+    kpisEl.innerHTML='<div class="kpi-card green">'
+      +'<div class="kpi-label">&#9989; Con bono</div>'
+      +'<div class="kpi-value" style="color:#059669">'+conBono+'</div>'
+      +'<div class="kpi-sub">de '+ops.length+' operarios</div></div>'
+    +'<div class="kpi-card amber">'
+      +'<div class="kpi-label">&#128176; Prom. % bono</div>'
+      +'<div class="kpi-value" style="color:#d97706">'+avgBono+'%</div>'
+      +'<div class="kpi-sub">picking</div></div>'
+    +'<div class="kpi-card blue">'
+      +'<div class="kpi-label">&#11088; Nivel N2 (100%+)</div>'
+      +'<div class="kpi-value" style="color:#2563eb">'+n2+'</div>'
+      +'<div class="kpi-sub">bono 10%</div></div>'
+    +'<div class="kpi-card slate">'
+      +'<div class="kpi-label">&#10060; Sin bono</div>'
+      +'<div class="kpi-value" style="color:#dc2626">'+sinBono+'</div>'
+      +'<div class="kpi-sub">cumpl. &lt; 60%</div></div>';
+  }
+  // === Tabla ===
   var isDark=document.body.classList.contains('dark');
-  var thBg=isDark?'#1e3a5f':'#1e40af';
+  var thBg=isDark?'#065f46':'#059669';
   var html='<table style="width:100%;border-collapse:collapse;font-size:12.5px">';
   html+='<thead><tr style="background:'+thBg+';color:#fff">';
   html+='<th style="padding:9px 12px;text-align:left">Operario</th>';
@@ -1762,22 +2043,37 @@ function buildLiquidacion(){
   html+='<th style="padding:9px 12px;text-align:right">% Bono</th>';
   html+='</tr></thead><tbody>';
   var alt=false;
+  var totalLineas=0, totalDias=0;
+  ops.sort(function(a,b){return (b.cumpl||0)-(a.cumpl||0);});
   ops.forEach(function(op){
     var cum=op.cumpl||0;
     var nivel=cum>=100?'N2':cum>=80?'N1':cum>=60?'PRES':'&mdash;';
     var pct=cum>=100?'10%':cum>=80?'7,5%':cum>=60?'5%':'&mdash;';
-    var clr=cum>=100?'#16a34a':cum>=80?'#2563eb':cum>=60?'#d97706':'#dc2626';
+    var clr=cum>=100?'#059669':cum>=80?'#2563eb':cum>=60?'#d97706':'#dc2626';
     var bg=alt?(isDark?'#1e293b':'#f9f9f9'):(isDark?'#0f172a':'#fff'); alt=!alt;
+    totalLineas+=(op.lineas||0); totalDias+=(op.dias||0);
     html+='<tr style="background:'+bg+'">';
     html+='<td style="padding:8px 12px;font-weight:600">'+op.resp+'</td>';
     html+='<td style="padding:8px 12px;text-align:right">'+op.dias+'</td>';
     html+='<td style="padding:8px 12px;text-align:right">'+((op.lineas||0).toLocaleString())+'</td>';
-    html+='<td style="padding:8px 12px;text-align:right">'+((op.ld||0).toFixed(0))+'</td>';
-    html+='<td style="padding:8px 12px;text-align:right;font-weight:700;color:'+clr+'">'+(cum.toFixed(0))+'%</td>';
-    html+='<td style="padding:8px 12px;text-align:center;font-weight:700;color:'+clr+'">'+nivel+'</td>';
+    html+='<td style="padding:8px 12px;text-align:right">'+((op.ld||0).toFixed(1))+'</td>';
+    html+='<td style="padding:8px 12px;text-align:right;font-weight:700;color:'+clr+'">'+(cum.toFixed(1))+'%</td>';
+    html+='<td style="padding:8px 12px;text-align:center"><span style="background:'+(cum>=100?'#dcfce7':cum>=80?'#dbeafe':cum>=60?'#fef9c3':'#fee2e2')+';color:'+clr+';padding:2px 9px;border-radius:20px;font-size:11px;font-weight:700">'+nivel+'</span></td>';
     html+='<td style="padding:8px 12px;text-align:right;font-weight:700;color:'+clr+'">'+pct+'</td>';
     html+='</tr>';
   });
+  // Fila totales
+  var avgCumpl=ops.length?ops.reduce(function(s,op){return s+(op.cumpl||0);},0)/ops.length:0;
+  var totBg=isDark?'#0f2a20':'#d1fae5';
+  html+='<tr style="background:'+totBg+';border-top:2px solid #059669;font-weight:700">';
+  html+='<td style="padding:8px 12px;color:#059669">TOTAL / PROM</td>';
+  html+='<td style="padding:8px 12px;text-align:right">'+Math.round(totalDias/ops.length)+'</td>';
+  html+='<td style="padding:8px 12px;text-align:right">'+totalLineas.toLocaleString()+'</td>';
+  html+='<td style="padding:8px 12px;text-align:right">'+(totalDias?Math.round(totalLineas/totalDias*10)/10:0)+'</td>';
+  html+='<td style="padding:8px 12px;text-align:right;color:#059669">'+avgCumpl.toFixed(1)+'%</td>';
+  html+='<td style="padding:8px 12px;text-align:center;color:#059669">'+avgBono+'%</td>';
+  html+='<td style="padding:8px 12px;text-align:right;color:#059669">'+avgBono+'%</td>';
+  html+='</tr>';
   html+='</tbody></table>';
   if(el) el.innerHTML=html;
 }
