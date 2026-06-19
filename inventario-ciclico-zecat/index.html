@@ -1007,7 +1007,7 @@ async function apiGetHoy() {
   const conteos = await idbGetAll('conteos');
   const ayer = diaLaborableAnterior(hoy);
   const hoyMap = {}; conteos.filter(c=>c.dia===hoy).forEach(c=>{ hoyMap[c.articulo]=c; });
-  const itemsFull = items.map(it=>{ const ct=hoyMap[it.articulo]; return {...it,contado:!!ct,conteo_id:ct?.id||null,fisico:ct?.fisico??null,dif_cont:ct?.difCont??ct?.dif_cont??null,diferencia:ct?.diferencia||null,motivo:ct?.motivo||null,observacion:ct?.observacion||null}; });
+  const itemsFull = items.map((it,idx)=>{ const ct=hoyMap[it.articulo]; const sw=it.stock_web??it.stockWeb??0; return {...it,n:idx+1,stock_web:sw,valor_ddp:it.valor_ddp??it.ddpVal??0,contado:!!ct,conteo_id:ct?.id||null,fisico_contado:ct?.fisico??null,dif_cont:ct?.difCont??ct?.dif_cont??null,diferencia:ct?.diferencia||null,motivo_contado:ct?.motivo??null,obs_contado:ct?.observacion??null}; });
   const ciclo = await getCiclo();
   return {fecha:hoy,es_laborable:lab,items:itemsFull,ayer:{fecha:ayer,items:conteos.filter(c=>c.dia===ayer).map(c=>({articulo:c.articulo,diferencia:c.diferencia}))},ciclo:{ciclo_numero:ciclo.ciclo_numero,total_elegibles:ciclo.total_elegibles,ya_recomendados_count:(ciclo.ya_recomendados||[]).length}};
 }
@@ -1792,6 +1792,143 @@ function renderHoy(d) {
   }
 
   document.getElementById('hoy-content').innerHTML = html;
+}
+
+
+/* ================================================================
+   CONTEO HOY — funciones inline
+   ================================================================ */
+function calcDif(input) {
+  const tr = input.closest('tr');
+  const sw = parseFloat(input.dataset.sw) || 0;
+  const fisico = parseFloat(input.value);
+  const difCell = tr.querySelector('.diff-cell');
+  const motivoSel = tr.querySelector('.motivo-sel');
+  if (isNaN(fisico)) {
+    if (difCell) difCell.textContent = '—';
+    if (motivoSel) { motivoSel.disabled=true; motivoSel.style.opacity='0.3'; motivoSel.style.cursor='not-allowed'; motivoSel.value=''; motivoSel.style.border=''; }
+    return;
+  }
+  const dif = fisico - sw;
+  const sign = dif >= 0 ? '+' : '';
+  const color = dif===0?'var(--text-muted)':dif>0?'#16a34a':'#dc2626';
+  if (difCell) difCell.innerHTML = `<span style="color:${color};font-weight:600;">${sign}${fmt(dif)}</span>`;
+  if (motivoSel) {
+    const hasDif = dif !== 0;
+    motivoSel.disabled = !hasDif;
+    motivoSel.style.opacity = hasDif ? '1' : '0.3';
+    motivoSel.style.cursor = hasDif ? 'pointer' : 'not-allowed';
+    motivoSel.style.border = '';
+    if (!hasDif) motivoSel.value = '';
+  }
+}
+
+function onMotivoChange(sel) {
+  sel.style.border = '';
+}
+
+async function guardarConteoHoy() {
+  const hoy = isoHoyStr();
+  const msgEl = document.getElementById('guardar-msg');
+  const inputs = document.querySelectorAll('#hoy-content input[data-articulo]');
+  const toSave = []; let errores = 0;
+  inputs.forEach(input => {
+    if (input.value === '') return;
+    const tr = input.closest('tr');
+    const fisico = parseFloat(input.value);
+    if (isNaN(fisico) || fisico < 0) return;
+    const sw = parseFloat(input.dataset.sw) || 0;
+    const dif = fisico - sw;
+    const motivoSel = tr.querySelector('.motivo-sel');
+    const motivo = motivoSel ? motivoSel.value : '';
+    if (dif !== 0 && !motivo) {
+      if (motivoSel) motivoSel.style.border = '2px solid #dc2626';
+      errores++;
+      return;
+    }
+    const obsInput = tr.querySelector('.obs-input');
+    toSave.push({
+      articulo:    input.dataset.articulo,
+      sku_wms:     input.dataset.sku || '',
+      familia:     input.dataset.familia || '',
+      sistema:     sw,
+      fisico,
+      ddp:         parseFloat(input.dataset.ddp) || 0,
+      motivo:      motivo || null,
+      observacion: obsInput ? obsInput.value.trim() : '',
+      dia:         hoy
+    });
+  });
+  if (errores > 0) {
+    if (msgEl) msgEl.innerHTML = `<span class="text-red">Completá el motivo en ${errores} fila(s) con diferencia.</span>`;
+    return;
+  }
+  if (!toSave.length) {
+    if (msgEl) msgEl.innerHTML = `<span style="color:var(--text-muted);font-size:12px;">No hay filas con stock físico ingresado.</span>`;
+    return;
+  }
+  if (msgEl) msgEl.innerHTML = `<span style="color:var(--text-muted);font-size:12px;">Guardando ${toSave.length} conteo(s)...</span>`;
+  try {
+    for (const body of toSave) { await apiAddConteo(body); }
+    if (msgEl) msgEl.innerHTML = `<span class="text-green">Guardados ${toSave.length} conteo(s) correctamente.</span>`;
+    setTimeout(() => loadHoy(), 800);
+  } catch(e) {
+    if (msgEl) msgEl.innerHTML = `<span class="text-red">Error: ${e.message}</span>`;
+  }
+}
+
+async function editarFila(btn) {
+  const tr = btn.closest('tr');
+  const conteoId = parseInt(tr.dataset.conteoId || '0');
+  if (!conteoId) return;
+  const sw  = parseFloat(tr.dataset.sw)  || 0;
+  const ddp = parseFloat(tr.dataset.ddp) || 0;
+  const prevFisico = tr.dataset.fisico ?? '';
+  const prevMotivo = tr.dataset.motivo || '';
+  const prevObs    = tr.dataset.obs    || '';
+  tr.cells[7].innerHTML = `<input type="number" min="0" step="1" value="${prevFisico}"
+    data-sw="${sw}" data-ddp="${ddp}" data-articulo="${tr.dataset.articulo||''}"
+    data-familia="${tr.dataset.familia||''}" data-sku="${tr.dataset.sku||''}"
+    oninput="calcDif(this)" class="edit-fisico"
+    style="width:70px;padding:3px 6px;border:1px solid var(--border);border-radius:6px;text-align:right;font-size:13px;background:var(--card);color:var(--text);">`;
+  tr.cells[9].innerHTML = `<select class="motivo-sel" onchange="onMotivoChange(this)"
+    style="width:155px;padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--card);color:var(--text);">
+    <option value="">- Motivo -</option>
+    <option value="Error Operativo"${prevMotivo==='Error Operativo'?' selected':''}>Error Operativo</option>
+    <option value="Error Administrativo"${prevMotivo==='Error Administrativo'?' selected':''}>Error Administrativo</option>
+    <option value="Sin Identificar"${prevMotivo==='Sin Identificar'?' selected':''}>Sin Identificar</option>
+  </select>`;
+  tr.cells[10].innerHTML = `<input type="text" class="obs-input" value="${prevObs.replace(/"/g,'&quot;')}" maxlength="200"
+    style="width:160px;padding:3px 6px;border:1px solid var(--border);border-radius:6px;font-size:12px;background:var(--card);color:var(--text);">`;
+  tr.cells[11].innerHTML = `<button onclick="guardarFilaEdit(this,${conteoId},${sw},${ddp})"
+    style="background:#2563eb;color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border:none;border-radius:6px;cursor:pointer;">Guardar</button>`;
+  const newInput = tr.cells[7].querySelector('input');
+  if (newInput) calcDif(newInput);
+}
+
+async function guardarFilaEdit(btn, conteoId, sw, ddp) {
+  const tr = btn.closest('tr');
+  const msgEl = document.getElementById('guardar-msg');
+  const fisico = parseFloat(tr.querySelector('.edit-fisico')?.value);
+  if (isNaN(fisico) || fisico < 0) { if (msgEl) msgEl.innerHTML=`<span class="text-red">Stock físico inválido.</span>`; return; }
+  const dif = fisico - sw;
+  const motivoSel = tr.querySelector('.motivo-sel');
+  const motivo = motivoSel ? motivoSel.value : '';
+  if (dif !== 0 && !motivo) {
+    if (motivoSel) motivoSel.style.border = '2px solid #dc2626';
+    if (msgEl) msgEl.innerHTML = `<span class="text-red">El motivo es obligatorio si hay diferencia.</span>`;
+    return;
+  }
+  const obs = tr.querySelector('.obs-input')?.value.trim() || '';
+  try {
+    const existing = await idbGet('conteos', conteoId);
+    if (!existing) throw new Error('Conteo no encontrado');
+    await apiUpdateConteo(conteoId, {...existing, fisico, sistema: sw, ddp, motivo: motivo||null, observacion: obs});
+    if (msgEl) msgEl.innerHTML = `<span class="text-green">Conteo actualizado.</span>`;
+    setTimeout(() => loadHoy(), 500);
+  } catch(e) {
+    if (msgEl) msgEl.innerHTML = `<span class="text-red">Error: ${e.message}</span>`;
+  }
 }
 
 /* ================================================================
