@@ -551,7 +551,8 @@ body.dark .heat-section-title{color:#cbd5e1!important}
   </label>
 </div>
 <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">
-  <button onclick="switchEficTab('pick')" id="ebt-pick" style="background:#2563eb;color:#fff;border:1px solid #2563eb;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600">&#128293; Pickeadores</button>
+  <button onclick="switchEficTab('all')" id="ebt-all" style="background:#2563eb;color:#fff;border:1px solid #2563eb;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600">&#127775; General</button>
+  <button onclick="switchEficTab('pick')" id="ebt-pick" style="background:transparent;color:#888;border:1px solid #ccc;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600">&#128293; Pickeadores</button>
   <button onclick="switchEficTab('maq')" id="ebt-maq" style="background:transparent;color:#888;border:1px solid #ccc;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600">&#128295; Maquinistas</button>
   <button onclick="switchEficTab('ctrl')" id="ebt-ctrl" style="background:transparent;color:#888;border:1px solid #ccc;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600">&#9881; Control</button>
   <button onclick="switchEficTab('pie')" id="ebt-pie" style="background:transparent;color:#888;border:1px solid #ccc;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600">&#128736; Pie de M&aacute;quina</button>
@@ -1648,7 +1649,7 @@ function buildMaquinistas(){
 }
 
 // ===== EFICIENCIA =====
-var eficCurTab='pick';
+var eficCurTab='all';
 
 function initEficiencia(){
   var sel=document.getElementById('efMesSel');
@@ -1671,7 +1672,7 @@ function initEficiencia(){
 
 function switchEficTab(tab){
   eficCurTab=tab;
-  ['pick','maq','ctrl','pie'].forEach(function(t){
+  ['all','pick','maq','ctrl','pie'].forEach(function(t){
     var btn=document.getElementById('ebt-'+t);
     if(!btn) return;
     var active=(t===tab);
@@ -1721,7 +1722,88 @@ function buildEficiencia(){
   var alt=false;
   var html='';
 
-  if(eficCurTab==='pick'){
+  if(eficCurTab==='all'){
+    html+=efTableHeader([{t:'Sector'},{t:'Operario'},{t:'D&iacute;as',r:true},{t:'M&eacute;trica/D&iacute;a',r:true},{t:'Nivel',r:true},{t:'Grupal',r:true},{t:'% Bono',r:true}]);
+    // Picking
+    var pkAll=((resumeData[ym]&&resumeData[ym].picking)||[]).filter(function(op){return op.dias>0;});
+    pkAll.slice().sort(function(a,b){return (b.cumpl||0)-(a.cumpl||0);}).forEach(function(op){
+      var cumpl=op.cumpl||0;
+      var nivel=cumpl>=120?2:cumpl>=100?1:0;
+      var bonoEfic=calcBonoEfic(nivel,grupal);
+      var bonoProd=cumpl>=100?10:cumpl>=80?7.5:cumpl>=60?5:0;
+      var bono=Math.min(bonoEfic+bonoProd,15);
+      var bg=alt?(isDark?'#1e293b':'#f9f9f9'):(isDark?'#0f172a':'#fff'); alt=!alt;
+      var cumplClr=cumpl>=120?'#16a34a':cumpl>=100?'#2563eb':cumpl>=80?'#d97706':'#dc2626';
+      html+='<tr style="background:'+bg+'">';
+      html+='<td style="padding:7px 12px"><span style="background:#2563eb22;color:#2563eb;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600">&#128230; Picking</span></td>';
+      html+='<td style="padding:7px 12px;font-weight:600">'+op.resp+'</td>';
+      html+='<td style="padding:7px 12px;text-align:right;color:#888">'+op.dias+'</td>';
+      html+='<td style="padding:7px 12px;text-align:right;color:'+cumplClr+';font-weight:700">'+((op.ld||0).toFixed(1))+' l/d</td>';
+      html+='<td style="padding:7px 12px;text-align:right">'+efNivelBadge(nivel)+'</td>';
+      html+='<td style="padding:7px 12px;text-align:right">'+(grupal?'<span style="color:#16a34a">+3%</span>':'<span style="color:#aaa">&mdash;</span>')+'</td>';
+      html+='<td style="padding:7px 12px;text-align:right">'+efBonoBadge(bono)+'</td>';
+      html+='</tr>';
+    });
+    // Control
+    var ctrlAllOps=(ctrlExcelData[ym]||[]).filter(function(op){return op.dias>0;});
+    ctrlAllOps.slice().sort(function(a,b){return (b.dias?b.und/b.dias:0)-(a.dias?a.und/a.dias:0);}).forEach(function(op){
+      var undDia=op.dias?Math.round(op.und/op.dias):0;
+      var nivel=undDia>=3500?2:undDia>=2000?1:0;
+      var bono=calcBonoEfic(nivel,grupal);
+      var bg=alt?(isDark?'#1e293b':'#f9f9f9'):(isDark?'#0f172a':'#fff'); alt=!alt;
+      var udClr=undDia>=3500?'#16a34a':undDia>=2000?'#2563eb':undDia>=1000?'#d97706':'#dc2626';
+      html+='<tr style="background:'+bg+'">';
+      html+='<td style="padding:7px 12px"><span style="background:#64748b22;color:#64748b;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600">&#128269; Control</span></td>';
+      html+='<td style="padding:7px 12px;font-weight:600">'+op.nm+'</td>';
+      html+='<td style="padding:7px 12px;text-align:right;color:#888">'+op.dias+'</td>';
+      html+='<td style="padding:7px 12px;text-align:right;color:'+udClr+';font-weight:700">'+undDia.toLocaleString('es-AR')+' und/d</td>';
+      html+='<td style="padding:7px 12px;text-align:right">'+efNivelBadge(nivel)+'</td>';
+      html+='<td style="padding:7px 12px;text-align:right">'+(grupal?'<span style="color:#16a34a">+3%</span>':'<span style="color:#aaa">&mdash;</span>')+'</td>';
+      html+='<td style="padding:7px 12px;text-align:right">'+efBonoBadge(bono)+'</td>';
+      html+='</tr>';
+    });
+    // Maquinistas
+    var mMaqAll=(maqData||[]).find(function(m){return m.ym===ym;});
+    if(mMaqAll&&mMaqAll.ops){
+      mMaqAll.ops.filter(function(op){return op.dias>0;}).forEach(function(op){
+        var movdia=op.mov/op.dias;
+        var nivel=movdia>=120?2:movdia>=100?1:0;
+        var bono=calcBonoEfic(nivel,grupal);
+        var bg=alt?(isDark?'#1e293b':'#f9f9f9'):(isDark?'#0f172a':'#fff'); alt=!alt;
+        var movClr=movdia>=120?'#16a34a':movdia>=100?'#2563eb':movdia>=60?'#d97706':'#dc2626';
+        html+='<tr style="background:'+bg+'">';
+        html+='<td style="padding:7px 12px"><span style="background:#05966922;color:#059669;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600">&#128295; Maquinistas</span></td>';
+        html+='<td style="padding:7px 12px;font-weight:600">'+op.nm+'</td>';
+        html+='<td style="padding:7px 12px;text-align:right;color:#888">'+op.dias+'</td>';
+        html+='<td style="padding:7px 12px;text-align:right;color:'+movClr+';font-weight:700">'+movdia.toFixed(1)+' mov/d</td>';
+        html+='<td style="padding:7px 12px;text-align:right">'+efNivelBadge(nivel)+'</td>';
+        html+='<td style="padding:7px 12px;text-align:right">'+(grupal?'<span style="color:#16a34a">+3%</span>':'<span style="color:#aaa">&mdash;</span>')+'</td>';
+        html+='<td style="padding:7px 12px;text-align:right">'+efBonoBadge(bono)+'</td>';
+        html+='</tr>';
+      });
+    }
+    // Pie de Maquina
+    var pieStoreAll=getPieStore();
+    Object.entries(pieStoreAll[ym]||{}).forEach(function(e){
+      var nm=e[0],d=e[1];
+      var err=d.err||0,dias=d.dias||0;
+      if(!dias) return;
+      var nivel=err===0?2:err<=1?1:0;
+      var bono=calcBonoEfic(nivel,grupal);
+      var bg=alt?(isDark?'#1e293b':'#f9f9f9'):(isDark?'#0f172a':'#fff'); alt=!alt;
+      html+='<tr style="background:'+bg+'">';
+      html+='<td style="padding:7px 12px"><span style="background:#d9770622;color:#d97706;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600">&#128736; Pie Maq.</span></td>';
+      html+='<td style="padding:7px 12px;font-weight:600">'+nm+'</td>';
+      html+='<td style="padding:7px 12px;text-align:right;color:#888">'+dias+'</td>';
+      html+='<td style="padding:7px 12px;text-align:right;color:'+(err===0?'#16a34a':err<=1?'#2563eb':'#dc2626')+';font-weight:700">'+err+' err/mes</td>';
+      html+='<td style="padding:7px 12px;text-align:right">'+efNivelBadge(nivel)+'</td>';
+      html+='<td style="padding:7px 12px;text-align:right">'+(grupal?'<span style="color:#16a34a">+3%</span>':'<span style="color:#aaa">&mdash;</span>')+'</td>';
+      html+='<td style="padding:7px 12px;text-align:right">'+efBonoBadge(bono)+'</td>';
+      html+='</tr>';
+    });
+    html+='</tbody></table>';
+
+  } else if(eficCurTab==='pick'){
     var ops=((resumeData[ym]&&resumeData[ym].picking)||[]).filter(function(op){return op.dias>0;});
     if(!ops.length){el.innerHTML='<div style="padding:20px;color:#888">Sin datos de picking para el per&iacute;odo.</div>';return;}
     html+=efTableHeader([{t:'Operario'},{t:'D&iacute;as',r:true},{t:'L/D&iacute;a',r:true},{t:'Cumpl%',r:true},{t:'Nivel',r:true},{t:'Grupal',r:true},{t:'% Bono',r:true}]);
