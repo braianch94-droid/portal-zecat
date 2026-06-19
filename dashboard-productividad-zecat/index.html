@@ -2076,7 +2076,7 @@ function buildRsBonosPanel(ym){
     var nivel=cumpl>=120?2:cumpl>=100?1:0;
     var bonoEfic=calcBonoEfic(nivel,grupal);
     var bonoProd=cumpl>=100?10:cumpl>=80?7.5:cumpl>=60?5:0;
-    var total=bonoEfic+bonoProd;
+    var total=Math.min(bonoEfic+bonoProd,15);
     var bg=alt?(isDark?'#1e293b':'#f9f9f9'):(isDark?'#0f172a':'#fff'); alt=!alt;
     var cumplClr=cumpl>=120?'#16a34a':cumpl>=100?'#2563eb':cumpl>=80?'#d97706':'#dc2626';
     h+='<tr style="background:'+bg+'">';
