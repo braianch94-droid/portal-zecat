@@ -1489,6 +1489,27 @@ function buildResumen(){
     return {resp:o.resp,grupo:o.grupo,dias:o.dias,lineas:o.lineas,ordenes:o.ordenes||0,ld:ld,recCnt:o.recCnt};
   }).sort(function(a,b){return b.ld-a.ld;});
 
+  // Agregar Control y Maquinistas cuando se muestra 'all'
+  if(_rsGrp==='all'){
+    var ctrlYmRs=selKeys.slice().reverse().find(function(k){return ctrlExcelData[k]&&ctrlExcelData[k].length;});
+    if(!ctrlYmRs) ctrlYmRs=Object.keys(ctrlExcelData).sort().filter(function(k){return ctrlExcelData[k]&&ctrlExcelData[k].length;}).pop();
+    if(ctrlYmRs){
+      (ctrlExcelData[ctrlYmRs]||[]).filter(function(op){return op.dias>0;}).slice().sort(function(a,b){return (b.dias?b.und/b.dias:0)-(a.dias?a.und/a.dias:0);}).forEach(function(op){
+        var undDia=op.dias?Math.round(op.und/op.dias):0;
+        rows.push({resp:op.nm,grupo:'control',dias:op.dias,lineas:op.und,ordenes:op.ord,ld:undDia,recCnt:0,metricaUnit:'und/d'});
+      });
+    }
+    var maqRsRow=null;
+    selKeys.slice().reverse().forEach(function(k){if(!maqRsRow){var r=(maqData||[]).find(function(m){return m.ym===k;});if(r&&r.ops.some(function(o){return o.dias>0;}))maqRsRow=r;}});
+    if(!maqRsRow) maqRsRow=(maqData||[]).slice().reverse().find(function(r){return r.ops.some(function(o){return o.dias>0;});});
+    if(maqRsRow){
+      maqRsRow.ops.filter(function(op){return op.dias>0;}).forEach(function(op){
+        var movdia=op.dias?op.mov/op.dias:0;
+        rows.push({resp:op.nm,grupo:'maquinistas',dias:op.dias,lineas:op.mov,ordenes:0,ld:parseFloat(movdia.toFixed(1)),recCnt:0,metricaUnit:'mov/d'});
+      });
+    }
+  }
+
   // === A: Podio Top 3 (solo picking) ===
   var pkRows=rows.filter(function(r){return r.grupo==='picking';});
   var podioWrap=document.getElementById('rs-podio-wrap');
@@ -1517,8 +1538,8 @@ function buildResumen(){
   // Tabla
   var tbody=document.getElementById('rs-tbody');
   tbody.innerHTML='';
-  var grpLabels={picking:'Picking',pie:'Pie Máquina',muestra:'Muestra Simple',control:'Control'};
-  var grpColors={picking:'#2563eb',pie:'#d97706',muestra:'#7c3aed',control:'#64748b'};
+  var grpLabels={picking:'Picking',pie:'Pie Máquina',muestra:'Muestra Simple',control:'Control',maquinistas:'Maquinistas'};
+  var grpColors={picking:'#2563eb',pie:'#d97706',muestra:'#7c3aed',control:'#64748b',maquinistas:'#059669'};
   var maxLD=rows.length?Math.max.apply(null,rows.map(function(r){return r.ld;})):1;
   if(!rows.length){
     tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:28px;color:#aaa">Sin datos para el período seleccionado</td></tr>';
@@ -1527,22 +1548,31 @@ function buildResumen(){
       var tr=document.createElement('tr');
       var gc=grpColors[op.grupo]||'#64748b';
       var gl=grpLabels[op.grupo]||op.grupo;
-      var ldC=op.grupo==='picking'?perfColor(op.ld):'#333';
-      var pct=maxLD>0?Math.round(op.ld/maxLD*100):0;
-      var barColor=op.grupo==='picking'?perfColor(op.ld):'#9ca3af';
-      var ldCell='<div class="pb-wrap"><span style="font-weight:700;color:'+ldC+';min-width:36px">'+op.ld+'</span>'
-        +'<div class="pb-mini"><div class="pb-mini-fill" style="width:'+pct+'%;background:'+barColor+'"></div></div></div>';
-      var tgtHtml=op.grupo==='picking'?('<span style="font-weight:700;color:'+(op.ld>=TARGET?'#16a34a':op.ld>=70?'#d97706':'#dc2626')+'">'+Math.round(op.ld/TARGET*100)+'%</span>'):'-';
-      var recC=op.recCnt===0?'#16a34a':op.recCnt<=3?'#d97706':'#dc2626';
-      var recCell=op.recCnt>0
-        ?'<span style="background:'+recC+';color:white;padding:1px 9px;border-radius:12px;font-size:12px;font-weight:600;cursor:pointer" onclick="openRecModal(\''+op.resp.replace(/'/g,'')+'\',\''+op.resp.replace(/'/g,'')+'\')" title="Ver detalle de reclamos">'+op.recCnt+' &#128269;</span>'
-        :'<span style="background:'+recC+';color:white;padding:1px 9px;border-radius:12px;font-size:12px;font-weight:600">0</span>';
+      var ldCell,tgtHtml,recCell;
+      if(op.metricaUnit){
+        var mClr=op.grupo==='control'?(op.ld>=3500?'#16a34a':op.ld>=2000?'#2563eb':op.ld>=1000?'#d97706':'#dc2626'):(op.ld>=120?'#16a34a':op.ld>=100?'#2563eb':op.ld>=60?'#d97706':'#dc2626');
+        ldCell='<span style="font-weight:700;color:'+mClr+'">'+op.ld.toLocaleString('es-AR')+'</span><span style="color:#999;font-size:10px;margin-left:4px">'+op.metricaUnit+'</span>';
+        var mNiv=op.grupo==='control'?(op.ld>=3500?2:op.ld>=2000?1:0):(op.ld>=120?2:op.ld>=100?1:0);
+        tgtHtml=efNivelBadge(mNiv);
+        recCell='<span style="color:#aaa">&mdash;</span>';
+      } else {
+        var ldC=op.grupo==='picking'?perfColor(op.ld):'#333';
+        var pct=maxLD>0?Math.round(op.ld/maxLD*100):0;
+        var barColor=op.grupo==='picking'?perfColor(op.ld):'#9ca3af';
+        ldCell='<div class="pb-wrap"><span style="font-weight:700;color:'+ldC+';min-width:36px">'+op.ld+'</span>'
+          +'<div class="pb-mini"><div class="pb-mini-fill" style="width:'+pct+'%;background:'+barColor+'"></div></div></div>';
+        tgtHtml=op.grupo==='picking'?('<span style="font-weight:700;color:'+(op.ld>=TARGET?'#16a34a':op.ld>=70?'#d97706':'#dc2626')+'">'+Math.round(op.ld/TARGET*100)+'%</span>'):'-';
+        var recC=op.recCnt===0?'#16a34a':op.recCnt<=3?'#d97706':'#dc2626';
+        recCell=op.recCnt>0
+          ?'<span style="background:'+recC+';color:white;padding:1px 9px;border-radius:12px;font-size:12px;font-weight:600;cursor:pointer" onclick="openRecModal(\''+op.resp.replace(/'/g,'')+'\',\''+op.resp.replace(/'/g,'')+'\')" title="Ver detalle de reclamos">'+op.recCnt+' &#128269;</span>'
+          :'<span style="background:'+recC+';color:white;padding:1px 9px;border-radius:12px;font-size:12px;font-weight:600">0</span>';
+      }
       if(op.recCnt>0){tr.style.cursor='pointer'; tr.title='Clic para ver detalle'; tr.onclick=function(){openRecModal(op.resp,op.resp);};}
       tr.innerHTML='<td style="color:#999;text-align:center">'+(i+1)+'</td>'
         +'<td style="font-weight:600">'+op.resp+'</td>'
         +'<td><span style="background:'+gc+'22;color:'+gc+';padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600">'+gl+'</span></td>'
         +'<td style="text-align:right">'+op.lineas.toLocaleString()+'</td>'
-        +'<td style="text-align:right">'+(op.ordenes||0).toLocaleString()+'</td>'
+        +'<td style="text-align:right">'+(op.metricaUnit?'<span style="color:#aaa">&mdash;</span>':(op.ordenes||0).toLocaleString())+'</td>'
         +'<td>'+ldCell+'</td>'
         +'<td style="text-align:center">'+tgtHtml+'</td>'
         +'<td style="text-align:center">'+recCell+'</td>';
