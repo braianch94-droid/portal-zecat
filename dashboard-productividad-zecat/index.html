@@ -715,6 +715,9 @@ function getFilteredIndices(){
 }
 
 function applyFilter(){
+  var _s=document.querySelector('.sec.active');var _id=_s?_s.id:'';
+  if(_id==='sec-control'){buildControl();return;}
+  if(_id==='sec-maquinistas'){buildMaquinistas();return;}
   var idx=getFilteredIndices();
   var labels=idx.map(function(i){return monLabels[i];});
   var selKeys=idx.map(function(i){return allMonKeys[i];});
