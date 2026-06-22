@@ -1932,6 +1932,7 @@ function updateChartColors(dark){
     c.update('none');
   });
 }
+function chartColors(){var dark=document.body.classList.contains('dark');return{grid:dark?'rgba(255,255,255,0.08)':'rgba(0,0,0,0.08)',tick:dark?'#94a3b8':'#555',leg:dark?'#cbd5e1':'#333'};}
 function buildControl(){
   var anio=document.getElementById('selAnio')?document.getElementById('selAnio').value:'all';
   var mes=document.getElementById('selMes')?document.getElementById('selMes').value:'all';
