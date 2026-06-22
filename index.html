@@ -866,11 +866,15 @@ function toggleTheme() {
   document.getElementById('theme-ico').textContent = isDark ? '🌙' : '☀️';
   document.getElementById('theme-lbl').textContent  = isDark ? 'Modo oscuro' : 'Modo claro';
 
-  try {
-    const doc = document.getElementById('ifr-productividad').contentDocument;
-    doc.body.classList.toggle('dark', isDark);
-  } catch(e) {}
+  document.querySelectorAll('iframe').forEach(ifr => {
+    try { ifr.contentWindow.postMessage({type:'zecat-theme', dark: isDark}, '*'); } catch(e) {}
+  });
 }
+window.addEventListener('message', e => {
+  if (e.data && e.data.type === 'zecat-theme-ready') {
+    try { e.source.postMessage({type:'zecat-theme', dark: isDark}, '*'); } catch(e2) {}
+  }
+});
 </script>
 </body>
 </html>

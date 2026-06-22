@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-theme="dark">
+<html lang="es" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -2320,6 +2320,13 @@ async function exportarDashboardExcel() {
 /* ================================================================
    INICIO: cargar tab por defecto
    ================================================================ */
+// Sincronización de tema con portal padre
+window.addEventListener('message', e => {
+  if (!e.data || e.data.type !== 'zecat-theme') return;
+  document.documentElement.dataset.theme = e.data.dark ? 'dark' : 'light';
+});
+try { window.parent.postMessage({type:'zecat-theme-ready'}, '*'); } catch(e) {}
+
 window.addEventListener('DOMContentLoaded', () => {
   // Auto-cargar stock embebido si IndexedDB está vacío
   (async () => {
