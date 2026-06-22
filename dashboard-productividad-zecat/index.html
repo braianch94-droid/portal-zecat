@@ -200,7 +200,7 @@ body.dark .heat-section-title{color:#cbd5e1!important}
       <h1>Dashboard de Productividad</h1>
     </div>
   </div>
-  <div class="badge">Actualizado: 22/06/2026 12:22<br>Target picking: 84 lin/d&iacute;a</div>
+  <div class="badge">Actualizado: 22/06/2026 16:17<br>Target picking: 84 lin/d&iacute;a</div>
   <button id="themeToggle" onclick="toggleTheme()" title="Cambiar tema claro / oscuro" aria-label="Cambiar tema"><span id="themeIcon">&#9790;</span></button>
 </header>
 
@@ -486,50 +486,14 @@ body.dark .heat-section-title{color:#cbd5e1!important}
 
 <!-- ===== SECCION: CONTROL ===== -->
 <div id="sec-control" class="sec">
-  <div class="kpi-grid g4" style="margin-bottom:18px">
-    <div class="kpi-card blue"><div class="kpi-label">UND Procesadas</div><div class="kpi-value" id="ctrlKpiUnd">&#8212;</div><div class="kpi-sub" id="ctrlKpiUndSub"></div></div>
-    <div class="kpi-card amber"><div class="kpi-label">ORD Procesadas</div><div class="kpi-value" id="ctrlKpiOrd">&#8212;</div><div class="kpi-sub" id="ctrlKpiOrdSub"></div></div>
-    <div class="kpi-card green"><div class="kpi-label">UND/d&iacute;a promedio</div><div class="kpi-value" id="ctrlKpiUdpd">&#8212;</div><div class="kpi-sub" id="ctrlKpiUdpdSub"></div></div>
-    <div class="kpi-card teal"><div class="kpi-label">Operarios</div><div class="kpi-value" id="ctrlKpiOps">&#8212;</div><div class="kpi-sub" id="ctrlKpiOpsSub"></div></div>
-  </div>
-  <div class="charts-grid" style="margin-bottom:18px">
-    <div class="chart-card">
-      <div class="chart-title">Evoluci&oacute;n mensual &mdash; UND/d&iacute;a</div>
-      <canvas id="chartCtrlEvol" height="220"></canvas>
-    </div>
-    <div class="chart-card">
-      <div class="chart-title">Ranking operarios &mdash; UND totales</div>
-      <canvas id="chartCtrlRank" height="220"></canvas>
-    </div>
-  </div>
-  <div class="chart-card" style="padding:14px">
-    <div class="rank-title">Detalle mensual</div>
-    <div id="ctrlTable"></div>
-  </div>
+  <div class="nodata" style="margin-top:0">&#128269; La secci&oacute;n Control est&aacute; en desarrollo.<br><br>Cuando la pesta&ntilde;a Control del Excel fuente tenga datos, los indicadores aparecer&aacute;n aqu&iacute; autom&aacute;ticamente.</div>
 </div><!-- /sec-control -->
 
 <!-- ===== SECCION: MAQUINISTAS ===== -->
 <div id="sec-maquinistas" class="sec">
-  <div class="kpi-grid g4" style="margin-bottom:18px">
-    <div class="kpi-card blue"><div class="kpi-label">Total MOV</div><div class="kpi-value" id="maqKpiMov">&#8212;</div><div class="kpi-sub" id="maqKpiMovSub"></div></div>
-    <div class="kpi-card teal"><div class="kpi-label">Total UND</div><div class="kpi-value" id="maqKpiUnd">&#8212;</div><div class="kpi-sub" id="maqKpiUndSub"></div></div>
-    <div class="kpi-card green"><div class="kpi-label">MOV/d&iacute;a promedio</div><div class="kpi-value" id="maqKpiMpd">&#8212;</div><div class="kpi-sub" id="maqKpiMpdSub"></div></div>
-    <div class="kpi-card amber"><div class="kpi-label">Operarios</div><div class="kpi-value" id="maqKpiOps">&#8212;</div><div class="kpi-sub" id="maqKpiOpsSub"></div></div>
-  </div>
-  <div class="charts-grid" style="margin-bottom:18px">
-    <div class="chart-card">
-      <div class="chart-title">Evoluci&oacute;n MOV/d&iacute;a &mdash; por operario</div>
-      <canvas id="chartMaqEvol" height="220"></canvas>
-    </div>
-    <div class="chart-card">
-      <div id="maqBreakSub" class="chart-title">Desglose por tarea</div>
-      <canvas id="chartMaqBreak" height="220"></canvas>
-    </div>
-  </div>
-  <div class="chart-card" style="padding:14px">
-    <div class="rank-title">Detalle mensual completo</div>
-    <div id="maqDetailTable"></div>
-  </div>
+<h2 style="font-size:16px;font-weight:700;margin:0 0 14px;color:#1e40af">&#128295; Maquinistas &mdash; Movimientos por mes</h2>
+<div id="maqNoData" style="display:none;padding:32px;text-align:center;color:#888;font-size:14px">Sin datos de Maquinistas en el archivo fuente.</div>
+<div id="maqTable" style="overflow-x:auto"></div>
 </div><!-- /sec-maquinistas -->
 
 <!-- ===== SECCION: LIQUIDACION ===== -->
@@ -667,7 +631,7 @@ body.dark .heat-section-title{color:#cbd5e1!important}
     <div style="text-align:right;margin-top:14px;font-size:11px;color:#aaa" id="recModalFooter"></div>
   </div>
 </div>
-<footer>Dashboard v5 &mdash; Zecat Art&iacute;culos Promocionales SA &nbsp;|&nbsp; 22/06/2026 12:22</footer>
+<footer>Dashboard v5 &mdash; Zecat Art&iacute;culos Promocionales SA &nbsp;|&nbsp; 22/06/2026 16:17</footer>
 
 <script>
 Chart.defaults.font.family='Arial,sans-serif';
