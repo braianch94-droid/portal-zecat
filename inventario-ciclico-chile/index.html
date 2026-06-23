@@ -792,6 +792,11 @@ th.center, td.center { text-align: center; }
 /* ================================================================
    LOCAL DB — IndexedDB (sin backend, datos persistidos en el browser)
    ================================================================ */
+// === API CENTRAL (PythonAnywhere) ===
+const CL_API='https://lupita.pythonanywhere.com/portal/ciclico-cl';
+const CL_API_KEY='zecat-chile-ciclo-2026';
+const CL_HDRS={'Content-Type':'application/json','X-Api-Key':CL_API_KEY};
+
 const DB_NAME = 'ciclico_cl_v1';
 const DB_VERSION = 2;
 
@@ -880,6 +885,34 @@ async function exportarFechaExcel(fecha){
   ws['!cols']=[{wch:6},{wch:12},{wch:42},{wch:14},{wch:22},{wch:10},{wch:10},{wch:6},{wch:10},{wch:12},{wch:14},{wch:22},{wch:28},{wch:14},{wch:16},{wch:14},{wch:10},{wch:20}];
   XLSX.utils.book_append_sheet(wb,ws,'Conteos '+fecha);
   XLSX.writeFile(wb,'conteos_CL_'+fecha+'.xlsx');
+}
+
+// === SYNC DESDE API CENTRAL ===
+async function syncFromAPI(){
+  try{
+    const [r1,r2,r3]=await Promise.allSettled([
+      fetch(CL_API+'/api/conteos/all',{headers:{'X-Api-Key':CL_API_KEY}}),
+      fetch(CL_API+'/api/articulos',{headers:{'X-Api-Key':CL_API_KEY}}),
+      fetch(CL_API+'/api/ciclo',{headers:{'X-Api-Key':CL_API_KEY}})
+    ]);
+    if(r1.status==='fulfilled'&&r1.value.ok){
+      const c=await r1.value.json();
+      if(Array.isArray(c)&&c.length){await idbClear('conteos');await idbBulkPut('conteos',c);}
+    }
+    if(r2.status==='fulfilled'&&r2.value.ok){
+      const s=await r2.value.json();
+      if(Array.isArray(s)&&s.length){
+        await idbClear('stock');
+        await idbBulkPut('stock',s.map(x=>({...x,sku_wms:x.sku||x.sku_wms||''})));
+      }
+    }
+    if(r3.status==='fulfilled'&&r3.value.ok){
+      const cd=await r3.value.json();
+      const yr=JSON.parse(cd.ya_recomendados||'[]');
+      await idbPut('ciclo',{id:1,ciclo_numero:cd.ciclo_numero||1,total_elegibles:cd.total_elegibles||0,ya_recomendados:yr,fecha_inicio:cd.fecha_inicio||''});
+    }
+    console.log('Sync API: OK');
+  }catch(e){console.warn('Sync API error:',e);}
 }
 function openDB() {
   return new Promise((resolve, reject) => {
@@ -1001,15 +1034,40 @@ async function generarListaHoy(fechaStr) {
   return sel;
 }
 
-async function apiGetHoy() {
-  const hoy = isoHoyStr(), lab = esLaborable(hoy);
-  let rec = await idbGet('recomendaciones',hoy); let items = rec?rec.items:[];
-  if (!items.length && lab) items = await generarListaHoy(hoy);
-  const conteos = await idbGetAll('conteos');
-  const ayer = diaLaborableAnterior(hoy);
-  const hoyMap = {}; conteos.filter(c=>c.dia===hoy).forEach(c=>{ hoyMap[c.articulo]=c; });
-  const itemsFull = items.map((it,idx)=>{ const ct=hoyMap[it.articulo]; const sw=it.stock_web??it.stockWeb??0; return {...it,n:idx+1,stock_web:sw,valor_ddp:it.valor_ddp??it.ddpVal??0,faltante:FALTANTE_CHILE[_normArt(it.articulo)]||it.faltante||0,contado:!!ct,conteo_id:ct?.id||null,fisico_contado:ct?.fisico??null,dif_cont:ct?.difCont??ct?.dif_cont??null,diferencia:ct?.diferencia||null,motivo_contado:ct?.motivo??null,obs_contado:ct?.observacion??null}; });
-  const ciclo = await getCiclo();
+async function apiGetHoy(){
+  // Intentar API central primero
+  try{
+    const r=await fetch(CL_API+'/api/hoy',{headers:{'X-Api-Key':CL_API_KEY}});
+    if(r.ok){
+      const data=await r.json();
+      const hoy=isoHoyStr();
+      const items=(data.items||[]).map((it,idx)=>({
+        ...it,n:idx+1,
+        stock_web:it.stock_web??0,valor_ddp:it.valor_ddp??0,faltante:0,
+        contado:it.contado||false,conteo_id:it.conteo_id||null,
+        fisico_contado:it.fisico_contado??null,
+        dif_cont:it.dif_contado??null,
+        diferencia:it.dif_contado||null,
+        motivo_contado:it.motivo_contado||null,
+        obs_contado:it.obs_contado||null
+      }));
+      await idbPut('recomendaciones',{fecha:hoy,items:items.map(it=>({articulo:it.articulo,familia:it.familia,stockWeb:it.stock_web,ddpVal:it.valor_ddp,ddp:it.ddp||0,tier:it.tier||4}))});
+      return {
+        fecha:data.fecha,es_laborable:data.es_laborable,items,
+        ciclo:{ciclo_numero:data.ciclo?.ciclo_numero||1,total_elegibles:data.ciclo?.total_elegibles||0,ya_recomendados_count:data.ciclo?.recomendados_ciclo||0},
+        ayer:{fecha:data.ayer?.fecha,items:[]}
+      };
+    }
+  }catch(e){console.warn('apiGetHoy API:',e);}
+  // Fallback local
+  const hoy=isoHoyStr(),lab=esLaborable(hoy);
+  let rec=await idbGet('recomendaciones',hoy);let items=rec?rec.items:[];
+  if(!items.length&&lab)items=await generarListaHoy(hoy);
+  const conteos=await idbGetAll('conteos');
+  const ayer=diaLaborableAnterior(hoy);
+  const hoyMap={};conteos.filter(c=>c.dia===hoy).forEach(c=>{hoyMap[c.articulo]=c;});
+  const itemsFull=items.map((it,idx)=>{const ct=hoyMap[it.articulo];const sw=it.stock_web??it.stockWeb??0;return {...it,n:idx+1,stock_web:sw,valor_ddp:it.valor_ddp??it.ddpVal??0,faltante:FALTANTE_CHILE[_normArt(it.articulo)]||it.faltante||0,contado:!!ct,conteo_id:ct?.id||null,fisico_contado:ct?.fisico??null,dif_cont:ct?.difCont??ct?.dif_cont??null,diferencia:ct?.diferencia||null,motivo_contado:ct?.motivo??null,obs_contado:ct?.observacion??null};});
+  const ciclo=await getCiclo();
   return {fecha:hoy,es_laborable:lab,items:itemsFull,ayer:{fecha:ayer,items:conteos.filter(c=>c.dia===ayer).map(c=>({articulo:c.articulo,diferencia:c.diferencia}))},ciclo:{ciclo_numero:ciclo.ciclo_numero,total_elegibles:ciclo.total_elegibles,ya_recomendados_count:(ciclo.ya_recomendados||[]).length}};
 }
 
@@ -1066,26 +1124,30 @@ async function apiGetConteos(filters={}) {
   return {items:rows.slice(start,start+pp).map(r=>({...r,familia:familiaLimpia(r.familia)})),total,page,per_page:pp,pages};
 }
 
-async function apiAddConteo(data) {
+async function apiAddConteo(data){
   const {sistema,fisico,ms=0,ddp}=data;
   const {total,difCont,diferencia,stockDdp,difDdp}=calcularCampos(sistema,fisico,ms,ddp);
-  const d=new Date(data.dia+'T12:00:00'), mes=MESES_ES_ARR[d.getMonth()+1]||'';
+  const d=new Date(data.dia+'T12:00:00'),mes=MESES_ES_ARR[d.getMonth()+1]||'';
   const rec={sku_wms:data.sku_wms||null,articulo:data.articulo,familia:data.familia||null,sistema,fisico,ms,total,dif_cont:difCont,diferencia,ajustado:'NO',motivo:data.motivo||null,observacion:data.observacion||null,mes,dia:data.dia,ddp:ddp||0,stock_ddp:stockDdp,dif_ddp:difDdp,fecha_ingreso:new Date().toLocaleString('es-AR')};
-  const id=await idbAdd('conteos',rec);
-  scheduleAutoguardar(rec.dia);
-  return {...rec,id};
+  try{
+    const r=await fetch(CL_API+'/api/conteo',{method:'POST',headers:CL_HDRS,body:JSON.stringify(rec)});
+    if(r.ok){const res=await r.json();const fr={...rec,id:res.id};await idbPut('conteos',fr);scheduleAutoguardar(rec.dia);return fr;}
+  }catch(e){console.warn('API addConteo:',e);}
+  const id=await idbAdd('conteos',rec);scheduleAutoguardar(rec.dia);return {...rec,id};
 }
 
-async function apiUpdateConteo(id, data) {
+async function apiUpdateConteo(id,data){
   const existing=await idbGet('conteos',id);
-  if (!existing) throw new Error('Conteo no encontrado');
+  if(!existing)throw new Error('Conteo no encontrado');
   const {sistema,fisico,ms=0,ddp}=data;
   const {total,difCont,diferencia,stockDdp,difDdp}=calcularCampos(sistema,fisico,ms,ddp);
-  const d=new Date(data.dia+'T12:00:00'), mes=MESES_ES_ARR[d.getMonth()+1]||'';
+  const d=new Date(data.dia+'T12:00:00'),mes=MESES_ES_ARR[d.getMonth()+1]||'';
   const updated={...existing,...data,total,dif_cont:difCont,diferencia,stock_ddp:stockDdp,dif_ddp:difDdp,mes};
-  await idbPut('conteos',updated);
-  scheduleAutoguardar(updated.dia);
-  return {...updated,success:true};
+  try{
+    const r=await fetch(CL_API+'/api/conteo/'+id,{method:'PUT',headers:CL_HDRS,body:JSON.stringify(updated)});
+    if(r.ok){await idbPut('conteos',updated);scheduleAutoguardar(updated.dia);return {...updated,success:true};}
+  }catch(e){console.warn('API updateConteo:',e);}
+  await idbPut('conteos',updated);scheduleAutoguardar(updated.dia);return {...updated,success:true};
 }
 
 async function apiDeleteConteo(id) {
@@ -2417,6 +2479,7 @@ window.addEventListener('message', e => {
 try { window.parent.postMessage({type:'zecat-theme-ready'}, '*'); } catch(e) {}
 
 window.addEventListener('DOMContentLoaded', () => {
+  syncFromAPI();
   // Auto-cargar stock embebido si IndexedDB está vacío
   (async () => {
     try {
