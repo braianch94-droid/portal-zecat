@@ -11,11 +11,17 @@ echo.
 set PROD_FOLDER=%~dp0
 set PROD_FOLDER=%PROD_FOLDER:~0,-1%
 set REPO_FOLDER=C:\Users\bchevasco\OneDrive - Articulos Promocionales SA\Escritorio\GIT huB
+set PS1_CANONICAL=%REPO_FOLDER%\dashboard-productividad-zecat\Update-Dashboard.ps1
 set GH_BIN=%USERPROFILE%\gh_cli\bin
 
 :: ── PASO 1: Generar el HTML desde Excel ──────────────────
+:: IMPORTANTE: siempre usa el PS1 del repositorio git (unica fuente de verdad).
+:: No editar Update-Dashboard.ps1 en esta carpeta — no se usa mas.
 echo [1/3] Generando dashboard desde productividad.xlsx...
-powershell -ExecutionPolicy Bypass -WindowStyle Normal -File "%PROD_FOLDER%\Update-Dashboard.ps1"
+powershell -ExecutionPolicy Bypass -WindowStyle Normal ^
+  -File "%PS1_CANONICAL%" ^
+  -Source "%PROD_FOLDER%\productividad.xlsx" ^
+  -Output "%PROD_FOLDER%\Dashboard_Productividad.xlsx"
 if errorlevel 1 (
     echo.
     echo  ERROR: No se pudo generar el dashboard.
@@ -42,7 +48,7 @@ echo.
 echo [3/3] Subiendo a GitHub...
 cd /d "%REPO_FOLDER%"
 
-:: Actualizar token de autenticación desde gh CLI
+:: Actualizar token de autenticacion desde gh CLI
 set PATH=%PATH%;%GH_BIN%
 for /f "delims=" %%T in ('gh auth token 2^>nul') do set GH_TOKEN=%%T
 if "%GH_TOKEN%"=="" (
