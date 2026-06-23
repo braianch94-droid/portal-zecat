@@ -47,15 +47,15 @@ header .badge{background:rgba(255,255,255,.1);border-radius:20px;padding:6px 16p
 .filter-badge{background:#f5f5f5;border:1px solid #cccccc;border-radius:20px;padding:4px 14px;font-size:12px;color:#333333;font-weight:600}
 .kpi-grid{display:grid;gap:14px;margin-bottom:20px}
 .g5{grid-template-columns:repeat(5,1fr)}.g4{grid-template-columns:repeat(4,1fr)}.g3{grid-template-columns:repeat(3,1fr)}.g2{grid-template-columns:repeat(2,1fr)}
-.kpi-card{background:white;border-radius:10px;padding:18px 20px;box-shadow:0 1px 4px rgba(0,0,0,.08);border:1px solid #e8e8e8;border-left:4px solid #cccccc;transition:transform .2s}
-.kpi-card:hover{transform:translateY(-2px);box-shadow:0 4px 14px rgba(0,0,0,.12)}
-.kpi-card.blue{border-left-color:#2563eb}.kpi-card.green{border-left-color:#16a34a}
-.kpi-card.red{border-left-color:#dc2626}.kpi-card.amber{border-left-color:#d97706}
-.kpi-card.purple{border-left-color:#7c3aed}.kpi-card.teal{border-left-color:#0891b2}
-.kpi-card.slate{border-left-color:#64748b}.kpi-card.gray{border-left-color:#9ca3af}
-.kpi-label{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:#777777;font-weight:600;margin-bottom:8px}
-.kpi-value{font-size:28px;font-weight:700;color:#111111;line-height:1}
-.kpi-sub{font-size:12px;color:#999999;margin-top:6px}
+.kpi-card{background:white;border-radius:12px;padding:18px 20px;box-shadow:0 1px 3px rgba(0,0,0,.05);border:1px solid #ebebeb;border-top:3px solid #ccc;transition:transform .15s;position:relative}
+.kpi-card:hover{transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.09)}
+.kpi-card.blue{border-top-color:#2563eb;background:#f0f7ff}.kpi-card.green{border-top-color:#16a34a;background:#f0fdf4}
+.kpi-card.red{border-top-color:#dc2626;background:#fff5f5}.kpi-card.amber{border-top-color:#d97706;background:#fffcf0}
+.kpi-card.purple{border-top-color:#7c3aed;background:#f5f3ff}.kpi-card.teal{border-top-color:#0891b2;background:#f0fdff}
+.kpi-card.slate{border-top-color:#64748b}.kpi-card.gray{border-top-color:#9ca3af}
+.kpi-label{font-size:11px;text-transform:uppercase;letter-spacing:.7px;color:#6b7280;font-weight:600;margin-bottom:10px}
+.kpi-value{font-size:30px;font-weight:700;color:#0f172a;line-height:1}
+.kpi-sub{font-size:12px;color:#9ca3af;margin-top:7px}
 .charts-row{display:grid;gap:18px;margin-bottom:18px}
 .c2{grid-template-columns:1fr 1fr}.c3{grid-template-columns:1.2fr 1fr 1fr}.c1{grid-template-columns:1fr}
 .chart-card{background:white;border-radius:10px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.08);border:1px solid #e8e8e8}
@@ -83,7 +83,8 @@ body.dark .filter-bar{background:#1e293b;border-color:#334155}
 body.dark .filter-bar label{color:#94a3b8}
 body.dark .filter-bar select{background:#0f172a;color:#e2e8f0;border-color:#475569}
 body.dark .filter-badge{background:#0f172a;border-color:#334155;color:#cbd5e1}
-body.dark .kpi-card{background:#1e293b;border-color:#334155;box-shadow:none}
+body.dark .kpi-card{background:#1e293b;border-color:#334155;border-top-color:inherit;box-shadow:none}
+body.dark .kpi-card.blue{background:#0f1e35}body.dark .kpi-card.green{background:#0a1f15}body.dark .kpi-card.amber{background:#1f1505}body.dark .kpi-card.teal{background:#071820}body.dark .kpi-card.red{background:#1f0a0a}body.dark .kpi-card.purple{background:#130d28}
 body.dark .kpi-label{color:#94a3b8}body.dark .kpi-value{color:#f1f5f9}body.dark .kpi-sub{color:#64748b}
 body.dark .chart-card{background:#1e293b;border-color:#334155;box-shadow:none}
 body.dark .table-card{background:#1e293b;border-color:#334155;box-shadow:none}
@@ -109,83 +110,6 @@ body.dark .grp-btn:hover{border-color:#3b82f6;color:#60a5fa}
 body.dark .grp-btn.active{background:#2563eb;border-color:#2563eb;color:white}
 #themeToggle{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);border-radius:50px;width:42px;height:42px;color:white;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
 #themeToggle:hover{background:rgba(255,255,255,.22);transform:scale(1.08)}
-body.dark #recModal>div{background:#1e293b;color:#e2e8f0}
-body.dark #recModal #recModalTitle{color:#f1f5f9}
-body.dark #recModal #recModalSub{color:#64748b}
-body.dark #recModal table thead tr{background:#0f172a}
-body.dark #recModal table thead th{color:#94a3b8;border-bottom-color:#334155}
-body.dark #recModal table tbody tr{background:#1e293b!important}
-body.dark #recModal table tbody tr:nth-child(even){background:#0f172a!important}
-body.dark #recModal table tbody td{color:#e2e8f0;border-bottom-color:#334155}
-body.dark #recModal button{background:#334155;color:#cbd5e1}
-/* ===== MEJORAS A-E ===== */
-.podio-wrap{display:flex;gap:14px;margin-bottom:20px;justify-content:center;flex-wrap:wrap}
-.podio-card{background:white;border-radius:14px;padding:20px 16px;text-align:center;flex:1;min-width:150px;max-width:210px;box-shadow:0 2px 12px rgba(0,0,0,.1);border:2px solid #e0e0e0;transition:transform .2s}
-.podio-card:hover{transform:translateY(-3px)}
-.podio-card.p1{border-color:#f59e0b;background:linear-gradient(135deg,#fffbeb,#ffffff)}
-.podio-card.p2{border-color:#9ca3af;background:linear-gradient(135deg,#f9fafb,#ffffff)}
-.podio-card.p3{border-color:#b45309;background:linear-gradient(135deg,#fffaf0,#ffffff)}
-.podio-medal{font-size:34px;line-height:1;margin-bottom:6px}
-.podio-name{font-size:13px;font-weight:700;color:#111;margin-bottom:4px;word-break:break-word}
-.podio-ld{font-size:26px;font-weight:800;margin:4px 0}
-.podio-sub{font-size:11px;color:#999}
-.pb-wrap{display:flex;align-items:center;gap:7px}
-.pb-mini{flex:1;height:6px;background:#e5e7eb;border-radius:3px;overflow:hidden;min-width:60px}
-.pb-mini-fill{height:100%;border-radius:3px;transition:width .4s}
-.delta-up{color:#16a34a;font-size:11px;font-weight:700;margin-top:3px}
-.delta-dn{color:#dc2626;font-size:11px;font-weight:700;margin-top:3px}
-.delta-eq{color:#9ca3af;font-size:11px;font-weight:700;margin-top:3px}
-.heat-wrap{overflow-x:auto;margin-top:10px}
-.heat-tbl{border-collapse:collapse;font-size:11px;min-width:400px}
-.heat-tbl th{padding:6px 10px;text-align:center;color:#777;font-weight:600;font-size:10px;text-transform:uppercase;border-bottom:2px solid #e0e0e0;white-space:nowrap}
-.heat-tbl th.hth-op{text-align:left;min-width:140px}
-.heat-tbl td{padding:5px 9px;text-align:center;border:1px solid #f0f0f0;min-width:46px}
-.heat-tbl td.hth-op{text-align:left;font-weight:600;white-space:nowrap;color:#333;border-right:2px solid #e0e0e0}
-.hc0{background:#f0fdf4;color:#16a34a}.hc1{background:#fefce8;color:#854d0e}.hc2{background:#fff7ed;color:#c2410c}.hc3{background:#fef2f2;color:#b91c1c;font-weight:700}
-.worst-combo{flex:1;min-width:160px;border-radius:10px;padding:12px 14px;border:1.5px solid}
-.profile-wrap{max-width:760px;margin:0 auto}
-.profile-card{background:white;border-radius:16px;padding:26px 28px;box-shadow:0 2px 16px rgba(0,0,0,.1);border:1px solid #e8e8e8;display:flex;gap:24px;align-items:flex-start;margin-bottom:20px}
-.profile-avatar{width:76px;height:76px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#a78bfa);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:white;flex-shrink:0;letter-spacing:-1px}
-.profile-info{flex:1;min-width:0}
-.profile-name{font-size:21px;font-weight:800;color:#111;margin-bottom:2px}
-.profile-role{font-size:13px;color:#7c3aed;font-weight:600;margin-bottom:14px}
-.profile-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
-.profile-stat{text-align:center;background:#f8f5ff;border-radius:10px;padding:11px 6px;border:1px solid #ede9fe}
-.profile-stat-val{font-size:21px;font-weight:800;color:#7c3aed}
-.profile-stat-lbl{font-size:10px;text-transform:uppercase;color:#888;letter-spacing:.5px;margin-top:3px}
-.profile-extra{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
-.profile-extra-card{background:white;border-radius:10px;padding:14px 14px;border:1px solid #e8e8e8;box-shadow:0 1px 4px rgba(0,0,0,.06);border-left-width:4px}
-.profile-extra-val{font-size:20px;font-weight:700}
-.profile-extra-lbl{font-size:10px;text-transform:uppercase;color:#888;letter-spacing:.5px;margin-top:3px}
-@media(max-width:700px){.profile-extra{grid-template-columns:repeat(2,1fr)}.profile-stats{grid-template-columns:repeat(2,1fr)}.profile-card{flex-direction:column}}
-body.dark .podio-card{background:#1e293b;border-color:#334155}
-body.dark .podio-card.p1{background:linear-gradient(135deg,#2a1f00,#1e293b);border-color:#f59e0b}
-body.dark .podio-card.p2{background:linear-gradient(135deg,#1a1f2e,#1e293b);border-color:#9ca3af}
-body.dark .podio-card.p3{background:linear-gradient(135deg,#2a1200,#1e293b);border-color:#b45309}
-body.dark .podio-name{color:#f1f5f9}
-body.dark .podio-sub{color:#64748b}
-body.dark .pb-mini{background:#334155}
-body.dark .profile-card{background:#1e293b;border-color:#334155}
-body.dark .profile-name{color:#f1f5f9}
-body.dark .profile-role{color:#a78bfa}
-body.dark .profile-stat{background:#0f172a;border-color:#334155}
-body.dark .profile-stat-val{color:#a78bfa}
-body.dark .profile-stat-lbl{color:#64748b}
-body.dark .profile-extra-card{background:#1e293b;border-color:#334155}
-body.dark .profile-extra-lbl{color:#64748b}
-body.dark .heat-tbl th{color:#94a3b8;border-bottom-color:#334155}
-body.dark .heat-tbl td{border-color:#1e293b}
-body.dark .heat-tbl th.hth-op,body.dark .heat-tbl td.hth-op{border-right-color:#334155}
-body.dark .heat-tbl td.hth-op{color:#e2e8f0}
-body.dark .hc0{background:rgba(22,163,74,.18)!important;color:#4ade80!important}
-body.dark .hc1{background:rgba(202,138,4,.15)!important;color:#fcd34d!important}
-body.dark .hc2{background:rgba(234,88,12,.18)!important;color:#fb923c!important}
-body.dark .hc3{background:rgba(185,28,28,.22)!important;color:#f87171!important;font-weight:700!important}
-body.dark .worst-combo{background:rgba(30,41,59,.85)!important;border-color:rgba(71,85,105,.6)!important}
-body.dark .worst-combo>div:nth-child(2){color:#f1f5f9!important}
-body.dark .worst-combo>div:nth-child(3){color:#94a3b8!important}
-body.dark .worst-combo>div:nth-child(4){color:#f87171!important}
-body.dark .heat-section-title{color:#cbd5e1!important}
 </style>
 </head>
 <body>
@@ -200,7 +124,7 @@ body.dark .heat-section-title{color:#cbd5e1!important}
       <h1>Dashboard de Productividad</h1>
     </div>
   </div>
-  <div class="badge">Actualizado: 23/06/2026 14:22<br>Target picking: 84 lin/d&iacute;a</div>
+  <div class="badge">Actualizado: 23/06/2026 14:30<br>Target picking: 84 lin/d&iacute;a</div>
   <button id="themeToggle" onclick="toggleTheme()" title="Cambiar tema claro / oscuro" aria-label="Cambiar tema"><span id="themeIcon">&#9790;</span></button>
 </header>
 
@@ -211,10 +135,7 @@ body.dark .heat-section-title{color:#cbd5e1!important}
   <button class="tab-btn" onclick="switchTab('muestra')" id="btn-muestra">&#128203; Muestra Simple</button>
   <button class="tab-btn" onclick="switchTab('reclamos')" id="btn-reclamos">&#128683; Reclamos</button>
   <button class="tab-btn" onclick="switchTab('control')" id="btn-control">&#128269; Control</button>
-  <button class="tab-btn" onclick="switchTab('resumen')" id="btn-resumen">&#128202; Resumen General</button>
   <button class="tab-btn" onclick="switchTab('maquinistas')" id="btn-maquinistas">&#128295; Maquinistas</button>
-  <button class="tab-btn" onclick="switchTab('liquidacion')" id="btn-liquidacion">&#128176; Liquidaci&oacute;n</button>
-  <button class="tab-btn" onclick="switchTab('eficiencia')" id="btn-eficiencia">&#9889; Eficiencia</button>
 </nav>
 
 <div class="container">
@@ -268,15 +189,10 @@ body.dark .heat-section-title{color:#cbd5e1!important}
   <div class="kpi-card red"><div class="kpi-label">Reclamos</div><div class="kpi-value" id="kpiRC">-</div><div class="kpi-sub">Tasa: <span id="kpiRate">-</span>/1000 lin</div></div>
   <div class="kpi-card purple"><div class="kpi-label">Unidades</div><div class="kpi-value" style="font-size:22px" id="kpiU">-</div><div class="kpi-sub"><span id="kpiOlas2">-</span> olas</div></div>
 </div>
-<div class="kpi-grid g4">
+<div class="kpi-grid g3">
   <div class="kpi-card teal"><div class="kpi-label">Personas Necesarias</div><div class="kpi-value" id="kpiStaffNec">-</div><div class="kpi-sub">Total lin / d&iacute;as hab / 84</div></div>
   <div class="kpi-card blue"><div class="kpi-label">Personas Activas (prom/d&iacute;a)</div><div class="kpi-value" id="kpiStaffAct">-</div><div class="kpi-sub">Promedio diario del per&iacute;odo</div></div>
   <div class="kpi-card green"><div class="kpi-label">Total L&iacute;neas</div><div class="kpi-value" style="font-size:22px" id="kpiL">-</div><div class="kpi-sub">Picking regular acumulado</div></div>
-  <div class="kpi-card teal"><div class="kpi-label">Eficiencia U/L&iacute;nea</div><div class="kpi-value" id="kpiEff">-</div><div class="kpi-sub" id="kpiEffSub">Unidades por l&iacute;nea picking</div></div>
-</div>
-<div class="kpi-grid g2" style="margin-top:0">
-  <div class="kpi-card blue" style="border-left-color:#2563eb"><div class="kpi-label">Lin/D&iacute;a &mdash; <span id="kpiLDMonth">Per&iacute;odo</span></div><div class="kpi-value" id="kpiLDDeltaVal" style="font-size:18px">-</div><div class="kpi-sub" id="kpiLDDelta">-</div></div>
-  <div class="kpi-card red" style="border-left-color:#dc2626"><div class="kpi-label">Reclamos &mdash; <span id="kpiRCMonth">Per&iacute;odo</span></div><div class="kpi-value" id="kpiRCDeltaVal" style="font-size:18px">-</div><div class="kpi-sub" id="kpiRCDelta">-</div></div>
 </div>
 
 <div class="info-box">&#127919; Target: <strong>84 lineas/d&iacute;a</strong> &mdash; Verde &ge; 84 &mdash; Naranja &ge; 70 &mdash; Rojo &lt; 70</div>
@@ -321,7 +237,7 @@ body.dark .heat-section-title{color:#cbd5e1!important}
   <div class="rank-title" id="rankTitle">Ranking &mdash; Picking Regular</div>
   <div class="rank-sub">Ordenado por lineas/d&iacute;a &nbsp;|&nbsp; MERMA y PIE DE MAQUINA en sus tabs propios</div>
   <table>
-    <thead><tr><th>#</th><th>Operario</th><th style="text-align:right">D&iacute;as</th><th style="text-align:right">Olas</th><th style="text-align:right">NPs</th><th style="text-align:right">Lineas</th><th style="text-align:center">Lin/D&iacute;a</th><th style="text-align:center">Cumpl%</th><th style="text-align:right">Unidades</th><th style="text-align:center">U/L&iacute;nea</th><th style="text-align:center">Reclamos</th><th style="text-align:center">Tasa Rec/1000</th><th style="text-align:center">Tendencia</th></tr></thead>
+    <thead><tr><th>#</th><th>Operario</th><th style="text-align:right">D&iacute;as</th><th style="text-align:right">Olas</th><th style="text-align:right">Lineas</th><th style="text-align:center">Lin/D&iacute;a</th><th style="text-align:center">Cumpl%</th><th style="text-align:right">Unidades</th><th style="text-align:center">Reclamos</th><th style="text-align:center">Tasa Rec/1000</th><th style="text-align:center">Tendencia</th></tr></thead>
     <tbody id="rankBody"></tbody>
   </table>
 </div>
@@ -330,7 +246,7 @@ body.dark .heat-section-title{color:#cbd5e1!important}
   <div class="rank-title">Totales por Operario &mdash; Per&iacute;odo seleccionado</div>
   <div class="rank-sub">Acumulado del per&iacute;odo &mdash; ordenado por total l&iacute;neas</div>
   <table>
-    <thead><tr><th>Operario</th><th style="text-align:right">Total D&iacute;as</th><th style="text-align:right">Total Olas</th><th style="text-align:right">Total NPs</th><th style="text-align:right">Total L&iacute;neas</th><th style="text-align:center">Prom Lin/D&iacute;a</th><th style="text-align:center">Cumpl%</th><th style="text-align:right">Total Unidades</th><th style="text-align:center">Total Reclamos</th></tr></thead>
+    <thead><tr><th>Operario</th><th style="text-align:right">Total D&iacute;as</th><th style="text-align:right">Total Olas</th><th style="text-align:right">Total L&iacute;neas</th><th style="text-align:center">Prom Lin/D&iacute;a</th><th style="text-align:center">Cumpl%</th><th style="text-align:right">Total Unidades</th><th style="text-align:center">Total Reclamos</th></tr></thead>
     <tbody id="totalesBody"></tbody>
   </table>
 </div>
@@ -370,46 +286,16 @@ body.dark .heat-section-title{color:#cbd5e1!important}
 <!-- ===== SECCION: MUESTRA SIMPLE ===== -->
 <div id="sec-muestra" class="sec">
 
-<div class="profile-wrap">
-  <div class="profile-card">
-    <div class="profile-avatar">LA</div>
-    <div class="profile-info">
-      <div class="profile-name">LEZCANO AGUST&Iacute;N</div>
-      <div class="profile-role">&#128203; Muestra Simple &nbsp;&mdash;&nbsp; Operario Especializado</div>
-      <div class="profile-stats">
-        <div class="profile-stat">
-          <div class="profile-stat-val" id="lezLD">-</div>
-          <div class="profile-stat-lbl">Lin/D&iacute;a Prom</div>
-        </div>
-        <div class="profile-stat">
-          <div class="profile-stat-val" id="lezDias">-</div>
-          <div class="profile-stat-lbl">D&iacute;as Trabajados</div>
-        </div>
-        <div class="profile-stat">
-          <div class="profile-stat-val" id="lezVsTeam" style="font-size:17px">-</div>
-          <div class="profile-stat-lbl">vs Equipo Picking</div>
-        </div>
-      </div>
-    </div>
-  </div>
-  <div class="profile-extra">
-    <div class="profile-extra-card" style="border-left-color:#2563eb">
-      <div class="profile-extra-val" id="lezL" style="color:#2563eb">-</div>
-      <div class="profile-extra-lbl">Total L&iacute;neas</div>
-    </div>
-    <div class="profile-extra-card" style="border-left-color:#d97706">
-      <div class="profile-extra-val" id="lezU" style="color:#d97706">-</div>
-      <div class="profile-extra-lbl">Unidades</div>
-    </div>
-    <div class="profile-extra-card" style="border-left-color:#dc2626">
-      <div class="profile-extra-val" id="lezRC" style="color:#dc2626">-</div>
-      <div class="profile-extra-lbl">Reclamos</div>
-    </div>
-    <div class="profile-extra-card" style="border-left-color:#0891b2">
-      <div class="profile-extra-val" id="lezOlas" style="color:#0891b2">-</div>
-      <div class="profile-extra-lbl">Olas / Pedidos</div>
-    </div>
-  </div>
+<div class="kpi-grid g5">
+  <div class="kpi-card purple"><div class="kpi-label">Lin/D&iacute;a Promedio</div><div class="kpi-value" id="lezLD">-</div><div class="kpi-sub">Muestra Simple</div></div>
+  <div class="kpi-card blue"><div class="kpi-label">Total L&iacute;neas</div><div class="kpi-value" style="font-size:22px" id="lezL">-</div><div class="kpi-sub">Per&iacute;odo seleccionado</div></div>
+  <div class="kpi-card green"><div class="kpi-label">D&iacute;as Trabajados</div><div class="kpi-value" id="lezDias">-</div><div class="kpi-sub">Con producci&oacute;n de muestras</div></div>
+  <div class="kpi-card amber"><div class="kpi-label">Unidades</div><div class="kpi-value" style="font-size:22px" id="lezU">-</div><div class="kpi-sub">Unidades procesadas</div></div>
+  <div class="kpi-card slate"><div class="kpi-label">vs Equipo Picking</div><div class="kpi-value" id="lezVsTeam">-</div><div class="kpi-sub">Diferencia lin/d&iacute;a</div></div>
+</div>
+<div class="kpi-grid g2">
+  <div class="kpi-card red"><div class="kpi-label">Reclamos</div><div class="kpi-value" id="lezRC">-</div><div class="kpi-sub">Muestra Simple</div></div>
+  <div class="kpi-card teal"><div class="kpi-label">Olas / Pedidos</div><div class="kpi-value" id="lezOlas">-</div><div class="kpi-sub">Total olas del per&iacute;odo</div></div>
 </div>
 
 <div class="charts-row c1">
@@ -473,165 +359,40 @@ body.dark .heat-section-title{color:#cbd5e1!important}
   </div>
 </div>
 
-<div class="table-card">
-  <div class="rank-title">&#128293; Peores Combinaciones &mdash; Operario &times; Categor&iacute;a</div>
-  <div class="rank-sub">Top 3 alertas del per&iacute;odo &mdash; combinaciones con m&aacute;s reclamos</div>
-  <div id="worstCombos" style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:18px"></div>
-  <div class="heat-section-title" style="font-size:13px;font-weight:700;color:#111;margin-bottom:6px">Mapa de calor &mdash; Reclamos por Operario &times; Categor&iacute;a</div>
-  <div class="heat-wrap"><table class="heat-tbl" id="heatmapTbl"><thead><tr id="heatHead"></tr></thead><tbody id="heatBody"></tbody></table></div>
-  <div id="heatNoData" class="nodata" style="display:none;padding:24px;margin-top:8px">Sin datos de operario/categor&iacute;a para el per&iacute;odo seleccionado</div>
-</div>
-
 </div><!-- /sec-reclamos -->
 
 <!-- ===== SECCION: CONTROL ===== -->
 <div id="sec-control" class="sec">
-  <div class="nodata" style="margin-top:0">&#128269; La secci&oacute;n Control est&aacute; en desarrollo.<br><br>Cuando la pesta&ntilde;a Control del Excel fuente tenga datos, los indicadores aparecer&aacute;n aqu&iacute; autom&aacute;ticamente.</div>
+  <div class="kpi-grid g4" style="margin-bottom:18px">
+    <div class="kpi-card blue"><div class="kpi-label">UND Procesadas</div><div class="kpi-value" id="ctrlKpiUnd">&#8212;</div><div class="kpi-sub" id="ctrlKpiUndSub"></div></div>
+    <div class="kpi-card amber"><div class="kpi-label">ORD Procesadas</div><div class="kpi-value" id="ctrlKpiOrd">&#8212;</div><div class="kpi-sub" id="ctrlKpiOrdSub"></div></div>
+    <div class="kpi-card green"><div class="kpi-label">UND/d&iacute;a promedio</div><div class="kpi-value" id="ctrlKpiUdpd">&#8212;</div><div class="kpi-sub" id="ctrlKpiUdpdSub"></div></div>
+    <div class="kpi-card teal"><div class="kpi-label">Operarios</div><div class="kpi-value" id="ctrlKpiOps">&#8212;</div><div class="kpi-sub" id="ctrlKpiOpsSub"></div></div>
+  </div>
+  <div class="charts-grid" style="margin-bottom:18px">
+    <div class="chart-card"><div class="chart-title">Evoluci&oacute;n mensual &mdash; UND/d&iacute;a</div><canvas id="chartCtrlEvol" height="220"></canvas></div>
+    <div class="chart-card"><div class="chart-title">Ranking operarios &mdash; UND totales</div><canvas id="chartCtrlRank" height="220"></canvas></div>
+  </div>
+  <div class="chart-card" style="padding:14px"><div class="rank-title">Detalle mensual</div><div id="ctrlTable"></div></div>
 </div><!-- /sec-control -->
 
 <!-- ===== SECCION: MAQUINISTAS ===== -->
 <div id="sec-maquinistas" class="sec">
-<h2 style="font-size:16px;font-weight:700;margin:0 0 14px;color:#1e40af">&#128295; Maquinistas &mdash; Movimientos por mes</h2>
-<div id="maqNoData" style="display:none;padding:32px;text-align:center;color:#888;font-size:14px">Sin datos de Maquinistas en el archivo fuente.</div>
-<div id="maqTable" style="overflow-x:auto"></div>
+  <div class="kpi-grid g4" style="margin-bottom:18px">
+    <div class="kpi-card blue"><div class="kpi-label">Total MOV</div><div class="kpi-value" id="maqKpiMov">&#8212;</div><div class="kpi-sub" id="maqKpiMovSub"></div></div>
+    <div class="kpi-card teal"><div class="kpi-label">Total UND</div><div class="kpi-value" id="maqKpiUnd">&#8212;</div><div class="kpi-sub" id="maqKpiUndSub"></div></div>
+    <div class="kpi-card green"><div class="kpi-label">MOV/d&iacute;a promedio</div><div class="kpi-value" id="maqKpiMpd">&#8212;</div><div class="kpi-sub" id="maqKpiMpdSub"></div></div>
+    <div class="kpi-card amber"><div class="kpi-label">Operarios</div><div class="kpi-value" id="maqKpiOps">&#8212;</div><div class="kpi-sub" id="maqKpiOpsSub"></div></div>
+  </div>
+  <div class="charts-grid" style="margin-bottom:18px">
+    <div class="chart-card"><div class="chart-title">Evoluci&oacute;n MOV/d&iacute;a &mdash; por operario</div><canvas id="chartMaqEvol" height="220"></canvas></div>
+    <div class="chart-card"><div id="maqBreakSub" class="chart-title">Desglose por tarea</div><canvas id="chartMaqBreak" height="220"></canvas></div>
+  </div>
+  <div class="chart-card" style="padding:14px"><div class="rank-title">Detalle mensual completo</div><div id="maqDetailTable"></div></div>
 </div><!-- /sec-maquinistas -->
 
-<!-- ===== SECCION: LIQUIDACION ===== -->
-<div id="sec-liquidacion" class="sec">
-<h2 style="font-size:16px;font-weight:700;margin:0 0 4px;color:#1e40af">&#128176; Liquidaci&oacute;n &mdash; Bonos por Productividad</h2>
-<p style="font-size:12px;color:#888;margin:0 0 14px">Calcula bono seg&uacute;n cumplimiento individual vs target: PRES &#8805; 60% = 5% &nbsp;|&nbsp; N1 &#8805; 80% = 7,5% &nbsp;|&nbsp; N2 &#8805; 100% = 10%</p>
-<div style="margin-bottom:12px">
-  <label style="font-size:12px;font-weight:600">Mes:</label>&nbsp;
-  <select id="selLiqMes" onchange="buildLiquidacion()" style="border:1px solid #ccc;border-radius:6px;padding:4px 8px;font-size:12px"></select>
-</div>
-<div id="liqTable" style="overflow-x:auto"></div>
-</div><!-- /sec-liquidacion -->
-
-<!-- ===== SECCION: EFICIENCIA ===== -->
-<div id="sec-eficiencia" class="sec">
-<div style="display:flex;align-items:center;gap:16px;margin-bottom:14px;flex-wrap:wrap">
-  <h2 style="margin:0;font-size:16px;font-weight:700;color:#1e40af">&#9889; Eficiencia &mdash; Bonos</h2>
-  <span style="font-size:11px;color:#888">Presentismo 5% | N1 +2,5% | N2 +4,5% | Grupal +3% | M&aacute;x 15%</span>
-  <label style="margin-left:auto;display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-weight:600">
-    <input type="checkbox" id="efGrupalCheck" onchange="buildEficiencia()">
-    Bono Grupal activo (+3%)
-  </label>
-</div>
-<div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">
-  <button onclick="switchEficTab('pick')" id="ebt-pick" style="background:#2563eb;color:#fff;border:1px solid #2563eb;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600">&#128293; Pickeadores</button>
-  <button onclick="switchEficTab('maq')" id="ebt-maq" style="background:transparent;color:#888;border:1px solid #ccc;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600">&#128295; Maquinistas</button>
-  <button onclick="switchEficTab('ctrl')" id="ebt-ctrl" style="background:transparent;color:#888;border:1px solid #ccc;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600">&#9881; Control</button>
-  <button onclick="switchEficTab('pie')" id="ebt-pie" style="background:transparent;color:#888;border:1px solid #ccc;padding:6px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600">&#128736; Pie de M&aacute;quina</button>
-</div>
-<div style="margin-bottom:14px;display:flex;align-items:center;gap:8px">
-  <span style="font-size:12px;color:#888;font-weight:600">Mes:</span>
-  <select id="efMesSel" onchange="buildEficiencia()" style="border:1px solid #ccc;border-radius:6px;padding:4px 10px;font-size:12px"></select>
-</div>
-<div id="eficContent"></div>
-</div><!-- /sec-eficiencia -->
-
-<!-- ===== SECCION: RESUMEN GENERAL ===== -->
-<div id="sec-resumen" class="sec">
-
-<div class="kpi-grid g4" style="margin-bottom:18px">
-  <div class="kpi-card blue">
-    <div class="kpi-label">&#128230; Picking &mdash; Operarios</div>
-    <div class="kpi-value" id="rs-pk-ops">&#8212;</div>
-    <div class="kpi-sub" id="rs-pk-sub">Sin datos</div>
-  </div>
-  <div class="kpi-card amber">
-    <div class="kpi-label">&#9881; Pie de M&aacute;quina &mdash; Turnos</div>
-    <div class="kpi-value" id="rs-pie-ops">&#8212;</div>
-    <div class="kpi-sub" id="rs-pie-sub">Sin datos</div>
-  </div>
-  <div class="kpi-card purple">
-    <div class="kpi-label">&#128203; Muestra Simple</div>
-    <div class="kpi-value" id="rs-lez-ops">&#8212;</div>
-    <div class="kpi-sub" id="rs-lez-sub">Sin datos</div>
-  </div>
-  <div class="kpi-card slate">
-    <div class="kpi-label">&#128269; Control</div>
-    <div class="kpi-value">&#8212;</div>
-    <div class="kpi-sub">Sin datos a&uacute;n</div>
-  </div>
-</div>
-
-<div class="grp-btns">
-  <button class="grp-btn active" id="rsBtnAll"  onclick="setResGrp('all')">Todos</button>
-  <button class="grp-btn" id="rsBtnPk"   onclick="setResGrp('picking')">&#128230; Picking</button>
-  <button class="grp-btn" id="rsBtnPie"  onclick="setResGrp('pie')">&#9881; Pie de M&aacute;quina</button>
-  <button class="grp-btn" id="rsBtnLez"  onclick="setResGrp('muestra')">&#128203; Muestra Simple</button>
-  <button class="grp-btn" id="rsBtnCtrl" onclick="setResGrp('control')" style="opacity:.45;cursor:not-allowed">&#128269; Control</button>
-</div>
-
-<div id="rs-podio-wrap" style="display:none;margin-bottom:18px">
-  <div style="font-size:13px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:.7px;margin-bottom:12px">&#127942; TOP 3 &mdash; Picking Regular</div>
-  <div class="podio-wrap" id="rs-podio"></div>
-</div>
-
-<div class="table-card" style="margin-bottom:18px">
-  <div class="rank-title">&#127942; Ranking de Performance por Operario</div>
-  <div class="rank-sub" id="rs-sub">Seleccion&aacute; un mes espec&iacute;fico para ver el detalle</div>
-  <table>
-    <thead><tr>
-      <th style="width:36px">#</th>
-      <th>Operario</th>
-      <th>Grupo</th>
-      <th style="text-align:right">Total L&iacute;neas</th>
-      <th style="text-align:right">NPs</th>
-      <th style="text-align:center;width:150px">Lin/D&iacute;a</th>
-      <th style="text-align:center">vs Target</th>
-      <th style="text-align:center">Reclamos</th>
-    </tr></thead>
-    <tbody id="rs-tbody"></tbody>
-  </table>
-</div>
-
-<div class="charts-row c2">
-  <div class="chart-card" style="border-top:3px solid #2563eb">
-    <div class="chart-title">&#128200; Evoluci&oacute;n Lin/D&iacute;a por grupo</div>
-    <div class="chart-subtitle">Todos los meses disponibles</div>
-    <div style="position:relative;height:230px"><canvas id="chartResGrp"></canvas></div>
-  </div>
-  <div class="chart-card" style="border-top:3px solid #dc2626">
-    <div class="chart-title">&#128683; Reclamos por operario</div>
-    <div class="chart-subtitle" id="rs-rec-sub">Mes seleccionado</div>
-    <div style="position:relative;height:230px"><canvas id="chartResRec"></canvas></div>
-  </div>
-</div>
-
-</div><!-- /sec-resumen -->
-
 </div><!-- /container -->
-
-<!-- ===== MODAL DETALLE RECLAMOS ===== -->
-<div id="recModal" onclick="if(event.target===this)closeRecModal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9000;overflow-y:auto;padding:24px 12px">
-  <div style="background:white;max-width:960px;margin:0 auto;border-radius:14px;padding:28px 28px 20px;position:relative;box-shadow:0 20px 60px rgba(0,0,0,.3)">
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px;gap:12px">
-      <div>
-        <div style="font-size:16px;font-weight:700;color:#111" id="recModalTitle">Reclamos</div>
-        <div style="font-size:12px;color:#888;margin-top:4px" id="recModalSub"></div>
-      </div>
-      <button onclick="closeRecModal()" style="background:#f0f0f0;border:none;border-radius:8px;width:34px;height:34px;font-size:18px;cursor:pointer;color:#555;flex-shrink:0;line-height:1">&#x2715;</button>
-    </div>
-    <div style="overflow-x:auto">
-      <table style="width:100%;border-collapse:collapse;font-size:12.5px" id="recModalTable">
-        <thead><tr style="background:#f5f5f5">
-          <th style="padding:9px 10px;text-align:left;font-size:10.5px;text-transform:uppercase;color:#666;border-bottom:2px solid #e0e0e0;white-space:nowrap">NP</th>
-          <th style="padding:9px 10px;text-align:left;font-size:10.5px;text-transform:uppercase;color:#666;border-bottom:2px solid #e0e0e0;white-space:nowrap">Fecha</th>
-          <th style="padding:9px 10px;text-align:left;font-size:10.5px;text-transform:uppercase;color:#666;border-bottom:2px solid #e0e0e0">Art&iacute;culo</th>
-          <th style="padding:9px 10px;text-align:right;font-size:10.5px;text-transform:uppercase;color:#666;border-bottom:2px solid #e0e0e0;white-space:nowrap">Q Reclam.</th>
-          <th style="padding:9px 10px;text-align:left;font-size:10.5px;text-transform:uppercase;color:#666;border-bottom:2px solid #e0e0e0">Motivo</th>
-          <th style="padding:9px 10px;text-align:left;font-size:10.5px;text-transform:uppercase;color:#666;border-bottom:2px solid #e0e0e0">Comentario</th>
-          <th style="padding:9px 10px;text-align:left;font-size:10.5px;text-transform:uppercase;color:#666;border-bottom:2px solid #e0e0e0">Cliente</th>
-        </tr></thead>
-        <tbody id="recModalBody"></tbody>
-      </table>
-    </div>
-    <div style="text-align:right;margin-top:14px;font-size:11px;color:#aaa" id="recModalFooter"></div>
-  </div>
-</div>
-<footer>Dashboard v5 &mdash; Zecat Art&iacute;culos Promocionales SA &nbsp;|&nbsp; 23/06/2026 14:22</footer>
+<footer>Dashboard v5 &mdash; Zecat Art&iacute;culos Promocionales SA &nbsp;|&nbsp; 23/06/2026 14:30</footer>
 
 <script>
 Chart.defaults.font.family='Arial,sans-serif';
@@ -640,47 +401,127 @@ Chart.defaults.font.size=12;
 const TARGET=84;
 const allMonKeys=['2026-01','2026-02','2026-03','2026-04','2026-05','2026-06'];
 const monLabels=['Enero 2026','Febrero 2026','Marzo 2026','Abril 2026','Mayo 2026','Junio 2026'];
-const teamLD=[61.6,62.9,67.7,80.4,99.3,78.2];
-const teamColors=['#dc2626','#dc2626','#dc2626','#d97706','#16a34a','#d97706'];
+const teamLD=[61.7,65,86,80.6,99.4,78.2];
+const teamColors=['#dc2626','#dc2626','#16a34a','#d97706','#16a34a','#d97706'];
 const staffNec=[2.2,3.3,4.1,3.8,4.9,3.7];
 const staffAct=[3,4,4,4,4,4.8];
 const merma1=[28.4,21.3,29.4,25.4,23.1,22.1];
 const merma2=[22.2,38,13.8,16.6,16,15.3];
 const pie1=[null,null,null,null,null,null];
 const pie2=[null,null,null,null,null,null];
-const monthlyData={'2026-01':{totOps:7,pickeadores:3,avgLD:61.6,cumAv:73.3,totL:3880,totU:314550,totRC:12,rateG:3.09,totOlas:284,staffNec:2.2,staffAct:3,pickers:[{resp:'BRUN TOMAS',dias:22,olas:102,lineas:1409,ordenes:532,ld:64,cumpl:76.2,unidades:108737,recCnt:5,trend:'▼ -17.9'},{resp:'ARMOA TAMARA',dias:12,olas:30,lineas:727,ordenes:240,ld:60.6,cumpl:72.1,unidades:38925,recCnt:3,trend:'▼ -3.6'},{resp:'ROMERO MELANIE',dias:14,olas:71,lineas:803,ordenes:277,ld:57.4,cumpl:68.3,unidades:72382,recCnt:2,trend:'-'},{resp:'LAURATO MARTINEZ',dias:21,olas:76,lineas:927,ordenes:332,ld:44.1,cumpl:52.5,unidades:81727,recCnt:2,trend:'▼ -24.8'},{resp:'ARCE ELIAS',dias:1,olas:1,lineas:8,ordenes:7,ld:8,cumpl:9.5,unidades:742,recCnt:0,trend:'-'},{resp:'DEMARCHIS EMILIANO',dias:1,olas:1,lineas:3,ordenes:1,ld:3,cumpl:3.6,unidades:12000,recCnt:0,trend:'-'},{resp:'OCAMPO BRIAN',dias:2,olas:3,lineas:3,ordenes:3,ld:1.5,cumpl:1.8,unidades:37,recCnt:0,trend:'-'}]},'2026-02':{totOps:8,pickeadores:4,avgLD:62.9,cumAv:74.9,totL:4526,totU:411711,totRC:19,rateG:4.2,totOlas:240,staffNec:3.3,staffAct:4,pickers:[{resp:'BRUN TOMAS',dias:14,olas:59,lineas:1236,ordenes:462,ld:88.3,cumpl:105.1,unidades:172902,recCnt:4,trend:'▼ -17.9'},{resp:'ARMOA TAMARA',dias:12,olas:39,lineas:926,ordenes:294,ld:77.2,cumpl:91.9,unidades:54745,recCnt:5,trend:'▼ -3.6'},{resp:'LAURATO MARTINEZ',dias:20,olas:85,lineas:1241,ordenes:422,ld:62,cumpl:73.8,unidades:106847,recCnt:5,trend:'▼ -24.8'},{resp:'ROMERO MELANIE',dias:15,olas:43,lineas:877,ordenes:283,ld:58.5,cumpl:69.6,unidades:67135,recCnt:4,trend:'-'},{resp:'OCAMPO BRIAN',dias:9,olas:10,lineas:219,ordenes:32,ld:24.3,cumpl:28.9,unidades:5211,recCnt:0,trend:'-'},{resp:'CAÑETE FAVIO',dias:1,olas:2,lineas:11,ordenes:2,ld:11,cumpl:13.1,unidades:3072,recCnt:0,trend:'-'},{resp:'ARCE ELIAS',dias:1,olas:1,lineas:9,ordenes:3,ld:9,cumpl:10.7,unidades:431,recCnt:1,trend:'-'},{resp:'FAVIO CAÑETE',dias:1,olas:1,lineas:7,ordenes:1,ld:7,cumpl:8.3,unidades:1368,recCnt:0,trend:'-'}]},'2026-03':{totOps:8,pickeadores:4,avgLD:67.7,cumAv:80.6,totL:5690,totU:552993,totRC:18,rateG:3.16,totOlas:360,staffNec:4.1,staffAct:4,pickers:[{resp:'BRUN TOMAS',dias:21,olas:118,lineas:1903,ordenes:718,ld:90.6,cumpl:107.9,unidades:217052,recCnt:9,trend:'▼ -17.9'},{resp:'ARMOA TAMARA',dias:19,olas:65,lineas:1591,ordenes:421,ld:83.7,cumpl:99.6,unidades:87492,recCnt:4,trend:'▼ -3.6'},{resp:'LAURATO MARTINEZ',dias:21,olas:93,lineas:1330,ordenes:523,ld:63.3,cumpl:75.4,unidades:155836,recCnt:2,trend:'▼ -24.8'},{resp:'ROMERO DAMIAN',dias:12,olas:43,lineas:535,ordenes:216,ld:44.6,cumpl:53.1,unidades:60282,recCnt:0,trend:'-'},{resp:'MARIN LAUTARO',dias:2,olas:6,lineas:63,ordenes:32,ld:31.5,cumpl:37.5,unidades:6622,recCnt:0,trend:'-'},{resp:'ROMERO MELANIE',dias:4,olas:8,lineas:86,ordenes:41,ld:21.5,cumpl:25.6,unidades:8626,recCnt:2,trend:'-'},{resp:'OCAMPO BRIAN',dias:12,olas:26,lineas:181,ordenes:86,ld:15.1,cumpl:18,unidades:15073,recCnt:1,trend:'-'},{resp:'DEMARCHIS EMILIANO',dias:1,olas:1,lineas:1,ordenes:1,ld:1,cumpl:1.2,unidades:2010,recCnt:0,trend:'-'}]},'2026-04':{totOps:9,pickeadores:4,avgLD:80.4,cumAv:95.7,totL:6432,totU:483306,totRC:22,rateG:3.42,totOlas:462,staffNec:3.8,staffAct:4,pickers:[{resp:'ARMOA TAMARA',dias:20,olas:117,lineas:1996,ordenes:625,ld:99.8,cumpl:118.8,unidades:99906,recCnt:12,trend:'▼ -3.6'},{resp:'BRUN TOMAS',dias:20,olas:119,lineas:1852,ordenes:700,ld:92.6,cumpl:110.2,unidades:130264,recCnt:8,trend:'▼ -17.9'},{resp:'LAURATO MARTINEZ',dias:20,olas:123,lineas:1518,ordenes:568,ld:75.9,cumpl:90.4,unidades:140312,recCnt:2,trend:'▼ -24.8'},{resp:'SANDOVAL TOMAS',dias:1,olas:2,lineas:50,ordenes:6,ld:50,cumpl:59.5,unidades:972,recCnt:0,trend:'-'},{resp:'CACERES EDISON',dias:6,olas:19,lineas:202,ordenes:87,ld:33.7,cumpl:40.1,unidades:25186,recCnt:0,trend:'▼ -11'},{resp:'ROMERO MELANIE',dias:6,olas:15,lineas:184,ordenes:44,ld:30.7,cumpl:36.5,unidades:1873,recCnt:0,trend:'-'},{resp:'CHOQUE LEANDRO',dias:9,olas:30,lineas:255,ordenes:136,ld:28.3,cumpl:33.7,unidades:54875,recCnt:0,trend:'-'},{resp:'DEMARCHIS EMILIANO',dias:2,olas:2,lineas:50,ordenes:6,ld:25,cumpl:29.8,unidades:395,recCnt:0,trend:'-'},{resp:'OCAMPO BRIAN',dias:20,olas:35,lineas:325,ordenes:165,ld:16.2,cumpl:19.3,unidades:29523,recCnt:0,trend:'-'}]},'2026-05':{totOps:9,pickeadores:4,avgLD:99.3,cumAv:118.2,totL:7548,totU:370270,totRC:35,rateG:4.64,totOlas:434,staffNec:4.9,staffAct:4,pickers:[{resp:'BRUN TOMAS',dias:18,olas:105,lineas:2108,ordenes:560,ld:117.1,cumpl:139.4,unidades:90214,recCnt:11,trend:'▼ -17.9'},{resp:'ARMOA TAMARA',dias:18,olas:87,lineas:2015,ordenes:482,ld:111.9,cumpl:133.2,unidades:62131,recCnt:11,trend:'▼ -3.6'},{resp:'LAURATO MARTINEZ',dias:18,olas:109,lineas:1798,ordenes:494,ld:99.9,cumpl:118.9,unidades:89392,recCnt:10,trend:'▼ -24.8'},{resp:'CACERES EDISON',dias:19,olas:78,lineas:896,ordenes:280,ld:47.2,cumpl:56.2,unidades:75175,recCnt:2,trend:'▼ -11'},{resp:'OCAMPO BRIAN',dias:11,olas:40,lineas:506,ordenes:154,ld:46,cumpl:54.8,unidades:45520,recCnt:0,trend:'-'},{resp:'ROMERO MELANIE',dias:4,olas:9,lineas:143,ordenes:39,ld:35.8,cumpl:42.6,unidades:5028,recCnt:1,trend:'-'},{resp:'DEMARCHIS EMILIANO',dias:1,olas:2,lineas:24,ordenes:6,ld:24,cumpl:28.6,unidades:454,recCnt:0,trend:'-'},{resp:'SANDOVAL TOMAS',dias:3,olas:3,lineas:57,ordenes:16,ld:19,cumpl:22.6,unidades:2351,recCnt:0,trend:'-'},{resp:'ADRIAN ROMERO',dias:1,olas:1,lineas:1,ordenes:1,ld:1,cumpl:1.2,unidades:5,recCnt:0,trend:'-'}]},'2026-06':{totOps:4,pickeadores:4,avgLD:78.2,cumAv:93.1,totL:3753,totU:294001,totRC:15,rateG:4,totOlas:249,staffNec:3.7,staffAct:4,pickers:[{resp:'ARMOA TAMARA',dias:12,olas:84,lineas:1300,ordenes:386,ld:108.3,cumpl:128.9,unidades:82980,recCnt:8,trend:'▼ -3.6'},{resp:'BRUN TOMAS',dias:12,olas:74,lineas:1190,ordenes:400,ld:99.2,cumpl:118.1,unidades:83132,recCnt:4,trend:'▼ -17.9'},{resp:'LAURATO MARTINEZ',dias:12,olas:71,lineas:901,ordenes:380,ld:75.1,cumpl:89.4,unidades:96513,recCnt:3,trend:'▼ -24.8'},{resp:'CACERES EDISON',dias:10,olas:20,lineas:362,ordenes:133,ld:36.2,cumpl:43.1,unidades:31376,recCnt:0,trend:'▼ -11'}]}};
-const lezMonthly={'2026-01':null,'2026-02':{ld:581.5,lineas:2326,dias:4,olas:25,unidades:2327,recCnt:0,vsTeam:539.3},'2026-03':{ld:6007,lineas:6007,dias:1,olas:28,unidades:6020,recCnt:0,vsTeam:5963.1},'2026-04':{ld:766.5,lineas:1533,dias:2,olas:9,unidades:1535,recCnt:0,vsTeam:716.3},'2026-05':{ld:274.5,lineas:1647,dias:6,olas:12,unidades:1647,recCnt:0,vsTeam:218.7},'2026-06':{ld:892,lineas:892,dias:1,olas:6,unidades:893,recCnt:0,vsTeam:812.3}};
+const monthlyData={'2026-01':{totOps:8,pickeadores:3,avgLD:61.7,cumAv:73.5,totL:3886,totU:314664,totRC:12,rateG:3.09,totOlas:289,staffNec:2.2,staffAct:3,pickers:[{resp:'BRUN TOMAS',dias:22,olas:102,lineas:1409,ld:64,cumpl:76.2,unidades:108737,recCnt:5,trend:'▼ -17.9'},{resp:'ARMOA TAMARA',dias:12,olas:30,lineas:727,ld:60.6,cumpl:72.1,unidades:38925,recCnt:3,trend:'▼ -3.6'},{resp:'ROMERO MELANIE',dias:14,olas:71,lineas:803,ld:57.4,cumpl:68.3,unidades:72382,recCnt:2,trend:'-'},{resp:'LAURATO MARTINEZ',dias:21,olas:76,lineas:927,ld:44.1,cumpl:52.5,unidades:81727,recCnt:2,trend:'▼ -24.8'},{resp:'ARCE ELIAS',dias:1,olas:1,lineas:8,ld:8,cumpl:9.5,unidades:742,recCnt:0,trend:'-'},{resp:'DEMARCHIS EMILIANO',dias:1,olas:1,lineas:3,ld:3,cumpl:3.6,unidades:12000,recCnt:0,trend:'-'},{resp:'OCAMPO BRIAN',dias:2,olas:3,lineas:3,ld:1.5,cumpl:1.8,unidades:37,recCnt:0,trend:'-'},{resp:'-2146826246',dias:5,olas:5,lineas:6,ld:1.2,cumpl:1.4,unidades:114,recCnt:0,trend:'-'}]},'2026-02':{totOps:9,pickeadores:4,avgLD:65,cumAv:77.4,totL:4682,totU:416578,totRC:19,rateG:4.06,totOlas:257,staffNec:3.3,staffAct:4,pickers:[{resp:'BRUN TOMAS',dias:14,olas:59,lineas:1236,ld:88.3,cumpl:105.1,unidades:172902,recCnt:4,trend:'▼ -17.9'},{resp:'ARMOA TAMARA',dias:12,olas:39,lineas:926,ld:77.2,cumpl:91.9,unidades:54745,recCnt:5,trend:'▼ -3.6'},{resp:'LAURATO MARTINEZ',dias:20,olas:85,lineas:1241,ld:62,cumpl:73.8,unidades:106847,recCnt:5,trend:'▼ -24.8'},{resp:'ROMERO MELANIE',dias:15,olas:43,lineas:877,ld:58.5,cumpl:69.6,unidades:67135,recCnt:4,trend:'-'},{resp:'OCAMPO BRIAN',dias:9,olas:10,lineas:219,ld:24.3,cumpl:28.9,unidades:5211,recCnt:0,trend:'-'},{resp:'-2146826246',dias:11,olas:17,lineas:156,ld:14.2,cumpl:16.9,unidades:4867,recCnt:0,trend:'-'},{resp:'CAÑETE FAVIO',dias:1,olas:2,lineas:11,ld:11,cumpl:13.1,unidades:3072,recCnt:0,trend:'-'},{resp:'ARCE ELIAS',dias:1,olas:1,lineas:9,ld:9,cumpl:10.7,unidades:431,recCnt:1,trend:'-'},{resp:'FAVIO CAÑETE',dias:1,olas:1,lineas:7,ld:7,cumpl:8.3,unidades:1368,recCnt:0,trend:'-'}]},'2026-03':{totOps:9,pickeadores:4,avgLD:86,cumAv:102.4,totL:7223,totU:1330994,totRC:18,rateG:2.49,totOlas:395,staffNec:4.1,staffAct:4,pickers:[{resp:'-2146826246',dias:14,olas:35,lineas:1533,ld:109.5,cumpl:130.4,unidades:778001,recCnt:0,trend:'-'},{resp:'BRUN TOMAS',dias:21,olas:118,lineas:1903,ld:90.6,cumpl:107.9,unidades:217052,recCnt:9,trend:'▼ -17.9'},{resp:'ARMOA TAMARA',dias:19,olas:65,lineas:1591,ld:83.7,cumpl:99.6,unidades:87492,recCnt:4,trend:'▼ -3.6'},{resp:'LAURATO MARTINEZ',dias:21,olas:93,lineas:1330,ld:63.3,cumpl:75.4,unidades:155836,recCnt:2,trend:'▼ -24.8'},{resp:'ROMERO DAMIAN',dias:12,olas:43,lineas:535,ld:44.6,cumpl:53.1,unidades:60282,recCnt:0,trend:'-'},{resp:'MARIN LAUTARO',dias:2,olas:6,lineas:63,ld:31.5,cumpl:37.5,unidades:6622,recCnt:0,trend:'-'},{resp:'ROMERO MELANIE',dias:4,olas:8,lineas:86,ld:21.5,cumpl:25.6,unidades:8626,recCnt:2,trend:'-'},{resp:'OCAMPO BRIAN',dias:12,olas:26,lineas:181,ld:15.1,cumpl:18,unidades:15073,recCnt:1,trend:'-'},{resp:'DEMARCHIS EMILIANO',dias:1,olas:1,lineas:1,ld:1,cumpl:1.2,unidades:2010,recCnt:0,trend:'-'}]},'2026-04':{totOps:10,pickeadores:4,avgLD:80.6,cumAv:96,totL:6450,totU:488493,totRC:22,rateG:3.41,totOlas:469,staffNec:3.8,staffAct:4,pickers:[{resp:'ARMOA TAMARA',dias:20,olas:117,lineas:1996,ld:99.8,cumpl:118.8,unidades:99906,recCnt:12,trend:'▼ -3.6'},{resp:'BRUN TOMAS',dias:20,olas:119,lineas:1852,ld:92.6,cumpl:110.2,unidades:130264,recCnt:8,trend:'▼ -17.9'},{resp:'LAURATO MARTINEZ',dias:20,olas:123,lineas:1518,ld:75.9,cumpl:90.4,unidades:140312,recCnt:2,trend:'▼ -24.8'},{resp:'SANDOVAL TOMAS',dias:1,olas:2,lineas:50,ld:50,cumpl:59.5,unidades:972,recCnt:0,trend:'-'},{resp:'CACERES EDISON',dias:6,olas:19,lineas:202,ld:33.7,cumpl:40.1,unidades:25186,recCnt:0,trend:'▼ -11'},{resp:'ROMERO MELANIE',dias:6,olas:15,lineas:184,ld:30.7,cumpl:36.5,unidades:1873,recCnt:0,trend:'-'},{resp:'CHOQUE LEANDRO',dias:9,olas:30,lineas:255,ld:28.3,cumpl:33.7,unidades:54875,recCnt:0,trend:'-'},{resp:'DEMARCHIS EMILIANO',dias:2,olas:2,lineas:50,ld:25,cumpl:29.8,unidades:395,recCnt:0,trend:'-'},{resp:'OCAMPO BRIAN',dias:20,olas:35,lineas:325,ld:16.2,cumpl:19.3,unidades:29523,recCnt:0,trend:'-'},{resp:'-2146826246',dias:7,olas:7,lineas:18,ld:2.6,cumpl:3.1,unidades:5187,recCnt:0,trend:'-'}]},'2026-05':{totOps:10,pickeadores:4,avgLD:99.4,cumAv:118.3,totL:7554,totU:370682,totRC:35,rateG:4.63,totOlas:438,staffNec:4.9,staffAct:4,pickers:[{resp:'BRUN TOMAS',dias:18,olas:105,lineas:2108,ld:117.1,cumpl:139.4,unidades:90214,recCnt:11,trend:'▼ -17.9'},{resp:'ARMOA TAMARA',dias:18,olas:87,lineas:2015,ld:111.9,cumpl:133.2,unidades:62131,recCnt:11,trend:'▼ -3.6'},{resp:'LAURATO MARTINEZ',dias:18,olas:109,lineas:1798,ld:99.9,cumpl:118.9,unidades:89392,recCnt:10,trend:'▼ -24.8'},{resp:'CACERES EDISON',dias:19,olas:78,lineas:896,ld:47.2,cumpl:56.2,unidades:75175,recCnt:2,trend:'▼ -11'},{resp:'OCAMPO BRIAN',dias:11,olas:40,lineas:506,ld:46,cumpl:54.8,unidades:45520,recCnt:0,trend:'-'},{resp:'ROMERO MELANIE',dias:4,olas:9,lineas:143,ld:35.8,cumpl:42.6,unidades:5028,recCnt:1,trend:'-'},{resp:'DEMARCHIS EMILIANO',dias:1,olas:2,lineas:24,ld:24,cumpl:28.6,unidades:454,recCnt:0,trend:'-'},{resp:'SANDOVAL TOMAS',dias:3,olas:3,lineas:57,ld:19,cumpl:22.6,unidades:2351,recCnt:0,trend:'-'},{resp:'-2146826246',dias:4,olas:4,lineas:6,ld:1.5,cumpl:1.8,unidades:412,recCnt:0,trend:'-'},{resp:'ADRIAN ROMERO',dias:1,olas:1,lineas:1,ld:1,cumpl:1.2,unidades:5,recCnt:0,trend:'-'}]},'2026-06':{totOps:4,pickeadores:4,avgLD:78.2,cumAv:93.1,totL:3753,totU:294001,totRC:15,rateG:4,totOlas:249,staffNec:3.7,staffAct:4,pickers:[{resp:'ARMOA TAMARA',dias:12,olas:84,lineas:1300,ld:108.3,cumpl:128.9,unidades:82980,recCnt:8,trend:'▼ -3.6'},{resp:'BRUN TOMAS',dias:12,olas:74,lineas:1190,ld:99.2,cumpl:118.1,unidades:83132,recCnt:4,trend:'▼ -17.9'},{resp:'LAURATO MARTINEZ',dias:12,olas:71,lineas:901,ld:75.1,cumpl:89.4,unidades:96513,recCnt:3,trend:'▼ -24.8'},{resp:'CACERES EDISON',dias:10,olas:20,lineas:362,ld:36.2,cumpl:43.1,unidades:31376,recCnt:0,trend:'▼ -11'}]}};
+const lezMonthly={'2026-01':null,'2026-02':{ld:581.5,lineas:2326,dias:4,olas:25,unidades:2327,recCnt:0,vsTeam:542.4},'2026-03':{ld:6007,lineas:6007,dias:1,olas:28,unidades:6020,recCnt:0,vsTeam:5955.8},'2026-04':{ld:766.5,lineas:1533,dias:2,olas:9,unidades:1535,recCnt:0,vsTeam:721},'2026-05':{ld:274.5,lineas:1647,dias:6,olas:12,unidades:1647,recCnt:0,vsTeam:224.2},'2026-06':{ld:892,lineas:892,dias:1,olas:6,unidades:893,recCnt:0,vsTeam:812.3}};
 const merma1L=[454,256,617,431,392,177];
 const merma2L=[133,342,83,133,112,46];
 const recMonthly={'2026-01':{cnt:13,byOp:{'AIRALA CESAR':1,'ARMOA TAMARA':3,'BRUN TOMAS':5,'LAURATO MARTINEZ':2,'ROMERO MELANIE':2},byCat:{'El packaging presenta fallas o hay faltantes de estos.':2,'Hay un producto/s defectuoso/s o con fallas.':9,'Recibí una cantidad distinta a la comprada.':2},byOpCat:{'AIRALA CESAR':{'El packaging presenta fallas o hay faltantes de estos.':1},'ARMOA TAMARA':{'Hay un producto/s defectuoso/s o con fallas.':3},'BRUN TOMAS':{'El packaging presenta fallas o hay faltantes de estos.':1,'Hay un producto/s defectuoso/s o con fallas.':3,'Recibí una cantidad distinta a la comprada.':1},'LAURATO MARTINEZ':{'Hay un producto/s defectuoso/s o con fallas.':1,'Recibí una cantidad distinta a la comprada.':1},'ROMERO MELANIE':{'Hay un producto/s defectuoso/s o con fallas.':2}}},'2026-02':{cnt:20,byOp:{'AIRALA CESAR':1,'ARCE ELIAS':1,'ARMOA TAMARA':5,'BRUN TOMAS':4,'LAURATO MARTINEZ':5,'ROMERO MELANIE':4},byCat:{'El packaging presenta fallas o hay faltantes de estos.':1,'Hay un producto/s defectuoso/s o con fallas.':13,'Recibi otro producto.':2,'Recibí una cantidad distinta a la comprada.':4},byOpCat:{'AIRALA CESAR':{'Hay un producto/s defectuoso/s o con fallas.':1},'ARCE ELIAS':{'Hay un producto/s defectuoso/s o con fallas.':1},'ARMOA TAMARA':{'Hay un producto/s defectuoso/s o con fallas.':2,'Recibí una cantidad distinta a la comprada.':3},'BRUN TOMAS':{'Hay un producto/s defectuoso/s o con fallas.':2,'Recibi otro producto.':1,'Recibí una cantidad distinta a la comprada.':1},'LAURATO MARTINEZ':{'El packaging presenta fallas o hay faltantes de estos.':1,'Hay un producto/s defectuoso/s o con fallas.':4},'ROMERO MELANIE':{'Hay un producto/s defectuoso/s o con fallas.':3,'Recibi otro producto.':1}}},'2026-03':{cnt:18,byOp:{'ARMOA TAMARA':4,'BRUN TOMAS':9,'LAURATO MARTINEZ':2,'OCAMPO BRIAN':1,'ROMERO MELANIE':2},byCat:{'Consultas/comunicaciones administrativas.':1,'Hay un producto/s defectuoso/s o con fallas.':10,'Recibi otro producto.':3,'Recibí una cantidad distinta a la comprada.':4},byOpCat:{'ARMOA TAMARA':{'Hay un producto/s defectuoso/s o con fallas.':1,'Recibi otro producto.':1,'Recibí una cantidad distinta a la comprada.':2},'BRUN TOMAS':{'Consultas/comunicaciones administrativas.':1,'Hay un producto/s defectuoso/s o con fallas.':5,'Recibi otro producto.':2,'Recibí una cantidad distinta a la comprada.':1},'LAURATO MARTINEZ':{'Hay un producto/s defectuoso/s o con fallas.':2},'OCAMPO BRIAN':{'Recibí una cantidad distinta a la comprada.':1},'ROMERO MELANIE':{'Hay un producto/s defectuoso/s o con fallas.':2}}},'2026-04':{cnt:22,byOp:{'ARMOA TAMARA':12,'BRUN TOMAS':8,'LAURATO MARTINEZ':2},byCat:{'El packaging presenta fallas o hay faltantes de estos.':1,'Hay un producto/s defectuoso/s o con fallas.':8,'Recibi otro producto.':6,'Recibí una cantidad distinta a la comprada.':6,'Reclamo por plazo de entrega.':1},byOpCat:{'ARMOA TAMARA':{'El packaging presenta fallas o hay faltantes de estos.':1,'Hay un producto/s defectuoso/s o con fallas.':5,'Recibi otro producto.':2,'Recibí una cantidad distinta a la comprada.':4},'BRUN TOMAS':{'Hay un producto/s defectuoso/s o con fallas.':2,'Recibi otro producto.':4,'Recibí una cantidad distinta a la comprada.':2},'LAURATO MARTINEZ':{'Hay un producto/s defectuoso/s o con fallas.':1,'Reclamo por plazo de entrega.':1}}},'2026-05':{cnt:35,byOp:{'ARMOA TAMARA':11,'BRUN TOMAS':11,'CACERES EDISON':2,'LAURATO MARTINEZ':10,'ROMERO MELANIE':1},byCat:{'Consultas/comunicaciones administrativas.':1,'El packaging presenta fallas o hay faltantes de estos.':4,'Hay un producto/s defectuoso/s o con fallas.':19,'Recibi otro producto.':4,'Recibí una cantidad distinta a la comprada.':7},byOpCat:{'ARMOA TAMARA':{'El packaging presenta fallas o hay faltantes de estos.':2,'Hay un producto/s defectuoso/s o con fallas.':6,'Recibi otro producto.':1,'Recibí una cantidad distinta a la comprada.':2},'BRUN TOMAS':{'Consultas/comunicaciones administrativas.':1,'El packaging presenta fallas o hay faltantes de estos.':1,'Hay un producto/s defectuoso/s o con fallas.':6,'Recibi otro producto.':2,'Recibí una cantidad distinta a la comprada.':1},'CACERES EDISON':{'Hay un producto/s defectuoso/s o con fallas.':1,'Recibí una cantidad distinta a la comprada.':1},'LAURATO MARTINEZ':{'El packaging presenta fallas o hay faltantes de estos.':1,'Hay un producto/s defectuoso/s o con fallas.':6,'Recibi otro producto.':1,'Recibí una cantidad distinta a la comprada.':2},'ROMERO MELANIE':{'Recibí una cantidad distinta a la comprada.':1}}},'2026-06':{cnt:15,byOp:{'ARMOA TAMARA':8,'BRUN TOMAS':4,'LAURATO MARTINEZ':3},byCat:{'Hay un producto/s defectuoso/s o con fallas.':6,'Recibi otro producto.':6,'Recibí una cantidad distinta a la comprada.':3},byOpCat:{'ARMOA TAMARA':{'Hay un producto/s defectuoso/s o con fallas.':1,'Recibi otro producto.':5,'Recibí una cantidad distinta a la comprada.':2},'BRUN TOMAS':{'Hay un producto/s defectuoso/s o con fallas.':4},'LAURATO MARTINEZ':{'Hay un producto/s defectuoso/s o con fallas.':1,'Recibi otro producto.':1,'Recibí una cantidad distinta a la comprada.':1}}}};
 const MES=['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const day7Rows=[{f:'08/06',d:'Lu',ops:3,lines:311,lpo:103.7,tgt:252,cum:123.4,dlt:null,cl:120,clops:2,sl:191,slops:2},{f:'09/06',d:'Ma',ops:4,lines:369,lpo:92.2,tgt:336,cum:109.8,dlt:58,cl:75,clops:3,sl:294,slops:4},{f:'10/06',d:'Mi',ops:3,lines:214,lpo:71.3,tgt:252,cum:84.9,dlt:-155,cl:27,clops:2,sl:187,slops:3},{f:'11/06',d:'Ju',ops:4,lines:187,lpo:46.8,tgt:336,cum:55.7,dlt:-27,cl:55,clops:3,sl:132,slops:4},{f:'12/06',d:'Vi',ops:4,lines:280,lpo:70,tgt:336,cum:83.3,dlt:93,cl:62,clops:2,sl:218,slops:3},{f:'16/06',d:'Ma',ops:4,lines:315,lpo:78.8,tgt:336,cum:93.8,dlt:35,cl:69,clops:3,sl:246,slops:3},{f:'17/06',d:'Mi',ops:4,lines:198,lpo:49.5,tgt:336,cum:58.9,dlt:-117,cl:39,clops:2,sl:159,slops:4}];
 const evol30Labels=['05/05','06/05','07/05','08/05','11/05','12/05','13/05','14/05','15/05','18/05','19/05','20/05','21/05','22/05','26/05','27/05','28/05','29/05','01/06','02/06','03/06','04/06','05/06','08/06','09/06','10/06','11/06','12/06','16/06','17/06'];
-const evol30Data=[382,406,762,442,572,451,386,296,135,290,373,199,366,264,504,611,500,259,492,343,389,386,269,311,369,214,187,280,315,198];
+const evol30Data=[382,406,762,442,574,452,386,296,135,291,373,199,366,264,504,611,500,259,492,343,389,386,269,311,369,214,187,280,315,198];
 const evol30CL=[111,70,63,83,182,142,122,84,49,60,103,90,99,55,76,192,167,65,84,99,233,210,78,120,75,27,55,62,69,39];
 const evol30SL=[271,337,699,359,392,310,264,212,147,276,335,268,267,209,428,419,333,194,408,244,156,176,191,191,294,187,132,218,246,159];
 const evol30Target=[336,336,336,336,336,336,336,336,336,336,336,336,336,336,336,336,336,336,336,336,336,336,336,336,336,336,336,336,336,336];
-const evol30Ord=[101,89,103,114,110,130,127,101,72,108,113,66,122,102,108,142,127,104,132,109,144,150,88,104,128,91,81,96,99,77];
-const resumeData={'2026-01':{picking:[{resp:'BRUN TOMAS',dias:22,lineas:1409,ordenes:532,ld:64,cumpl:76.2,recCnt:5},{resp:'ARMOA TAMARA',dias:12,lineas:727,ordenes:240,ld:60.6,cumpl:72.1,recCnt:3},{resp:'ROMERO MELANIE',dias:14,lineas:803,ordenes:277,ld:57.4,cumpl:68.3,recCnt:2},{resp:'LAURATO MARTINEZ',dias:21,lineas:927,ordenes:332,ld:44.1,cumpl:52.5,recCnt:2},{resp:'ARCE ELIAS',dias:1,lineas:8,ordenes:7,ld:8,cumpl:9.5,recCnt:0},{resp:'DEMARCHIS EMILIANO',dias:1,lineas:3,ordenes:1,ld:3,cumpl:3.6,recCnt:0},{resp:'OCAMPO BRIAN',dias:2,lineas:3,ordenes:3,ld:1.5,cumpl:1.8,recCnt:0}],pie:[],muestra:[],control:[]},'2026-02':{picking:[{resp:'BRUN TOMAS',dias:14,lineas:1236,ordenes:462,ld:88.3,cumpl:105.1,recCnt:4},{resp:'ARMOA TAMARA',dias:12,lineas:926,ordenes:294,ld:77.2,cumpl:91.9,recCnt:5},{resp:'LAURATO MARTINEZ',dias:20,lineas:1241,ordenes:422,ld:62,cumpl:73.8,recCnt:5},{resp:'ROMERO MELANIE',dias:15,lineas:877,ordenes:283,ld:58.5,cumpl:69.6,recCnt:4},{resp:'OCAMPO BRIAN',dias:9,lineas:219,ordenes:32,ld:24.3,cumpl:28.9,recCnt:0},{resp:'CAÑETE FAVIO',dias:1,lineas:11,ordenes:2,ld:11,cumpl:13.1,recCnt:0},{resp:'ARCE ELIAS',dias:1,lineas:9,ordenes:3,ld:9,cumpl:10.7,recCnt:1},{resp:'FAVIO CAÑETE',dias:1,lineas:7,ordenes:1,ld:7,cumpl:8.3,recCnt:0}],pie:[],muestra:[{resp:'LEZCANO AGUSTIN',dias:4,lineas:2326,ld:581.5,cumpl:0,recCnt:0}],control:[]},'2026-03':{picking:[{resp:'BRUN TOMAS',dias:21,lineas:1903,ordenes:718,ld:90.6,cumpl:107.9,recCnt:9},{resp:'ARMOA TAMARA',dias:19,lineas:1591,ordenes:421,ld:83.7,cumpl:99.6,recCnt:4},{resp:'LAURATO MARTINEZ',dias:21,lineas:1330,ordenes:523,ld:63.3,cumpl:75.4,recCnt:2},{resp:'ROMERO DAMIAN',dias:12,lineas:535,ordenes:216,ld:44.6,cumpl:53.1,recCnt:0},{resp:'MARIN LAUTARO',dias:2,lineas:63,ordenes:32,ld:31.5,cumpl:37.5,recCnt:0},{resp:'ROMERO MELANIE',dias:4,lineas:86,ordenes:41,ld:21.5,cumpl:25.6,recCnt:2},{resp:'OCAMPO BRIAN',dias:12,lineas:181,ordenes:86,ld:15.1,cumpl:18,recCnt:1},{resp:'DEMARCHIS EMILIANO',dias:1,lineas:1,ordenes:1,ld:1,cumpl:1.2,recCnt:0}],pie:[],muestra:[{resp:'LEZCANO AGUSTIN',dias:1,lineas:6007,ld:6007,cumpl:0,recCnt:0}],control:[]},'2026-04':{picking:[{resp:'ARMOA TAMARA',dias:20,lineas:1996,ordenes:625,ld:99.8,cumpl:118.8,recCnt:12},{resp:'BRUN TOMAS',dias:20,lineas:1852,ordenes:700,ld:92.6,cumpl:110.2,recCnt:8},{resp:'LAURATO MARTINEZ',dias:20,lineas:1518,ordenes:568,ld:75.9,cumpl:90.4,recCnt:2},{resp:'SANDOVAL TOMAS',dias:1,lineas:50,ordenes:6,ld:50,cumpl:59.5,recCnt:0},{resp:'CACERES EDISON',dias:6,lineas:202,ordenes:87,ld:33.7,cumpl:40.1,recCnt:0},{resp:'ROMERO MELANIE',dias:6,lineas:184,ordenes:44,ld:30.7,cumpl:36.5,recCnt:0},{resp:'CHOQUE LEANDRO',dias:9,lineas:255,ordenes:136,ld:28.3,cumpl:33.7,recCnt:0},{resp:'DEMARCHIS EMILIANO',dias:2,lineas:50,ordenes:6,ld:25,cumpl:29.8,recCnt:0},{resp:'OCAMPO BRIAN',dias:20,lineas:325,ordenes:165,ld:16.2,cumpl:19.3,recCnt:0}],pie:[],muestra:[{resp:'LEZCANO AGUSTIN',dias:2,lineas:1533,ld:766.5,cumpl:0,recCnt:0}],control:[]},'2026-05':{picking:[{resp:'BRUN TOMAS',dias:18,lineas:2108,ordenes:560,ld:117.1,cumpl:139.4,recCnt:11},{resp:'ARMOA TAMARA',dias:18,lineas:2015,ordenes:482,ld:111.9,cumpl:133.2,recCnt:11},{resp:'LAURATO MARTINEZ',dias:18,lineas:1798,ordenes:494,ld:99.9,cumpl:118.9,recCnt:10},{resp:'CACERES EDISON',dias:19,lineas:896,ordenes:280,ld:47.2,cumpl:56.2,recCnt:2},{resp:'OCAMPO BRIAN',dias:11,lineas:506,ordenes:154,ld:46,cumpl:54.8,recCnt:0},{resp:'ROMERO MELANIE',dias:4,lineas:143,ordenes:39,ld:35.8,cumpl:42.6,recCnt:1},{resp:'DEMARCHIS EMILIANO',dias:1,lineas:24,ordenes:6,ld:24,cumpl:28.6,recCnt:0},{resp:'SANDOVAL TOMAS',dias:3,lineas:57,ordenes:16,ld:19,cumpl:22.6,recCnt:0},{resp:'ADRIAN ROMERO',dias:1,lineas:1,ordenes:1,ld:1,cumpl:1.2,recCnt:0}],pie:[],muestra:[{resp:'LEZCANO AGUSTIN',dias:6,lineas:1647,ld:274.5,cumpl:0,recCnt:0}],control:[]},'2026-06':{picking:[{resp:'ARMOA TAMARA',dias:12,lineas:1300,ordenes:386,ld:108.3,cumpl:128.9,recCnt:8},{resp:'BRUN TOMAS',dias:12,lineas:1190,ordenes:400,ld:99.2,cumpl:118.1,recCnt:4},{resp:'LAURATO MARTINEZ',dias:12,lineas:901,ordenes:380,ld:75.1,cumpl:89.4,recCnt:3},{resp:'CACERES EDISON',dias:10,lineas:362,ordenes:133,ld:36.2,cumpl:43.1,recCnt:0}],pie:[],muestra:[{resp:'LEZCANO AGUSTIN',dias:1,lineas:892,ld:892,cumpl:0,recCnt:0}],control:[]}};
-const maqData=[{ym:'2026-01',lbl:'Enero 2026',ops:[{nm:'DEMARCHIS EMILIANO',mov:440,dias:14},{nm:'SANDOVAL TOMAS',mov:0,dias:0}]},{ym:'2026-02',lbl:'Febrero 2026',ops:[{nm:'DEMARCHIS EMILIANO',mov:224,dias:10},{nm:'SANDOVAL TOMAS',mov:0,dias:0}]},{ym:'2026-03',lbl:'Marzo 2026',ops:[{nm:'DEMARCHIS EMILIANO',mov:690,dias:18},{nm:'SANDOVAL TOMAS',mov:197,dias:8}]},{ym:'2026-04',lbl:'Abril 2026',ops:[{nm:'DEMARCHIS EMILIANO',mov:594,dias:14},{nm:'SANDOVAL TOMAS',mov:525,dias:20}]},{ym:'2026-05',lbl:'Mayo 2026',ops:[{nm:'DEMARCHIS EMILIANO',mov:846,dias:19},{nm:'SANDOVAL TOMAS',mov:459,dias:19}]},{ym:'2026-06',lbl:'Junio 2026',ops:[{nm:'DEMARCHIS EMILIANO',mov:648,dias:10},{nm:'SANDOVAL TOMAS',mov:171,dias:10}]}];
-const maqNamesArr=['DEMARCHIS EMILIANO','SANDOVAL TOMAS'];
-const recDetail={'BRUN TOMAS|2026-03':[{np:'10154345',f:'27/03/26',art:'Boligrafo Electra',q:170,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'No traba el sistema y se vuelve, ademas de que varias no escriben... hice algunas pero decidi cambiarlas porque no me da seguridad para entregarlas al cliente. No tengo fotos para mostrar la falla.',cli:'AGUSTIN NICOLAS GONZALEZ HERRERA (Grullas)'},{np:'10155265',f:'23/03/26',art:'Mate Zaino',q:4,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'3 con mal acabado y 1 con oxido',cli:'Seize Market SA (Viacotone)'},{np:'10154174',f:'18/03/26',art:'Botella Penguin',q:4,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'ABOLLADAS',cli:'Nexprom SA (Nexprom)'},{np:'10154321',f:'17/03/26',art:'Pantalones Cargo Unisex',q:2,mot:'Consultas/comunicaciones administrativas.',com:'el cliente quiere cambiar 2 pantalones talle 40 por  talle 38 ., ya que quedaron  muy grandes',cli:'Abadi Ibargoyen Elena Lucero (Reveiller)'},{np:'10154555',f:'16/03/26',art:'Passport Holder Satz',q:1,mot:'Recibi otro producto.',com:'Recibí 1 Passport CARDON y eran todos WAGNER',cli:'Discover Argentina S.A. (We Golf)'},{np:'10154055',f:'11/03/26',art:'Remera Lincoln',q:8,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'manchadas y rotas',cli:'Nexprom SA (Nexprom)'},{np:'10154287',f:'11/03/26',art:'Remera Regent Mujer',q:3,mot:'Recibí una cantidad distinta a la comprada.',com:'buenas tardes recibi el pedido pero faltaron las remeras de mujer small negras marca soul, el primer item del pedido. adjunto foto del detalle del pedido y de las remeras si recibidas negras',cli:'CARDOZO ERICA VANESA (El Fenix)'},{np:'10154036',f:'10/03/26',art:'Jarro Maipo',q:1,mot:'Recibi otro producto.',com:'El jarro debe ser color negro y nos entregaron en color gris.',cli:'Seize Market SA (Viacotone)'},{np:'10152547',f:'06/03/26',art:'Cuaderno Nifty',q:3,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'3 rotos',cli:'Seize Market SA (Viacotone)'}],'BRUN TOMAS|2026-01':[{np:'10150282',f:'29/01/26',art:'Botella Island 750 ml',q:2,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'Hola, como va? Ayer llegaron las botellas y recibí dos abolladas. Adjunto imágenes',cli:'TIPICO ARGENTINA S.A. (Pug Merch)'},{np:'10150496',f:'26/01/26',art:'Caja Small',q:50,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'No vino la tapa en las unidades.',cli:'Epsilon BS S.R.L. (Epsilon)'},{np:'10149868',f:'22/01/26',art:'Cooler Campi',q:1,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'Recibimos 1 cooler sin el bolsillo negro del frente.',cli:'Beresiartu Marcos (Brandgallery)'},{np:'10149486',f:'14/01/26',art:'Cuaderno Ingenio',q:10,mot:'Recibí una cantidad distinta a la comprada.',com:'recibimos el pedido nro 10149486 y nos faltaron 10 cuadernos la misma caja dice que trae 40 unidades y el remito dice 2 bultos, 1 caja de jarros y la caja de 40 cuadernos faltando 10 unidades, lo necesitamos urgente para',cli:'Grupo Inversor Velski SA (Giv)'},{np:'10149229',f:'08/01/26',art:'Parlante Track',q:8,mot:'El packaging presenta fallas o hay faltantes de estos.',com:'Faltaron 8 cables de los parlantes. Los necesito urgente.',cli:'Logo Group S.A. (Focus Logo)'}],'ARMOA TAMARA|2026-02':[{np:'10151844',f:'23/02/26',art:'Jarro Mocca',q:5,mot:'Recibí una cantidad distinta a la comprada.',com:'Buen dia, hemos recibido 5 tapas menos que las solicitadas, como vinieron separadas estamos armando los jarros para entregarlos, pero nos faltan 5 tapas. Podrán enviarmelas a Francia 2959 entre el 23 y 24, ya que el 25 d',cli:'GRUPO GRACIAS SRL (Gracias.)'},{np:'10151846',f:'18/02/26',art:'Botella Island 750 ml',q:6,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'recibimos 6 botellas abolladas y algunas ralladas',cli:'Sanchez Ruiz Martin Alejandro (Panda Merchandising)'},{np:'10151777',f:'13/02/26',art:'Paraguas FLÖZ',q:1,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'Llego sin una de las cintas de cierre',cli:'Grupo Inversor Velski SA (Giv)'},{np:'10150836',f:'05/02/26',art:'Auriculares Concerto',q:2,mot:'Recibí una cantidad distinta a la comprada.',com:'Hola, faltaron 2 unidades!',cli:'Camara Daniel (La Usina)'},{np:'10150870',f:'05/02/26',art:'Auriculares CUFFIA',q:1,mot:'Recibí una cantidad distinta a la comprada.',com:'Hola, falto 1',cli:'Camara Daniel (La Usina)'}],'ARMOA TAMARA|2026-04':[{np:'10158841',f:'28/04/26',art:'Remera Game',q:1,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'ROTA',cli:'Seize Market SA (Viacotone)'},{np:'10158841',f:'28/04/26',art:'Botella Penguin',q:2,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'FALLA ABOLLADO',cli:'Seize Market SA (Viacotone)'},{np:'10158712',f:'27/04/26',art:'Buzo Goya',q:2,mot:'Recibi otro producto.',com:'Se han entregado todas las camperas en color azul. 2 unidades deben ser en talle M color NEGRO.',cli:'MHGG SRL (Mhgg)'},{np:'10158262',f:'23/04/26',art:'Botella Zen',q:1,mot:'Recibí una cantidad distinta a la comprada.',com:'Hola, llegó una botella menos. Dos cajas  de 25 y una de 15, en la de 15 vinieron 14.',cli:'Muncal SRL ( Muncal)'},{np:'10157299',f:'21/04/26',art:'Jarro Puelo',q:1,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'vino roto',cli:'Nexprom SA (Nexprom)'},{np:'10155554',f:'15/04/26',art:'Boligrafo Boy',q:5,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'llegaron 5 productos en mal estado',cli:'INDUSTRIA GEO S A (Industria Geo)'},{np:'10156432',f:'15/04/26',art:'Mochila Cima - S',q:1,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'esta en cierre roto',cli:'INDUSTRIA GEO S A (Industria Geo)'},{np:'10156341',f:'13/04/26',art:'Boligrafo Omega',q:40,mot:'Recibí una cantidad distinta a la comprada.',com:'No se enviaron los boligrafos omega se reviso todas las cajas y no se los encontro.',cli:'Komuk  SRL (Komuk Srl)'},{np:'10156141',f:'10/04/26',art:'Cuaderno ECO1 Espiralado A6 C/boligrafo',q:15,mot:'Recibi otro producto.',com:'Hay quince unidades que vinieron con elástico y bolígrafo con tetalle azul en vez de gris como todos los demás',cli:'Cosentino Mendez Vittorio Angel (Mi Merchandising)'},{np:'10156399',f:'09/04/26',art:'Botella Fizzy',q:2,mot:'Recibí una cantidad distinta a la comprada.',com:'Recibimos 98 botellas en vez de 100 como se realizo en el pedido.',cli:'Grupo Adal SRL (Pro Work)'},{np:'10156034',f:'07/04/26',art:'Auriculares CROMO',q:25,mot:'El packaging presenta fallas o hay faltantes de estos.',com:'NO CARGAN CON EL CABLE QUE TRAE, PROBAMOS CON OTRO CABLE Y SI CARGA. (EL PROBLEMA ES EL CABLE)',cli:'BLUIMPORT S.A.'},{np:'10156398',f:'06/04/26',art:'Boligrafo Boy',q:1,mot:'Recibí una cantidad distinta a la comprada.',com:'Falta una lapicera blanca. Recibimos 5.',cli:'SCHAUFFELE MARCELO MARTIN (Marcelo)'}],'LAURATO MARTINEZ|2026-05':[{np:'10159767',f:'12/05/26',art:'Auriculares Nexus',q:1,mot:'Recibí una cantidad distinta a la comprada.',com:'UNA DE LAS CAJAS ESTABA TOTALMETE VACÍA. NI EL MANUAL',cli:'Logo Group S.A. (Focus Logo)'},{np:'10160257',f:'12/05/26',art:'Botella Penguin',q:1,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'DE 30 BOTELLAS RECIBI UNA CON ESTA MARCA DE GOLPE, COMO SE PUEDE VER EN LAS FOTOS.',cli:'Cia. Mac Group S.R.L ( Cia. Mac Group S.R.L)'},{np:'10158399',f:'12/05/26',art:'Paraguas STICH Automatico',q:1,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'el mango del paraguas esta en descomposicion',cli:'Corbella Ortiz Eduardo Enrique (Orly)'},{np:'10160174',f:'12/05/26',art:'Set de Golf Swing',q:4,mot:'El packaging presenta fallas o hay faltantes de estos.',com:'Faltan las 4 estacas para la pelota.',cli:'Norte Central S.R.L (Norte Central)'},{np:'10159826',f:'11/05/26',art:'Botella Jim',q:6,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'Hay 6 botellas JIM que estan abolladas.',cli:'Schijman Daniela Viviana (Shijman Daniela)'},{np:'10158399',f:'08/05/26',art:'Paraguas STICH Automatico',q:8,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'Los paraguas stich tienen los mangos en estado de descomposicion',cli:'Corbella Ortiz Eduardo Enrique (Orly)'},{np:'10161931',f:'29/05/26',art:'Holder Pop Up',q:19,mot:'Recibí una cantidad distinta a la comprada.',com:'Recibimos 381 Holder Pop up cuando deberían haber sido 400 unidades',cli:'Soldavini Luciano Nicolas (Escorpion Group)'},{np:'10161177',f:'27/05/26',art:'Chomba Passion',q:1,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'chomba manchada',cli:'Seize Market SA (Viacotone)'},{np:'10161963',f:'27/05/26',art:'Jarro Java',q:8,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'compramos 2 tandas de jarros Java y en primer envio hay 8 unidades completamente destrozadas, todas astilladas o rotas.necesito reponer esas 8 unidades a la brevedad xq deben aplicar el logo, el lugar para cambiar es ber',cli:'Btlandia SA (Btlandia)'},{np:'10160710',f:'18/05/26',art:'Mochila Hesse',q:60,mot:'Recibi otro producto.',com:'Recibi mochilas SMITH',cli:'MHGG SRL (Mhgg)'}],'AIRALA CESAR|2026-02':[{np:'10152146',f:'18/02/26',art:'Mochila FLIGHT',q:2,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'La mochila tiene una marca vertical, como un enganche, en la parte del bolsillo, donde tenemos que aplicar el logo.',cli:'Branding Merchandising S.A. ( Branding Merchandising S)'}],'OCAMPO BRIAN|2026-03':[{np:'10151072',f:'02/03/26',art:'Termo IVY 1000ml',q:1,mot:'Recibí una cantidad distinta a la comprada.',com:'recibi dos termos ivy negros de 1l y pedí 3',cli:'DE A TRES S R L (Cardondolores)'}],'BRUN TOMAS|2026-06':[{np:'10161804',f:'01/06/26',art:'Mochila Traful',q:1,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'mochila fallada en la costura',cli:'Seize Market SA (Viacotone)'},{np:'10161813',f:'05/06/26',art:'Botella Ring',q:5,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'5 unidades',cli:'Nexprom SA (Nexprom)'},{np:'10162594',f:'05/06/26',art:'Jarro Mocca',q:2,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'Recibí 2 unidades con el producto fallado.',cli:'CALLES JIMENA (Mondobox)'},{np:'10163230',f:'16/06/26',art:'Termo Aconcagua',q:1,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'La tapa del termo, llegó hundida. La caja estaba bien.',cli:'AGROADS AGRIBUSINESS S.A. (Agroads)'}],'ROMERO MELANIE|2026-05':[{np:'10159522',f:'21/05/26',art:'Power Bank Tron',q:1,mot:'Recibí una cantidad distinta a la comprada.',com:'No estaba el producto a pesar de que en el remito figura.',cli:'Simonet Javier Hernan (Azore+Vida Regalos Sustentables)'}],'BRUN TOMAS|2026-04':[{np:'10158063',f:'28/04/26',art:'Bolsa Kraft 22x10x30',q:8,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'estan rotas.',cli:'Seize Market SA (Viacotone)'},{np:'10158411',f:'27/04/26',art:'Paraguas TAHG 134 Automático',q:1,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'Manchado',cli:'Rulo SA (Rulo Puma)'},{np:'10156964',f:'17/04/26',art:'Bolsa M1 30x30x10',q:100,mot:'Recibi otro producto.',com:'Eran bolsas negras y me llegaron bolsas blancas.',cli:'MHGG SRL (Mhgg)'},{np:'10157138',f:'15/04/26',art:'Campera Jacket Full Zipper Cardon',q:1,mot:'Recibí una cantidad distinta a la comprada.',com:'Recibimos 7 Camperas Jacket Full Zipper Cardon talle M, cuando por la web compramos 8 camperas.',cli:'PIC INSUMOS S.A.S. (Pic Insumos)'},{np:'10156781',f:'10/04/26',art:'Remera Lincoln',q:8,mot:'Recibi otro producto.',com:'Recibi chombas cutralco y el pedido es de remeras.',cli:'LA MAQUINOLA SRL (Pamperopilar)'},{np:'10156781',f:'10/04/26',art:'Remera Lincoln',q:7,mot:'Recibi otro producto.',com:'Recibi chombas cutralco y el pedido es de remeras.',cli:'LA MAQUINOLA SRL (Pamperopilar)'},{np:'10156837',f:'09/04/26',art:'Boligrafo Omega',q:50,mot:'Recibi otro producto.',com:'pedimos 50 unidades del boligrafo omega en celeste claro y nos enviaron en azul !!',cli:'Grupo Inversor Velski SA (Giv)'},{np:'10155770',f:'01/04/26',art:'Mate Origen c/Bombilla',q:5,mot:'Recibí una cantidad distinta a la comprada.',com:'Compramos 10 mates y llegaron con un faltante de 5 bombillas.',cli:'Seize Market SA (Viacotone)'}],'ROMERO MELANIE|2026-03':[{np:'10154188',f:'10/03/26',art:'Espejo Pocket',q:1,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'NO ABRE',cli:'Seize Market SA (Viacotone)'},{np:'10152388',f:'02/03/26',art:'Mochila Lisa',q:1,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'1 de las mochilas viene con el cierre defectuoso, no cierra ni abre bien por una diferencia de tamaño',cli:'Grupo Inversor Velski SA (Giv)'}],'LAURATO MARTINEZ|2026-01':[{np:'10149535',f:'14/01/26',art:'Pelota de Futbol Nro.5 AMERICA',q:1,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'vino pinchada',cli:'Agetin S.R.L (Promote)'},{np:'10149482',f:'14/01/26',art:'Lona Rest',q:3,mot:'Recibí una cantidad distinta a la comprada.',com:'NOS FALTARON 3 UNIDADES.',cli:'Marcelo Alonso y Raquel Ramirez SH (Maprom)'}],'LAURATO MARTINEZ|2026-03':[{np:'10152040',f:'04/03/26',art:'Mochila Baviera',q:1,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'Le falta el cierre frontal.',cli:'Kowalewski Roberto Gabriel (Brander)'},{np:'10152581',f:'04/03/26',art:'Botella Ring',q:5,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'Me llegaron 5 botellas abolladas o marcadas.',cli:'S&P PROFESIONAL S.A. (S&P Profesional S.A)'}],'BRUN TOMAS|2026-02':[{np:'10152901',f:'27/02/26',art:'Cuaderno BUSH',q:100,mot:'Recibi otro producto.',com:'LLEGARON LAS 100 UNIDADES DE UN COLOR QUE NI SIQUIERA ESTAN CARGADOS EN LA PAGINA',cli:'Grupo Inversor Velski SA (Giv)'},{np:'10151518',f:'25/02/26',art:'Mate Practico',q:100,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'algunos estan lisos y la mayoria estan con relieves como si fuesen golpeadoas',cli:'Nexprom SA (Nexprom)'},{np:'10152714',f:'23/02/26',art:'Mochila KASSEL',q:30,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'nos vino una caja completa de color gris y las negras estan con el bolsillo torcido',cli:'Muncal SRL ( Muncal)'},{np:'10150226',f:'02/02/26',art:'Botella Jim',q:30,mot:'Recibí una cantidad distinta a la comprada.',com:'Buenas tardes! este producto no lo hemos recibido, vinieron 4 bultos asociados al pedido Nº1015026 donde 3 corresponden a las 60u. de manta COLORADO c/cuadros y en el 4to bulto estan los boligrafos+ set de asado+ cuadern',cli:'CIUFFO S.A. (Diuff)'}],'ARMOA TAMARA|2026-06':[{np:'10162223',f:'03/06/26',art:'Buzo Goya',q:6,mot:'Recibi otro producto.',com:'Buenos dias, viniero los 16 buzos de otro modelo, son marca Slazenger de polar con cierre hasta abajo.',cli:'Schijman Daniela Viviana (Shijman Daniela)'},{np:'10161896',f:'02/06/26',art:'Gorro MisFit c/velcro',q:7,mot:'Recibí una cantidad distinta a la comprada.',com:'se recibieron 7 gorras menos. Se pidieron 100 y recibimos 93',cli:'Rodriguez Zelada Romulo Facundo (Josulo Merchamdising)'},{np:'10160244',f:'01/06/26',art:'Gorro HEMP',q:10,mot:'Recibi otro producto.',com:'es otro modelo el enviado, no el hemp',cli:'Promo Master S.R.L. ( Epoint)'},{np:'10162968',f:'09/06/26',art:'Bolso Championship',q:1,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'el frente del bolsi, tiene una linea de punto de tejiro de lado a lado. vease sobre la linea verde de la foto. Necesitamos resolver el cambio URGENTE',cli:'Nexprom SA (Nexprom)'},{np:'10162635',f:'12/06/26',art:'Campera Stone',q:3,mot:'Recibi otro producto.',com:'Buenas, mi motivo de reclamo es el siguiente:  Solicite Campera Stone - Talle M - 3 unidades y me enviaron 3 buzos en lugar de campera.  Necesito avanzar con la devolucion para poder completar el pedido.',cli:'LAZZARI AUGUSTO (Lazzari)'},{np:'10163264',f:'12/06/26',art:'Jarro SLICE',q:2,mot:'Recibí una cantidad distinta a la comprada.',com:'Compré 202 unidades y recibí 8 bultos de 25 unidades cada uno, lo que hace un  Total de 200 unidades  El sello del expreso indica que ellos recibieron solo 8 bultos y se ve abajo tachado otra cantidad de bultos. Aguardo',cli:'Peñeñory Hugo Marcelo (Publicidad Empresaria)'},{np:'10163246',f:'10/06/26',art:'LLavero Destapador Carbono',q:20,mot:'Recibi otro producto.',com:'recibimos otro modelo de llavero, adjuntamos foto, necesitamos lo antes posible los que habíamos solicitado, muchas gracias',cli:'Groupadvince SAS (Brandcaps Argentina)'},{np:'10163250',f:'10/06/26',art:'Campera Stone',q:4,mot:'Recibi otro producto.',com:'En el día de la fecha se reciben 4 buzos en vez de 4 camperas se adjunta imagen',cli:'Arrieta Guido Martin (GM Promociones)'}],'LAURATO MARTINEZ|2026-06':[{np:'10162614',f:'04/06/26',art:'Botella Dairy',q:2,mot:'Recibí una cantidad distinta a la comprada.',com:'faltaron 2 botellas',cli:'Seize Market SA (Viacotone)'},{np:'10160761',f:'04/06/26',art:'Mochila Smith',q:51,mot:'Recibi otro producto.',com:'Recibimos 40 mochila hesse (2 bultos) en lugar de 50 smith (2 bultos)  Y en una de las cajas hay 1 bolso duomo en lugar de 1 mochila smith',cli:'Logo Group S.A. (Focus Logo)'},{np:'10161339',f:'11/06/26',art:'Campera Montana Hombre',q:1,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'La campera vino fallada en la costura de la axila.',cli:'Proar Imagen Promocional S.R.L. (Proar Imagen)'}],'ARCE ELIAS|2026-02':[{np:'10151207',f:'18/02/26',art:'Mate Practico',q:50,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'Estan todos los mates como se ven en la foto, con muchos detalles negros como raspados en el interior del producto',cli:'TU ESTAMPA S.R.L. (Tu Estampa)'}],'ARMOA TAMARA|2026-01':[{np:'10150444',f:'29/01/26',art:'Taza - Canvas Sublimation',q:1,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'La taza llego rota. Importante como sugerencia mejorar el empaquetado del producto porque estaba suelto y al ser tazas es muy probable la rotura.',cli:'Ortega Guemberena SA ( Ogdistinciones)'},{np:'10150383',f:'26/01/26',art:'Botella Jim',q:2,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'Llegaron dos unidades rayadadas',cli:'My Tokio SRL (Retail)'},{np:'10149797',f:'16/01/26',art:'Mate Practico',q:30,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'TODOS LOS MATES ESTAN FALLADOS!',cli:'Seize Market SA (Viacotone)'}],'AIRALA CESAR|2026-01':[{np:'10150524',f:'27/01/26',art:'Jarro Mocca',q:3,mot:'El packaging presenta fallas o hay faltantes de estos.',com:'falla en tapa de jarro',cli:'Seize Market SA (Viacotone)'}],'LAURATO MARTINEZ|2026-04':[{np:'10157885',f:'22/04/26',art:'Cuaderno Jotter',q:253,mot:'Reclamo por plazo de entrega.',com:'entrega fuera de tiempo, pedido liso debería haber salido el día lunes 20.',cli:'Ortega Guemberena SA ( Ogdistinciones)'},{np:'10155999',f:'08/04/26',art:'Mochila Baviera',q:1,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'Tenemos inconvenientes para loguear la mochila del pedido N.º 10155999. La solapa superior está descuadrada (aprox. 1 cm), lo que deja el cierre en bisel e impide centrar el logo (siempre se ve torcido). Además, presenta',cli:'Northplast  SRL (Uni Pro)'}],'CACERES EDISON|2026-05':[{np:'10159899',f:'08/05/26',art:'Set de Asado Peña',q:1,mot:'Recibí una cantidad distinta a la comprada.',com:'Falto la tabla lisa',cli:'Ortega Guemberena SA ( Ogdistinciones)'},{np:'10159636',f:'08/05/26',art:'Set Midnight',q:40,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'vinieron con la caja defectuosas',cli:'Daneri Fernando Daniel (Clickregalos)'}],'BRUN TOMAS|2026-05':[{np:'10160374',f:'15/05/26',art:'Remera Lincoln',q:7,mot:'Recibi otro producto.',com:'Buscamos las remeras y nos entregaron chombas. No son solo las 7, son las 13',cli:'Muncal SRL ( Muncal)'},{np:'10160249',f:'14/05/26',art:'Taza - Canvas Sublimation',q:7,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'son 7 unidades rotas.',cli:'Nortex Solutions S.R.L (Cordoba Pedro)'},{np:'10160418',f:'14/05/26',art:'Bolsa M3 40x35x10',q:14,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'14 BOLSAS MANCHADAS',cli:'Seize Market SA (Viacotone)'},{np:'10159936',f:'14/05/26',art:'Bolso Worker',q:5,mot:'Recibi otro producto.',com:'recibimos otro modelo. necesitamos el cambio lo mas rápido posible.',cli:'Skyline Merchandising (Pablo Daniel Gonzalez)'},{np:'10156971',f:'04/05/26',art:'Llavero Cinta Métrica Square',q:100,mot:'Consultas/comunicaciones administrativas.',com:'ES UN PEDIDO QUE NO SOLICITE, QUE POR ERROR DE SISTEMA ME ENVIARON SIN LOGO',cli:'ORTEGA PAMELA ALEJANDRA (Lihue Regaleria Empresarial)'},{np:'10160255',f:'28/05/26',art:'Boligrafo Vento White',q:30,mot:'El packaging presenta fallas o hay faltantes de estos.',com:'Hola buenas tardes, tengo 30 cajitas de los boligrafos que vinieron asi.   Necesito me envien o poder retirar para poder remplazarlas',cli:'Marpa SA ( Marpa)'},{np:'10161782',f:'27/05/26',art:'Espejo Pocket',q:4,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'llegaron espejos rotos',cli:'MHGG SRL (Mhgg)'},{np:'10159462',f:'26/05/26',art:'Set Midnight',q:125,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'cajas rayadas',cli:'Seize Market SA (Viacotone)'},{np:'10160921',f:'26/05/26',art:'Set Midnight',q:25,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'vinieron cajas falladas rayadas las cambiamos mañana mano a mano',cli:'Seize Market SA (Viacotone)'},{np:'10161397',f:'26/05/26',art:'Jarro Express Cup',q:1,mot:'Recibí una cantidad distinta a la comprada.',com:'Buenos dias!! Recibi 100 jarros y 99 tiras de silicona color negra. Falta una.  Por favor enviar con urgencia!! Gracias!',cli:'Gogift Soc.por Acción Simplificada (Gogift)'},{np:'10158837',f:'18/05/26',art:'Botella Kun',q:4,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'estan abolladas',cli:'Camerano Walter Fabian (Bordafax)'}],'LAURATO MARTINEZ|2026-02':[{np:'10152827',f:'27/02/26',art:'Botella Penguin',q:6,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'Las botellas estan rayadas',cli:'Rizzuto Luciano Augusto (Con La Marca)'},{np:'10152792',f:'27/02/26',art:'Set Palma',q:4,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'buenas , tenes 4 o 5 de las bolsitas negras de los sets rotas  adjunto imagen de dos que tengo a mano  saludos',cli:'4Brands de Marcos R.Larreta y C.Buchanan (4Brands)'},{np:'10151814',f:'25/02/26',art:'Remera Regent Hombre/Unisex',q:11,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'Llegaron 11 unidades de la remera XL blanca manchadas y fuera de sus bolsas',cli:'My Tokio SRL (Retail)'},{np:'10151104',f:'06/02/26',art:'Caja Large',q:30,mot:'El packaging presenta fallas o hay faltantes de estos.',com:'hola, solo nos enviaron las fundas, falta la parte interna de la caja.   necesito la parte interna de manera URGENTE!',cli:'Marcelo Alonso y Raquel Ramirez SH (Maprom)'},{np:'10150946',f:'04/02/26',art:'Mochila Lisa',q:120,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'Me vinieron en 2 tonos, necesito un tono igual-',cli:'Libreria Mafra S.R.L. ( Libreria Mafra)'}],'ROMERO MELANIE|2026-02':[{np:'10152355',f:'24/02/26',art:'Mate SAN ROQUE c/Bombilla',q:2,mot:'Recibi otro producto.',com:'recibimos 2 unidades color verde',cli:'Logo Group S.A. (Focus Logo)'},{np:'10151812',f:'13/02/26',art:'Jarro Campster',q:2,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'2 de los 5 jarros llegaron marcados y abollados',cli:'Grupo Inversor Velski SA (Giv)'},{np:'10151177',f:'09/02/26',art:'Pelota de Futbol Nro.5 AMERICA',q:2,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'nos llegaron 2 pelotas pinchadas',cli:'Seize Market SA (Viacotone)'},{np:'10151230',f:'05/02/26',art:'Mate Alazan ( calabaza + cinturon de cuero)',q:3,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'TRES FALLADOS',cli:'Seize Market SA (Viacotone)'}],'ARMOA TAMARA|2026-03':[{np:'10155704',f:'30/03/26',art:'Remera Regent Hombre/Unisex',q:18,mot:'Recibi otro producto.',com:'Pedimos azules y vino un color casi negro',cli:'Agetin S.R.L (Promote)'},{np:'10155484',f:'26/03/26',art:'Chaleco Pampero',q:2,mot:'Recibí una cantidad distinta a la comprada.',com:'Buenas tardes! Recibimos este pedido con un faltante de 2 chalecos Pampero talle S (compramos 4 y recibimos 2 de ese talle)',cli:'PIC INSUMOS S.A.S. (Pic Insumos)'},{np:'10155376',f:'25/03/26',art:'Campera Rompeviento Pampero',q:1,mot:'Recibí una cantidad distinta a la comprada.',com:'Me enviaron un talle L de mas... (Me sobra una campera L)  Y me falta un talle S',cli:'Discover Argentina S.A. (We Golf)'},{np:'10153661',f:'04/03/26',art:'Mate Zaino',q:3,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'TRES MATES OXIDADOS',cli:'Seize Market SA (Viacotone)'}],'ROMERO MELANIE|2026-01':[{np:'10150195',f:'22/01/26',art:'Caja Extra Large',q:5,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'cajas manchadas',cli:'Seize Market SA (Viacotone)'},{np:'10149303',f:'12/01/26',art:'Auriculares NALU',q:1,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'un auricular no funciona',cli:'Seize Market SA (Viacotone)'}],'ARMOA TAMARA|2026-05':[{np:'10159908',f:'12/05/26',art:'Campera Pampero',q:1,mot:'Recibi otro producto.',com:'HOLA, ME HAN ENVIADO UN CHALECO EN VEZ DE CAMPERA POLAR GRIS Y NEGRO, NECESITO RESOLVERLO HOY O MAÑANA YA QEU DEBO BORDARLO Y ENTREGAR A CLIENTE EN TIEMPO Y FORMA EL DIA JUEVES.....',cli:'RODRIGUEZ ANDREA ALEJANDRA (Tienda Beacon)'},{np:'10159892',f:'11/05/26',art:'TAZA RECTA 300',q:1,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'Taza rota en asa/manija.',cli:'Seize Market SA (Viacotone)'},{np:'10158718',f:'11/05/26',art:'Cooler CERRILLO',q:2,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'Remito 67903 1 coolor gris manchado y le falta el caño- manija',cli:'Toma Retail S.R.L ( Market Brand)'},{np:'10162228',f:'29/05/26',art:'Tote Bag Cactus',q:40,mot:'Recibí una cantidad distinta a la comprada.',com:'no llego ninguna bolsa, solo set',cli:'Creando de a Dos / Belen Ibarra (Tu Producto)'},{np:'10161068',f:'28/05/26',art:'Tote Bag Cactus',q:15,mot:'Recibí una cantidad distinta a la comprada.',com:'Faltaron 15 unidades, habia 3 cajas que tenian 35 unidades, una de 20, y otras de 40',cli:'Onpromotion SRL (Onpromotion)'},{np:'10161333',f:'27/05/26',art:'La Baule Master Cheese',q:1,mot:'El packaging presenta fallas o hay faltantes de estos.',com:'uno de los le baule cheese vino rayado un poco el vidrio y con la caja rota',cli:'Grupo Inversor Velski SA (Giv)'},{np:'10161333',f:'27/05/26',art:'Cuaderno Freedom',q:1,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'Recibimos uno de los cuadernos marcado un poco roto en los bordes',cli:'Grupo Inversor Velski SA (Giv)'},{np:'10161588',f:'22/05/26',art:'Botella FLUMEN',q:3,mot:'El packaging presenta fallas o hay faltantes de estos.',com:'de 41 enviaron solo 38 unidades, por favor enviar a la brevedad ya que afecta a la producción',cli:'Nortex Solutions S.R.L (Cordoba Pedro)'},{np:'10159680',f:'19/05/26',art:'Mochila Walking L',q:1,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'Costura rota en union de tela y cierre',cli:'GALLI IVO SIMON (Un Presnete)'},{np:'10159983',f:'19/05/26',art:'Botella Ring',q:4,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'BOTELLAS ABOLLADAS',cli:'MHGG SRL (Mhgg)'},{np:'10159920',f:'18/05/26',art:'Mochila Cima - S',q:1,mot:'Hay un producto/s defectuoso/s o con fallas.',com:'vino descosida',cli:'Seize Market SA (Viacotone)'}]};
 var _grpFilter='all';
-var _rsGrp='all';
+const ctrlExcelData={'2026-01':[{nm:'PENIDA JOSE',und:9823,ord:84,dias:13},{nm:'bejermanwmszecat@gmail.com',und:4105,ord:59,dias:14},{nm:'logistica2@zecat.com',und:348,ord:4,dias:4},{nm:'BARRIOS DANA',und:47697,ord:521,dias:21},{nm:'braianarielocampo@gmail.com',und:3825,ord:17,dias:2},{nm:'ROMERO MELANIE',und:11028,ord:105,dias:7},{nm:'ARMOA TAMARA',und:2,ord:1,dias:1},{nm:'tomasbrunzecat@gmail.com',und:1047,ord:4,dias:2}],'2026-02':[{nm:'ARMOA TAMARA',und:11969,ord:112,dias:8},{nm:'logistica2@zecat.com',und:5999,ord:47,dias:10},{nm:'mcamerano@zecat.com',und:12957,ord:94,dias:16},{nm:'BARRIOS DANA',und:55836,ord:529,dias:16},{nm:'bejermanwmszecat@gmail.com',und:9453,ord:55,dias:18},{nm:'PENIDA JOSE',und:2605,ord:19,dias:3},{nm:'magwmszecat@gmail.com',und:71,ord:3,dias:3},{nm:'ROMERO MELANIE',und:23984,ord:180,dias:15},{nm:'tomasbrunzecat@gmail.com',und:2,ord:1,dias:1},{nm:'admdeposito.ch@zecat.cl',und:100,ord:1,dias:1}],'2026-03':[{nm:'BARRIOS DANA',und:38923,ord:72,dias:3},{nm:'adrianromerozecat@gmail.com',und:389,ord:1,dias:1},{nm:'PITTALA TOMAS',und:31061,ord:178,dias:8},{nm:'bejermanwmszecat@gmail.com',und:10511,ord:84,dias:21},{nm:'mcamerano@zecat.com',und:137084,ord:663,dias:24},{nm:'tomasbrunzecat@gmail.com',und:3064,ord:21,dias:4},{nm:'logistica2@zecat.com',und:6580,ord:25,dias:14},{nm:'ROMERO MELANIE',und:85136,ord:680,dias:21},{nm:'PENIDA JOSE',und:2998,ord:6,dias:5},{nm:'ARMOA TAMARA',und:35956,ord:105,dias:13},{nm:'magwmszecat@gmail.com',und:4631,ord:12,dias:9}],'2026-04':[{nm:'mcamerano@zecat.com',und:113450,ord:632,dias:24},{nm:'bejermanwmszecat@gmail.com',und:23092,ord:139,dias:21},{nm:'ARMOA TAMARA',und:908,ord:8,dias:5},{nm:'ROMERO MELANIE',und:79820,ord:613,dias:20},{nm:'logistica2@zecat.com',und:1767,ord:10,dias:8},{nm:'PITTALA TOMAS',und:84217,ord:572,dias:20},{nm:'PENIDA JOSE',und:4920,ord:16,dias:3},{nm:'braianarielocampo@gmail.com',und:3611,ord:14,dias:2},{nm:'tomasbrunzecat@gmail.com',und:7,ord:1,dias:1}],'2026-05':[{nm:'mcamerano@zecat.com',und:70465,ord:448,dias:21},{nm:'logistica2@zecat.com',und:1066,ord:7,dias:5},{nm:'tomasbrunzecat@gmail.com',und:265,ord:3,dias:2},{nm:'bejermanwmszecat@gmail.com',und:19154,ord:116,dias:17},{nm:'PITTALA TOMAS',und:72001,ord:623,dias:18},{nm:'ROMERO MELANIE',und:64996,ord:497,dias:17},{nm:'ARMOA TAMARA',und:17609,ord:82,dias:9}],'2026-06':[{nm:'magwmszecat@gmail.com',und:419,ord:3,dias:1},{nm:'ROMERO MELANIE',und:53144,ord:350,dias:12},{nm:'mcamerano@zecat.com',und:29824,ord:277,dias:12},{nm:'bejermanwmszecat@gmail.com',und:1945,ord:26,dias:9},{nm:'logistica2@zecat.com',und:5302,ord:24,dias:4},{nm:'PITTALA TOMAS',und:61428,ord:381,dias:12},{nm:'ARMOA TAMARA',und:4953,ord:30,dias:4},{nm:'tomasbrunzecat@gmail.com',und:1323,ord:7,dias:2}]};
+const maqDetailData={'2026-01':{lbl:'Enero 2026',ops:[{nm:'DEMARCHIS EMILIANO',mov:627,und:194981,dias:14,pa02:440,rec:75,rl01:0,pallet:0,flow:112}]},'2026-02':{lbl:'Febrero 2026',ops:[{nm:'DEMARCHIS EMILIANO',mov:261,und:137390,dias:10,pa02:224,rec:37,rl01:0,pallet:0,flow:0}]},'2026-03':{lbl:'Marzo 2026',ops:[{nm:'DEMARCHIS EMILIANO',mov:913,und:643122,dias:18,pa02:690,rec:185,rl01:38,pallet:0,flow:0},{nm:'SANDOVAL TOMAS',mov:206,und:247106,dias:8,pa02:197,rec:7,rl01:2,pallet:0,flow:0}]},'2026-04':{lbl:'Abril 2026',ops:[{nm:'DEMARCHIS EMILIANO',mov:772,und:1127771,dias:14,pa02:594,rec:148,rl01:26,pallet:4,flow:0},{nm:'SANDOVAL TOMAS',mov:806,und:516426,dias:20,pa02:525,rec:239,rl01:24,pallet:18,flow:0}]},'2026-05':{lbl:'Mayo 2026',ops:[{nm:'SANDOVAL TOMAS',mov:606,und:641428,dias:19,pa02:459,rec:145,rl01:2,pallet:0,flow:0},{nm:'DEMARCHIS EMILIANO',mov:1066,und:2312165,dias:19,pa02:846,rec:202,rl01:18,pallet:0,flow:0}]},'2026-06':{lbl:'Junio 2026',ops:[{nm:'DEMARCHIS EMILIANO',mov:857,und:2835504,dias:10,pa02:648,rec:111,rl01:98,pallet:0,flow:0},{nm:'SANDOVAL TOMAS',mov:297,und:306561,dias:10,pa02:171,rec:126,rl01:0,pallet:0,flow:0}]}};
+var _chartCtrlEvol=null,_chartCtrlRank=null,_chartMaqEvol=null,_chartMaqBreak=null;
+
+function chartColors(){var dark=document.body.classList.contains('dark');return{grid:dark?'rgba(255,255,255,0.08)':'rgba(0,0,0,0.08)',tick:dark?'#94a3b8':'#555',leg:dark?'#cbd5e1':'#333'};}
+function buildControl(){
+  if(!ctrlExcelData||!Object.keys(ctrlExcelData).length)return;
+  var anio=document.getElementById('selAnio')?document.getElementById('selAnio').value:'all';
+  var mes=document.getElementById('selMes')?document.getElementById('selMes').value:'all';
+  var months=Object.keys(ctrlExcelData).sort();
+  var sel=months.filter(function(ym){var p=ym.split('-');if(anio!=='all'&&p[0]!==anio)return false;if(mes!=='all'&&parseInt(p[1])!==parseInt(mes))return false;return true;});
+  if(!sel.length)sel=[months[months.length-1]];
+  var cc=chartColors();
+  var opsMap={};sel.forEach(function(ym){(ctrlExcelData[ym]||[]).forEach(function(op){if(!opsMap[op.nm])opsMap[op.nm]={nm:op.nm,und:0,ord:0,dias:0};opsMap[op.nm].und+=op.und;opsMap[op.nm].ord+=op.ord;opsMap[op.nm].dias+=op.dias;});});
+  var ops=Object.values(opsMap).sort(function(a,b){return b.und-a.und;});
+  var totUnd=ops.reduce(function(s,o){return s+o.und;},0),totOrd=ops.reduce(function(s,o){return s+o.ord;},0),totDias=ops.reduce(function(s,o){return s+o.dias;},0);
+  var avgUpd=totDias?Math.round(totUnd/totDias):0;
+  document.getElementById('ctrlKpiUnd').textContent=totUnd.toLocaleString('es-AR');
+  document.getElementById('ctrlKpiUndSub').textContent=avgUpd+' und/dia prom';
+  document.getElementById('ctrlKpiOrd').textContent=totOrd.toLocaleString('es-AR');
+  document.getElementById('ctrlKpiOrdSub').textContent=totOrd.toLocaleString('es-AR')+' ordenes';
+  document.getElementById('ctrlKpiUdpd').textContent=avgUpd.toLocaleString('es-AR');
+  document.getElementById('ctrlKpiUdpdSub').textContent=sel.length+' mes'+(sel.length>1?'es':'');
+  document.getElementById('ctrlKpiOps').textContent=ops.length;
+  document.getElementById('ctrlKpiOpsSub').textContent='operarios';
+  var CLRS=['#2563eb','#16a34a','#d97706','#7c3aed','#0891b2'];
+  var MON_S=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  var monLbl=months.map(function(ym){var p=ym.split('-');return MON_S[parseInt(p[1])]+' '+p[0].slice(2);});
+  var allNms=[];months.forEach(function(ym){(ctrlExcelData[ym]||[]).forEach(function(op){if(allNms.indexOf(op.nm)<0)allNms.push(op.nm);});});
+  var evolDs=allNms.map(function(nm,i){return{label:nm.split(' ')[0],data:months.map(function(ym){var op=(ctrlExcelData[ym]||[]).find(function(o){return o.nm===nm;});return(op&&op.dias)?Math.round(op.und/op.dias):null;}),borderColor:CLRS[i%CLRS.length],backgroundColor:CLRS[i%CLRS.length]+'33',tension:0.35,spanGaps:true,pointRadius:4,fill:false};});
+  var isDarkC=document.body.classList.contains('dark');
+  var tooltipBase={backgroundColor:isDarkC?'#1e293b':'#fff',titleColor:isDarkC?'#f1f5f9':'#111',bodyColor:isDarkC?'#94a3b8':'#555',borderColor:isDarkC?'#334155':'#e5e7eb',borderWidth:1,padding:10,cornerRadius:8};
+  var el=document.getElementById('chartCtrlEvol');
+  var evolOpts={responsive:true,maintainAspectRatio:true,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{color:cc.leg,font:{size:11},usePointStyle:true,pointStyleWidth:8,boxHeight:8}},tooltip:{...tooltipBase,callbacks:{label:function(ctx){return ' '+ctx.dataset.label+': '+Math.round(ctx.parsed.y).toLocaleString('es-AR')+' und/dia';}}}},scales:{x:{grid:{color:cc.grid,lineWidth:0.5},border:{dash:[4,4]},ticks:{color:cc.tick,font:{size:10}}},y:{grid:{color:cc.grid,lineWidth:0.5},ticks:{color:cc.tick,font:{size:10},callback:function(v){return v.toLocaleString('es-AR');}},title:{display:true,text:'UND/dia',color:cc.tick,font:{size:10}}}}};
+  if(_chartCtrlEvol){_chartCtrlEvol.data.labels=monLbl;_chartCtrlEvol.data.datasets=evolDs;_chartCtrlEvol.options.scales.x.grid.color=cc.grid;_chartCtrlEvol.options.scales.y.grid.color=cc.grid;_chartCtrlEvol.options.scales.x.ticks.color=cc.tick;_chartCtrlEvol.options.scales.y.ticks.color=cc.tick;_chartCtrlEvol.options.plugins.legend.labels.color=cc.leg;_chartCtrlEvol.update();}
+  else if(el){_chartCtrlEvol=new Chart(el,{type:'line',data:{labels:monLbl,datasets:evolDs},options:evolOpts});}
+  var rkDs=[{label:'UND',data:ops.map(function(o){return o.und;}),backgroundColor:ops.map(function(o,i){return CLRS[i%CLRS.length];}),borderRadius:6,borderSkipped:false}];
+  var rk=document.getElementById('chartCtrlRank');
+  var rkOpts={responsive:true,maintainAspectRatio:true,indexAxis:'y',plugins:{legend:{display:false},tooltip:{...tooltipBase,callbacks:{label:function(ctx){return ' '+ctx.parsed.x.toLocaleString('es-AR')+' und';}}}},scales:{x:{grid:{color:cc.grid,lineWidth:0.5},ticks:{color:cc.tick,font:{size:10},callback:function(v){return v>=1000?(v/1000).toFixed(0)+'k':v;}},border:{dash:[4,4]}},y:{grid:{display:false},ticks:{color:cc.tick,font:{size:11,weight:'600'}}}}};
+  if(_chartCtrlRank){_chartCtrlRank.data.labels=ops.map(function(o){return o.nm.split(' ')[0];});_chartCtrlRank.data.datasets=rkDs;_chartCtrlRank.update();}
+  else if(rk){_chartCtrlRank=new Chart(rk,{type:'bar',data:{labels:ops.map(function(o){return o.nm.split(' ')[0];}),datasets:rkDs},options:rkOpts});}
+  var isDark=document.body.classList.contains('dark'),thBg=isDark?'#1e293b':'#f5f5f5';
+  var MON=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  var h='<table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr style="background:'+thBg+'"><th style="padding:8px 12px;text-align:left;border-bottom:2px solid #e0e0e0">Mes</th><th style="padding:8px 12px;text-align:left;border-bottom:2px solid #e0e0e0">Operario</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #e0e0e0">Dias</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #e0e0e0">UND</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #e0e0e0">UND/dia</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #e0e0e0">ORD</th></tr></thead><tbody>';
+  var alt=false;months.forEach(function(ym){(ctrlExcelData[ym]||[]).forEach(function(op){var upd=op.dias?Math.round(op.und/op.dias):0,clr=upd>=150?'#16a34a':upd>=80?'#2563eb':upd>=40?'#d97706':'#dc2626',bg=alt?(isDark?'#1e293b':'#f9f9f9'):(isDark?'#0f172a':'#fff'),p=ym.split('-');alt=!alt;h+='<tr style="background:'+bg+'"><td style="padding:7px 12px;color:#888">'+MON[parseInt(p[1])]+' '+p[0]+'</td><td style="padding:7px 12px;font-weight:600">'+op.nm+'</td><td style="padding:7px 12px;text-align:right;color:#888">'+op.dias+'</td><td style="padding:7px 12px;text-align:right;font-weight:700">'+op.und.toLocaleString('es-AR')+'</td><td style="padding:7px 12px;text-align:right;color:'+clr+';font-weight:700">'+upd+'</td><td style="padding:7px 12px;text-align:right;color:#888">'+op.ord+'</td></tr>';});});
+  h+='</tbody></table>';document.getElementById('ctrlTable').innerHTML=h;
+}
+function buildMaquinistas(){
+  if(!maqDetailData||!Object.keys(maqDetailData).length)return;
+  var anio=document.getElementById('selAnio')?document.getElementById('selAnio').value:'all';
+  var mes=document.getElementById('selMes')?document.getElementById('selMes').value:'all';
+  var months=Object.keys(maqDetailData).sort();
+  var sel=months.filter(function(ym){var p=ym.split('-');if(anio!=='all'&&p[0]!==anio)return false;if(mes!=='all'&&parseInt(p[1])!==parseInt(mes))return false;return true;});
+  if(!sel.length)sel=[months[months.length-1]];
+  var cc=chartColors();
+  var opsMap={};sel.forEach(function(ym){(maqDetailData[ym]||{ops:[]}).ops.forEach(function(op){if(!opsMap[op.nm])opsMap[op.nm]={nm:op.nm,mov:0,und:0,dias:0};opsMap[op.nm].mov+=op.mov;opsMap[op.nm].und+=op.und;opsMap[op.nm].dias+=op.dias;});});
+  var ops=Object.values(opsMap).sort(function(a,b){return b.mov-a.mov;});
+  var totMov=ops.reduce(function(s,o){return s+o.mov;},0),totUnd=ops.reduce(function(s,o){return s+o.und;},0),totDias=ops.reduce(function(s,o){return s+o.dias;},0);
+  var avgMpd=totDias?Math.round(totMov/totDias):0;
+  document.getElementById('maqKpiMov').textContent=totMov.toLocaleString('es-AR');
+  document.getElementById('maqKpiMovSub').textContent=avgMpd+' mov/dia prom';
+  document.getElementById('maqKpiUnd').textContent=totUnd>0?totUnd.toLocaleString('es-AR'):'N/D';
+  document.getElementById('maqKpiMpd').textContent=avgMpd.toLocaleString('es-AR');
+  document.getElementById('maqKpiMpdSub').textContent=totMov.toLocaleString('es-AR')+' mov totales';
+  document.getElementById('maqKpiOps').textContent=ops.length;
+  document.getElementById('maqKpiOpsSub').textContent=sel.length+' mes'+(sel.length>1?'es':'');
+  var CLRS=['#2563eb','#16a34a','#d97706','#7c3aed'];
+  var allNms=[];months.forEach(function(ym){(maqDetailData[ym]||{ops:[]}).ops.forEach(function(op){if(allNms.indexOf(op.nm)<0)allNms.push(op.nm);});});
+  var MON_S=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  var monLbl=months.map(function(ym){var p=ym.split('-');return MON_S[parseInt(p[1])]+' '+p[0].slice(2);});
+  var evolDs=allNms.map(function(nm,i){return{label:nm.split(' ')[0]+' '+(nm.split(' ')[1]||'').charAt(0)+'.',data:months.map(function(ym){var op=(maqDetailData[ym]||{ops:[]}).ops.find(function(o){return o.nm===nm;});return(op&&op.dias)?Math.round(op.mov/op.dias):null;}),borderColor:CLRS[i%CLRS.length],backgroundColor:CLRS[i%CLRS.length]+'33',tension:0.35,spanGaps:true,pointRadius:4,fill:false};});
+  var isDarkM=document.body.classList.contains('dark');
+  var ttBase={backgroundColor:isDarkM?'#1e293b':'#fff',titleColor:isDarkM?'#f1f5f9':'#111',bodyColor:isDarkM?'#94a3b8':'#555',borderColor:isDarkM?'#334155':'#e5e7eb',borderWidth:1,padding:10,cornerRadius:8};
+  var maqEvolEl=document.getElementById('chartMaqEvol');
+  var maqEvolOpts={responsive:true,maintainAspectRatio:true,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{color:cc.leg,font:{size:11},usePointStyle:true,pointStyleWidth:8,boxHeight:8}},tooltip:{...ttBase,callbacks:{label:function(ctx){return ' '+ctx.dataset.label+': '+Math.round(ctx.parsed.y).toLocaleString('es-AR')+' mov/dia';}}}},scales:{x:{grid:{color:cc.grid,lineWidth:0.5},border:{dash:[4,4]},ticks:{color:cc.tick,font:{size:10}}},y:{grid:{color:cc.grid,lineWidth:0.5},ticks:{color:cc.tick,font:{size:10},callback:function(v){return v.toLocaleString('es-AR');}},title:{display:true,text:'MOV/dia',color:cc.tick,font:{size:10}}}}};
+  if(_chartMaqEvol){_chartMaqEvol.data.labels=monLbl;_chartMaqEvol.data.datasets=evolDs;_chartMaqEvol.options.scales.x.grid.color=cc.grid;_chartMaqEvol.options.scales.y.grid.color=cc.grid;_chartMaqEvol.options.scales.x.ticks.color=cc.tick;_chartMaqEvol.options.scales.y.ticks.color=cc.tick;_chartMaqEvol.options.plugins.legend.labels.color=cc.leg;_chartMaqEvol.update();}
+  else if(maqEvolEl){_chartMaqEvol=new Chart(maqEvolEl,{type:'line',data:{labels:monLbl,datasets:evolDs},options:maqEvolOpts});}
+  var lastYm=sel[sel.length-1],lastOps=(maqDetailData[lastYm]||{ops:[]}).ops;
+  var TASK_LABELS=['PA02','Recep.','RL01','Pallet','Flow'],TASK_KEYS=['pa02','rec','rl01','pallet','flow'];
+  var breakDs=lastOps.map(function(op,i){return{label:op.nm.split(' ')[0],data:TASK_KEYS.map(function(k){return op[k]||0;}),backgroundColor:CLRS[i%CLRS.length],borderRadius:6,borderSkipped:false};});
+  var maqBrkEl=document.getElementById('chartMaqBreak');
+  document.getElementById('maqBreakSub').textContent='Desglose - '+(maqDetailData[lastYm]||{lbl:lastYm}).lbl;
+  var breakOpts={responsive:true,maintainAspectRatio:true,plugins:{legend:{labels:{color:cc.leg,font:{size:11},usePointStyle:true,pointStyleWidth:8,boxHeight:8}},tooltip:{...ttBase,callbacks:{label:function(ctx){return ' '+ctx.dataset.label+': '+ctx.parsed.y.toLocaleString('es-AR')+' mov';}}}},scales:{x:{grid:{display:false},ticks:{color:cc.tick,font:{size:11}}},y:{grid:{color:cc.grid,lineWidth:0.5},ticks:{color:cc.tick,font:{size:10},callback:function(v){return v>=1000?(v/1000).toFixed(0)+'k':v;}}}}};
+  if(_chartMaqBreak){_chartMaqBreak.data.datasets=breakDs;_chartMaqBreak.update();}
+  else if(maqBrkEl){_chartMaqBreak=new Chart(maqBrkEl,{type:'bar',data:{labels:TASK_LABELS,datasets:breakDs},options:breakOpts});}
+  var isDark=document.body.classList.contains('dark'),thBg=isDark?'#1e293b':'#f5f5f5';
+  var h='<table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr style="background:'+thBg+'"><th style="padding:8px 12px;text-align:left;border-bottom:2px solid #e0e0e0">Mes</th><th style="padding:8px 12px;text-align:left;border-bottom:2px solid #e0e0e0">Operario</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #e0e0e0">Dias</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #e0e0e0">MOV</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #e0e0e0">MOV/dia</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #e0e0e0">PA02</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #e0e0e0">Recep.</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #e0e0e0">RL01</th></tr></thead><tbody>';
+  var alt=false;months.forEach(function(ym){var md=maqDetailData[ym]||{lbl:ym,ops:[]};md.ops.forEach(function(op){var mpd=op.dias?Math.round(op.mov/op.dias):0,clr=mpd>=60?'#16a34a':mpd>=30?'#2563eb':mpd>=10?'#d97706':'#dc2626',bg=alt?(isDark?'#1e293b':'#f9f9f9'):(isDark?'#0f172a':'#fff');alt=!alt;h+='<tr style="background:'+bg+'"><td style="padding:7px 12px;color:#888">'+md.lbl+'</td><td style="padding:7px 12px;font-weight:600">'+op.nm+'</td><td style="padding:7px 12px;text-align:right;color:#888">'+op.dias+'</td><td style="padding:7px 12px;text-align:right;font-weight:700">'+op.mov.toLocaleString('es-AR')+'</td><td style="padding:7px 12px;text-align:right;color:'+clr+';font-weight:700">'+mpd+'</td><td style="padding:7px 12px;text-align:right;color:#888">'+op.pa02+'</td><td style="padding:7px 12px;text-align:right;color:#888">'+op.rec+'</td><td style="padding:7px 12px;text-align:right;color:#888">'+op.rl01+'</td></tr>';});});
+  h+='</tbody></table>';document.getElementById('maqDetailTable').innerHTML=h;
+}
 
 // Tab navigation
 function switchTab(name){
   document.querySelectorAll('.sec').forEach(function(s){s.classList.remove('active');});
   document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
-  var secEl=document.getElementById('sec-'+name);
-  var btnEl=document.getElementById('btn-'+name);
-  if(secEl) secEl.classList.add('active');
-  if(btnEl) btnEl.classList.add('active');
-  document.getElementById('opFilterWrap').style.display=(name==='picking'||name==='reclamos')?'':'none';
-  if(name==='resumen') buildResumen();
+  document.getElementById('sec-'+name).classList.add('active');
+  document.getElementById('btn-'+name).classList.add('active');
+  document.getElementById('opFilterWrap').style.display=(name==='picking'||name==='reclamos'||name==='control'||name==='maquinistas')?'':'none';
+  if(name==='control') buildControl();
   if(name==='maquinistas') buildMaquinistas();
-  if(name==='liquidacion') initLiquidacion();
-  if(name==='eficiencia') initEficiencia();
 }
 
 // Poblar selector de anios
@@ -689,9 +530,9 @@ const selAnioEl=document.getElementById('selAnio');
 years.forEach(function(y){var o=document.createElement('option');o.value=y;o.textContent=y;selAnioEl.appendChild(o);});
 
 // Poblar selector de operarios
-const operarios=['ADRIAN ROMERO','ARCE ELIAS','ARMOA TAMARA','BRUN TOMAS','CACERES EDISON','CAÑETE FAVIO','CHOQUE LEANDRO','DEMARCHIS EMILIANO','FAVIO CAÑETE','LAURATO MARTINEZ','MARIN LAUTARO','OCAMPO BRIAN','ROMERO DAMIAN','ROMERO MELANIE','SANDOVAL TOMAS'];
+const operarios=['-2146826246','ADRIAN ROMERO','ARCE ELIAS','ARMOA TAMARA','BRUN TOMAS','CACERES EDISON','CAÑETE FAVIO','CHOQUE LEANDRO','DEMARCHIS EMILIANO','FAVIO CAÑETE','LAURATO MARTINEZ','MARIN LAUTARO','OCAMPO BRIAN','ROMERO DAMIAN','ROMERO MELANIE','SANDOVAL TOMAS'];
 const selOpEl=document.getElementById('selOp');
-operarios.forEach(function(op){if(/^\-?\d+$/.test(op))return;var o=document.createElement('option');o.value=op;o.textContent=op;selOpEl.appendChild(o);});
+operarios.forEach(function(op){var o=document.createElement('option');o.value=op;o.textContent=op;selOpEl.appendChild(o);});
 
 // Colores de rendimiento (verde/naranja/rojo)
 function perfColor(v){return v>=TARGET?'#16a34a':v>=70?'#d97706':'#dc2626';}
@@ -711,6 +552,9 @@ function getFilteredIndices(){
 }
 
 function applyFilter(){
+  var _s=document.querySelector('.sec.active');var _id=_s?_s.id:'';
+  if(_id==='sec-control'){buildControl();return;}
+  if(_id==='sec-maquinistas'){buildMaquinistas();return;}
   var idx=getFilteredIndices();
   var labels=idx.map(function(i){return monLabels[i];});
   var selKeys=idx.map(function(i){return allMonKeys[i];});
@@ -742,11 +586,10 @@ function applyFilter(){
     aggOpsSum+=(d.pickeadores||d.totOps); aggLDSum+=d.avgLD; aggSN+=d.staffNec; aggSA+=(d.pickeadores||d.staffAct);
     if(selOp==='all'){aggL+=d.totL;aggU+=d.totU;aggRC+=d.totRC;aggOlas+=d.totOlas;}
     d.pickers.forEach(function(pk){
-      if(/^\-?\d+$/.test(pk.resp)) return;
       if(selOp!=='all'&&pk.resp!==selOp) return;
-      if(!rankMap[pk.resp]) rankMap[pk.resp]={dias:0,olas:0,lineas:0,ordenes:0,unidades:0,recCnt:0,trend:pk.trend};
+      if(!rankMap[pk.resp]) rankMap[pk.resp]={dias:0,olas:0,lineas:0,unidades:0,recCnt:0,trend:pk.trend};
       rankMap[pk.resp].dias+=pk.dias; rankMap[pk.resp].olas+=pk.olas;
-      rankMap[pk.resp].lineas+=pk.lineas; rankMap[pk.resp].ordenes+=(pk.ordenes||0); rankMap[pk.resp].unidades+=pk.unidades;
+      rankMap[pk.resp].lineas+=pk.lineas; rankMap[pk.resp].unidades+=pk.unidades;
       rankMap[pk.resp].recCnt+=pk.recCnt; rankMap[pk.resp].trend=pk.trend;
       if(selOp!=='all'){aggL+=pk.lineas;aggU+=pk.unidades;aggRC+=pk.recCnt;aggOlas+=pk.olas;opLDSum+=pk.ld;opValidM++;}
     });
@@ -777,41 +620,6 @@ function applyFilter(){
   document.getElementById('kpiStaffAct').textContent=mSA;
   document.getElementById('kpiL').textContent=aggL.toLocaleString('es-AR');
 
-  // === B: Eficiencia U/Línea ===
-  var mEff=aggL>0?Math.round(aggU/aggL*100)/100:0;
-  document.getElementById('kpiEff').textContent=mEff;
-  document.getElementById('kpiEff').style.color=mEff>=5?'#16a34a':mEff>=3?'#d97706':'#9ca3af';
-  document.getElementById('kpiEffSub').textContent='Unidades por línea picking';
-
-  // === D: Delta vs mes anterior ===
-  var prevKey=null;
-  if(mes!=='all'&&anio!=='all'){
-    var pm=parseInt(mes)-1,py=parseInt(anio);
-    if(pm<1){pm=12;py--;}
-    prevKey=py+'-'+(pm<10?'0':'')+pm;
-  }
-  var prevD=prevKey?monthlyData[prevKey]:null;
-  var periodoNow=anio==='all'?'Todos':((mes!=='all'?MES[parseInt(mes)]+' ':'')+anio);
-  document.getElementById('kpiLDMonth').textContent=periodoNow;
-  document.getElementById('kpiRCMonth').textContent=periodoNow;
-  document.getElementById('kpiLDDeltaVal').textContent=mAvgLD;
-  document.getElementById('kpiLDDeltaVal').style.color=perfColor(mAvgLD);
-  document.getElementById('kpiRCDeltaVal').textContent=aggRC;
-  document.getElementById('kpiRCDeltaVal').style.color=perfColorRec(aggRC);
-  if(prevD&&selOp==='all'){
-    var dLD=Math.round((mAvgLD-prevD.avgLD)*10)/10;
-    var dRC=aggRC-prevD.totRC;
-    var ldCls=dLD>0?'delta-up':dLD<0?'delta-dn':'delta-eq';
-    var rcCls=dRC<0?'delta-up':dRC>0?'delta-dn':'delta-eq';
-    var ldSign=dLD>0?'▲+':dLD<0?'▼':'→';
-    var rcSign=dRC<0?'▼':dRC>0?'▲+':'→';
-    document.getElementById('kpiLDDelta').innerHTML='<span class="'+ldCls+'">'+ldSign+dLD+' vs '+MES[pm]+'</span>';
-    document.getElementById('kpiRCDelta').innerHTML='<span class="'+rcCls+'">'+rcSign+dRC+' vs '+MES[pm]+'</span>';
-  } else {
-    document.getElementById('kpiLDDelta').innerHTML='';
-    document.getElementById('kpiRCDelta').innerHTML='';
-  }
-
   // Titulo del periodo
   var periodoLabel='';
   if(anio==='all'&&mes==='all') periodoLabel='Todos los periodos';
@@ -827,7 +635,7 @@ function applyFilter(){
     var ld=p.dias?Math.round(p.lineas/p.dias*10)/10:0;
     var cumpl=Math.round(ld/TARGET*1000)/10;
     var tasa=p.lineas>0?Math.round(p.recCnt/(p.lineas/1000)*100)/100:0;
-    return {resp:resp,dias:p.dias,olas:p.olas,lineas:p.lineas,ordenes:p.ordenes||0,unidades:p.unidades,recCnt:p.recCnt,trend:p.trend,ld:ld,cumpl:cumpl,tasa:tasa};
+    return {resp:resp,dias:p.dias,olas:p.olas,lineas:p.lineas,unidades:p.unidades,recCnt:p.recCnt,trend:p.trend,ld:ld,cumpl:cumpl,tasa:tasa};
   }).sort(function(a,b){return b.ld-a.ld;});
 
   var tbody=document.getElementById('rankBody');
@@ -839,19 +647,15 @@ function applyFilter(){
     var cumC=p.cumpl>=100?'#16a34a':p.cumpl>=83?'#d97706':'#dc2626';
     var rcC=perfColorRec(p.recCnt);
     var tasaC=p.tasa===0?'#16a34a':p.tasa<=3?'#d97706':'#dc2626';
-    var effUL=p.lineas>0?Math.round(p.unidades/p.lineas*100)/100:0;
-    var effC=effUL>=5?'#0891b2':effUL>=3?'#d97706':'#9ca3af';
     var tr='<tr>'
       +'<td style="text-align:center;font-weight:700">'+medal+'</td>'
       +'<td style="font-weight:600">'+p.resp+'</td>'
       +'<td style="text-align:right">'+p.dias+'</td>'
       +'<td style="text-align:right">'+p.olas+'</td>'
-      +'<td style="text-align:right">'+p.ordenes.toLocaleString("es-AR")+'</td>'
       +'<td style="text-align:right">'+p.lineas.toLocaleString("es-AR")+'</td>'
       +'<td style="text-align:center;font-weight:700;color:'+ldC+'">'+p.ld+'</td>'
       +'<td style="text-align:center;font-weight:700;color:'+cumC+'">'+p.cumpl+'%</td>'
       +'<td style="text-align:right">'+p.unidades.toLocaleString("es-AR")+'</td>'
-      +'<td style="text-align:center;font-weight:600;color:'+effC+'">'+effUL+'</td>'
       +'<td style="text-align:center;font-weight:700;color:'+rcC+'">'+p.recCnt+'</td>'
       +'<td style="text-align:center;font-weight:700;color:'+tasaC+'">'+p.tasa+'</td>'
       +'<td style="text-align:center">'+p.trend+'</td>'
@@ -871,7 +675,6 @@ function applyFilter(){
       +'<td style="font-weight:600">'+p.resp+'</td>'
       +'<td style="text-align:right">'+p.dias+'</td>'
       +'<td style="text-align:right">'+p.olas+'</td>'
-      +'<td style="text-align:right">'+p.ordenes.toLocaleString("es-AR")+'</td>'
       +'<td style="text-align:right">'+p.lineas.toLocaleString("es-AR")+'</td>'
       +'<td style="text-align:center;font-weight:700;color:'+ldC+'">'+p.ld+'</td>'
       +'<td style="text-align:center;font-weight:700;color:'+cumC+'">'+p.cumpl+'%</td>'
@@ -1085,9 +888,9 @@ function applyFilter(){
     var taC=opTasa===0?'#16a34a':opTasa<=3?'#d97706':'#dc2626';
     var bestCat=opBestCat[op]||'-';
     var medal=i===0?'&#127945;':i===1?'&#129352;':i===2?'&#129353;':(i+1)+'';
-    var tr='<tr style="cursor:pointer" onclick="openRecModal(\''+op.replace(/'/g,'')+'\',\''+op.replace(/'/g,'')+'\')" title="Ver detalle de reclamos">'
+    var tr='<tr>'
       +'<td style="text-align:center;font-weight:700">'+medal+'</td>'
-      +'<td style="font-weight:600">'+op+' <span style="font-size:11px;color:#2563eb">🔍</span></td>'
+      +'<td style="font-weight:600">'+op+'</td>'
       +'<td style="text-align:right;font-weight:700;color:'+rcC+'">'+cnt+'</td>'
       +'<td style="text-align:right;color:'+taC+'">'+opTasa.toFixed(2)+'</td>'
       +'<td style="color:#555">'+bestCat+'</td>'
@@ -1111,64 +914,6 @@ function applyFilter(){
       +'</tr>';
     recCatBodyEl.innerHTML+=tr;
   });
-  // === C: Heatmap operario × categoría ===
-  var heatOps=Object.keys(opTopCatCounts).filter(function(o){return !/^\-?\d+$/.test(o);}).sort();
-  var heatCatTotals={};
-  heatOps.forEach(function(op){Object.keys(opTopCatCounts[op]).forEach(function(cat){heatCatTotals[cat]=(heatCatTotals[cat]||0)+opTopCatCounts[op][cat];});});
-  var sortedHeatCats=Object.keys(heatCatTotals).sort(function(a,b){return heatCatTotals[b]-heatCatTotals[a];}).slice(0,8);
-  var htbl=document.getElementById('heatmapTbl');
-  var hHead=document.getElementById('heatHead');
-  var hBody=document.getElementById('heatBody');
-  var hNoData=document.getElementById('heatNoData');
-  if(heatOps.length&&sortedHeatCats.length){
-    if(htbl) htbl.style.display='';
-    if(hNoData) hNoData.style.display='none';
-    if(hHead){hHead.innerHTML='<th class="hth-op">Operario</th>';sortedHeatCats.forEach(function(c){hHead.innerHTML+='<th>'+c+'</th>';});}
-    if(hBody){
-      hBody.innerHTML='';
-      heatOps.forEach(function(op){
-        var row='<tr><td class="hth-op">'+op+'</td>';
-        sortedHeatCats.forEach(function(cat){
-          var v=(opTopCatCounts[op]&&opTopCatCounts[op][cat])||0;
-          var cls=v===0?'hc0':v===1?'hc1':v<=3?'hc2':'hc3';
-          row+='<td class="'+cls+'">'+(v||'&mdash;')+'</td>';
-        });
-        row+='</tr>';
-        hBody.innerHTML+=row;
-      });
-    }
-    // Worst combos
-    var combos=[];
-    heatOps.forEach(function(op){sortedHeatCats.forEach(function(cat){var v=(opTopCatCounts[op]&&opTopCatCounts[op][cat])||0;if(v>0)combos.push({op:op,cat:cat,cnt:v});});});
-    combos.sort(function(a,b){return b.cnt-a.cnt;});
-    var wcEl=document.getElementById('worstCombos');
-    if(wcEl){
-      wcEl.innerHTML='';
-      var isDark=document.body.classList.contains('dark');
-      combos.slice(0,3).forEach(function(c,i){
-        var bg=isDark?(i===0?'rgba(220,38,38,.13)':i===1?'rgba(234,88,12,.11)':'rgba(202,138,4,.11)'):(i===0?'#fef2f2':i===1?'#fff7ed':'#fefce8');
-        var bc=isDark?(i===0?'rgba(220,38,38,.3)':i===1?'rgba(234,88,12,.25)':'rgba(202,138,4,.25)'):(i===0?'#fca5a5':i===1?'#fed7aa':'#fde68a');
-        var nameClr=isDark?'#f1f5f9':'#111';
-        var descClr=isDark?'#94a3b8':'#555';
-        var numClr=isDark?'#f87171':'#dc2626';
-        var ico=i===0?'&#128308;':i===1?'&#129000;':'&#128993;';
-        wcEl.innerHTML+='<div class="worst-combo" style="background:'+bg+';border-color:'+bc+'">'
-          +'<div style="font-size:16px;margin-bottom:4px">'+ico+'</div>'
-          +'<div style="font-size:13px;font-weight:700;color:'+nameClr+'">'+c.op+'</div>'
-          +'<div style="font-size:12px;color:'+descClr+';margin-top:2px">'+c.cat+'</div>'
-          +'<div style="font-size:22px;font-weight:800;color:'+numClr+';margin-top:6px">'+c.cnt+' <span style="font-size:12px;font-weight:400">reclamos</span></div>'
-          +'</div>';
-      });
-    }
-  } else {
-    if(htbl) htbl.style.display='none';
-    if(hNoData) hNoData.style.display='block';
-    var wcEl=document.getElementById('worstCombos');
-    if(wcEl) wcEl.innerHTML='';
-  }
-
-  // Actualizar Resumen si está activo
-  if(document.getElementById('sec-resumen').classList.contains('active')) buildResumen();
 }
 
 function resetFilter(){
@@ -1193,7 +938,7 @@ const chartRanking=new Chart('chartRanking',{type:'bar',data:{
 
 const chartTeamTrend=new Chart('chartTeamTrend',{type:'line',data:{
   labels:['Enero 2026','Febrero 2026','Marzo 2026','Abril 2026','Mayo 2026','Junio 2026'],datasets:[
-    {label:'Lin/Dia equipo',data:[61.6,62.9,67.7,80.4,99.3,78.2],borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.1)',borderWidth:2.5,tension:.3,fill:true,pointRadius:4,pointBackgroundColor:['#dc2626','#dc2626','#dc2626','#d97706','#16a34a','#d97706']},
+    {label:'Lin/Dia equipo',data:[61.7,65,86,80.6,99.4,78.2],borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.1)',borderWidth:2.5,tension:.3,fill:true,pointRadius:4,pointBackgroundColor:['#dc2626','#dc2626','#16a34a','#d97706','#16a34a','#d97706']},
     {label:'Target 84',data:Array(6).fill(84),borderColor:'#16a34a',borderWidth:1.5,borderDash:[6,4],pointRadius:0,fill:false}
   ]},options:{responsive:true,maintainAspectRatio:false,
   plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11},color:'#444444'}}},
@@ -1209,21 +954,22 @@ const chartStaff=new Chart('chartStaff',{type:'bar',data:{
 
 const chartEvol=new Chart('chartEvol',{type:'line',data:{
   labels:['Enero 2026','Febrero 2026','Marzo 2026','Abril 2026','Mayo 2026','Junio 2026'],datasets:[
-  {label:'ADRIAN ROMERO',data:[null,null,null,null,1,null],borderColor:'#2563eb',backgroundColor:'#2563eb22',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
-  {label:'ARCE ELIAS',data:[8,9,null,null,null,null],borderColor:'#16a34a',backgroundColor:'#16a34a22',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
-  {label:'ARMOA TAMARA',data:[60.6,77.2,83.7,99.8,111.9,108.3],borderColor:'#d97706',backgroundColor:'#d9770622',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
-  {label:'BRUN TOMAS',data:[64,88.3,90.6,92.6,117.1,99.2],borderColor:'#dc2626',backgroundColor:'#dc262622',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
-  {label:'CACERES EDISON',data:[null,null,null,33.7,47.2,36.2],borderColor:'#7c3aed',backgroundColor:'#7c3aed22',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
-  {label:'CAÑETE FAVIO',data:[null,11,null,null,null,null],borderColor:'#0891b2',backgroundColor:'#0891b222',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
-  {label:'CHOQUE LEANDRO',data:[null,null,null,28.3,null,null],borderColor:'#be185d',backgroundColor:'#be185d22',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
-  {label:'DEMARCHIS EMILIANO',data:[3,null,1,25,24,null],borderColor:'#ca8a04',backgroundColor:'#ca8a0422',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
-  {label:'FAVIO CAÑETE',data:[null,7,null,null,null,null],borderColor:'#15803d',backgroundColor:'#15803d22',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
-  {label:'LAURATO MARTINEZ',data:[44.1,62,63.3,75.9,99.9,75.1],borderColor:'#b45309',backgroundColor:'#b4530922',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
-  {label:'MARIN LAUTARO',data:[null,null,31.5,null,null,null],borderColor:'#2563eb',backgroundColor:'#2563eb22',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
-  {label:'OCAMPO BRIAN',data:[1.5,24.3,15.1,16.2,46,null],borderColor:'#16a34a',backgroundColor:'#16a34a22',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
-  {label:'ROMERO DAMIAN',data:[null,null,44.6,null,null,null],borderColor:'#d97706',backgroundColor:'#d9770622',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
-  {label:'ROMERO MELANIE',data:[57.4,58.5,21.5,30.7,35.8,null],borderColor:'#dc2626',backgroundColor:'#dc262622',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
-  {label:'SANDOVAL TOMAS',data:[null,null,null,50,19,null],borderColor:'#7c3aed',backgroundColor:'#7c3aed22',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
+  {label:'-2146826246',data:[1.2,14.2,109.5,2.6,1.5,null],borderColor:'#2563eb',backgroundColor:'#2563eb22',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
+  {label:'ADRIAN ROMERO',data:[null,null,null,null,1,null],borderColor:'#16a34a',backgroundColor:'#16a34a22',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
+  {label:'ARCE ELIAS',data:[8,9,null,null,null,null],borderColor:'#d97706',backgroundColor:'#d9770622',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
+  {label:'ARMOA TAMARA',data:[60.6,77.2,83.7,99.8,111.9,108.3],borderColor:'#dc2626',backgroundColor:'#dc262622',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
+  {label:'BRUN TOMAS',data:[64,88.3,90.6,92.6,117.1,99.2],borderColor:'#7c3aed',backgroundColor:'#7c3aed22',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
+  {label:'CACERES EDISON',data:[null,null,null,33.7,47.2,36.2],borderColor:'#0891b2',backgroundColor:'#0891b222',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
+  {label:'CAÑETE FAVIO',data:[null,11,null,null,null,null],borderColor:'#be185d',backgroundColor:'#be185d22',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
+  {label:'CHOQUE LEANDRO',data:[null,null,null,28.3,null,null],borderColor:'#ca8a04',backgroundColor:'#ca8a0422',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
+  {label:'DEMARCHIS EMILIANO',data:[3,null,1,25,24,null],borderColor:'#15803d',backgroundColor:'#15803d22',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
+  {label:'FAVIO CAÑETE',data:[null,7,null,null,null,null],borderColor:'#b45309',backgroundColor:'#b4530922',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
+  {label:'LAURATO MARTINEZ',data:[44.1,62,63.3,75.9,99.9,75.1],borderColor:'#2563eb',backgroundColor:'#2563eb22',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
+  {label:'MARIN LAUTARO',data:[null,null,31.5,null,null,null],borderColor:'#16a34a',backgroundColor:'#16a34a22',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
+  {label:'OCAMPO BRIAN',data:[1.5,24.3,15.1,16.2,46,null],borderColor:'#d97706',backgroundColor:'#d9770622',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
+  {label:'ROMERO DAMIAN',data:[null,null,44.6,null,null,null],borderColor:'#dc2626',backgroundColor:'#dc262622',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
+  {label:'ROMERO MELANIE',data:[57.4,58.5,21.5,30.7,35.8,null],borderColor:'#7c3aed',backgroundColor:'#7c3aed22',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
+  {label:'SANDOVAL TOMAS',data:[null,null,null,50,19,null],borderColor:'#0891b2',backgroundColor:'#0891b222',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
 
     {label:'Target 84',data:Array(6).fill(84),borderColor:'#1a1a2e',borderWidth:2,borderDash:[8,4],pointRadius:0,fill:false}
   ]},options:{responsive:true,maintainAspectRatio:false,
@@ -1234,15 +980,11 @@ chartEvol.data.datasets.slice(0,-1).forEach(function(ds){pickerDataFull.push(ds.
 
 const chartEvol30=new Chart('chartEvol30',{type:'line',data:{
   labels:evol30Labels,datasets:[
-    {label:'Total líneas equipo',data:evol30Data,borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.08)',borderWidth:2.5,tension:.3,fill:true,pointRadius:3,pointHoverRadius:5},
-    {label:'Target líneas',data:evol30Target,borderColor:'rgba(220,38,38,.65)',borderWidth:1.5,borderDash:[7,4],pointRadius:0,fill:false,tension:0},
-    {label:'NPs (órdenes)',data:evol30Ord,borderColor:'#d97706',backgroundColor:'rgba(217,119,6,.06)',borderWidth:2,tension:.3,fill:false,pointRadius:2,pointHoverRadius:4,borderDash:[4,2]}
+    {label:'Total lineas equipo',data:evol30Data,borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.08)',borderWidth:2.5,tension:.3,fill:true,pointRadius:3,pointHoverRadius:5},
+    {label:'Target',data:evol30Target,borderColor:'rgba(220,38,38,.65)',borderWidth:1.5,borderDash:[7,4],pointRadius:0,fill:false,tension:0}
   ]},options:{responsive:true,maintainAspectRatio:false,
-  plugins:{legend:{display:true,position:'bottom',labels:{boxWidth:12,font:{size:10},color:'#444444'}},tooltip:{mode:'index',intersect:false,callbacks:{label:function(ctx){var s=ctx.dataset.label+': '+ctx.parsed.y.toLocaleString('es-AR');if(ctx.datasetIndex===2)s+=' NPs';else s+=' lin';return s;}}}},
-  scales:{
-    y:{min:0,grid:{color:'#eeeeee'},ticks:{color:'#555',font:{size:9}}},
-    x:{grid:{display:false},ticks:{color:'#666666',font:{size:9},maxTicksLimit:15}}
-  }}});
+  plugins:{legend:{display:true,position:'bottom',labels:{boxWidth:12,font:{size:10},color:'#444444'}},tooltip:{callbacks:{label:function(ctx){return ctx.dataset.label+': '+ctx.parsed.y.toLocaleString('es-AR')+(ctx.datasetIndex===0?' lineas':'');}}}},
+  scales:{y:{min:0,grid:{color:'#eeeeee'},ticks:{color:'#666666'}},x:{grid:{display:false},ticks:{color:'#666666',font:{size:9},maxTicksLimit:15}}}}});
 
 function setGrpFilter(g){
   _grpFilter=g;
@@ -1353,521 +1095,8 @@ const chartRecOp=new Chart('chartRecOp',{type:'bar',data:{
   plugins:{legend:{display:false}},
   scales:{y:{min:0,grid:{color:'#eeeeee'},ticks:{stepSize:1,color:'#666666'}},x:{grid:{display:false},ticks:{color:'#666666',font:{size:10},maxRotation:35}}}}});
 
-// ===== RESUMEN GENERAL =====
-const chartResGrp=new Chart('chartResGrp',{type:'line',data:{
-  labels:['Enero 2026','Febrero 2026','Marzo 2026','Abril 2026','Mayo 2026','Junio 2026'],
-  datasets:[
-    {label:'Picking equipo',data:[61.6,62.9,67.7,80.4,99.3,78.2],borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.08)',borderWidth:2.5,tension:.3,fill:true,pointRadius:3,spanGaps:true},
-    {label:'Pie Máquina 1',data:[null,null,null,null,null,null],borderColor:'#d97706',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
-    {label:'Pie Máquina 2',data:[null,null,null,null,null,null],borderColor:'#f59e0b',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true,borderDash:[4,3]},
-    {label:'Muestra Simple',data:[null,581.5,6007,766.5,274.5,892],borderColor:'#7c3aed',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true}
-  ]},
-  options:{responsive:true,maintainAspectRatio:false,
-    plugins:{legend:{position:'bottom',labels:{color:'#444',font:{size:11},boxWidth:12}},tooltip:{mode:'index',intersect:false}},
-    scales:{y:{min:0,grid:{color:'#eeeeee'},ticks:{color:'#666666'},title:{display:true,text:'Lin/Día',color:'#666'}},x:{grid:{display:false},ticks:{color:'#666666',font:{size:10},maxRotation:30}}}}});
-
-const chartResRec=new Chart('chartResRec',{type:'bar',data:{
-  labels:[],datasets:[{label:'Reclamos',data:[],backgroundColor:[],borderRadius:4}]},
-  options:{responsive:true,maintainAspectRatio:false,
-    plugins:{legend:{display:false}},
-    scales:{y:{min:0,grid:{color:'#eeeeee'},ticks:{stepSize:1,color:'#666666'}},x:{grid:{display:false},ticks:{color:'#666666',font:{size:10},maxRotation:35}}}}});
-
-// ===== MODAL DETALLE RECLAMOS =====
-function openRecModal(resp, label){
-  var idx=getFilteredIndices();
-  var selKeys=idx.map(function(i){return allMonKeys[i];});
-  var recs=[];
-  selKeys.forEach(function(mon){
-    var k=resp+'|'+mon;
-    if(recDetail[k]) recs=recs.concat(recDetail[k]);
-  });
-  if(!recs.length){return;}
-  var pLabel=selKeys.length===1?monLabels[idx[0]]:(selKeys.length+' meses');
-  document.getElementById('recModalTitle').textContent=(label||resp)+' — Detalle de reclamos';
-  document.getElementById('recModalSub').textContent='Período: '+pLabel+' · '+recs.length+' reclamo'+(recs.length!==1?'s':'');
-  var tbody=document.getElementById('recModalBody');
-  tbody.innerHTML='';
-  recs.forEach(function(rc,i){
-    var bg=i%2?'#fafafa':'#fff';
-    var tr=document.createElement('tr');
-    tr.style.background=bg;
-    tr.innerHTML='<td style="padding:8px 10px;font-weight:600;color:#2563eb;white-space:nowrap">'+rc.np+'</td>'
-      +'<td style="padding:8px 10px;white-space:nowrap;color:#555">'+rc.f+'</td>'
-      +'<td style="padding:8px 10px">'+rc.art+'</td>'
-      +'<td style="padding:8px 10px;text-align:right;font-weight:600">'+rc.q+'</td>'
-      +'<td style="padding:8px 10px;color:#d97706;font-size:12px">'+rc.mot+'</td>'
-      +'<td style="padding:8px 10px;color:#555;font-size:12px;max-width:280px">'+rc.com+'</td>'
-      +'<td style="padding:8px 10px;color:#777;font-size:11px;white-space:nowrap">'+rc.cli+'</td>';
-    tbody.appendChild(tr);
-  });
-  document.getElementById('recModalFooter').textContent='Clic fuera del cuadro para cerrar';
-  document.getElementById('recModal').style.display='block';
-  document.body.style.overflow='hidden';
-}
-function closeRecModal(){
-  document.getElementById('recModal').style.display='none';
-  document.body.style.overflow='';
-}
-document.addEventListener('keydown',function(e){if(e.key==='Escape')closeRecModal();});
-
-function setResGrp(g){
-  _rsGrp=g;
-  var btns={all:'rsBtnAll',picking:'rsBtnPk',pie:'rsBtnPie',muestra:'rsBtnLez',control:'rsBtnCtrl'};
-  Object.keys(btns).forEach(function(k){ var el=document.getElementById(btns[k]); if(el) el.classList.toggle('active',k===g); });
-  buildResumen();
-}
-
-function buildResumen(){
-  var idx=getFilteredIndices();
-  var selKeys=idx.map(function(i){return allMonKeys[i];});
-  var byOp={};
-  selKeys.forEach(function(mon){
-    var d=resumeData[mon]; if(!d) return;
-    var grps=_rsGrp==='all'?['picking','pie','muestra']:_rsGrp==='control'?[]:[ _rsGrp];
-    grps.forEach(function(g){
-      if(!d[g]) return;
-      d[g].forEach(function(op){
-        if(/^\-?\d+$/.test(op.resp)) return;
-        var k=op.resp+'||'+g;
-        if(!byOp[k]) byOp[k]={resp:op.resp,grupo:g,dias:0,lineas:0,ordenes:0,ldSum:0,ldN:0,recCnt:0};
-        byOp[k].dias+=op.dias; byOp[k].lineas+=op.lineas; byOp[k].ordenes+=(op.ordenes||0);
-        byOp[k].ldSum+=op.ld; byOp[k].ldN++;
-        byOp[k].recCnt+=op.recCnt;
-      });
-    });
-  });
-  var rows=Object.values(byOp).map(function(o){
-    var ld=o.ldN?Math.round(o.ldSum/o.ldN*10)/10:0;
-    return {resp:o.resp,grupo:o.grupo,dias:o.dias,lineas:o.lineas,ordenes:o.ordenes||0,ld:ld,recCnt:o.recCnt};
-  }).sort(function(a,b){return b.ld-a.ld;});
-
-  // === A: Podio Top 3 (solo picking) ===
-  var pkRows=rows.filter(function(r){return r.grupo==='picking';});
-  var podioWrap=document.getElementById('rs-podio-wrap');
-  var podioEl=document.getElementById('rs-podio');
-  if(pkRows.length>=2){
-    if(podioWrap) podioWrap.style.display='';
-    var top3=pkRows.slice(0,3);
-    var medals=['&#127945;','&#129352;','&#129353;'];
-    var pClasses=['p1','p2','p3'];
-    var ldColors=[perfColor(top3[0]?top3[0].ld:0),perfColor(top3[1]?top3[1].ld:0),perfColor(top3[2]?top3[2].ld:0)];
-    if(podioEl){
-      podioEl.innerHTML='';
-      top3.forEach(function(op,i){
-        podioEl.innerHTML+='<div class="podio-card '+pClasses[i]+'">'
-          +'<div class="podio-medal">'+medals[i]+'</div>'
-          +'<div class="podio-name">'+op.resp+'</div>'
-          +'<div class="podio-ld" style="color:'+ldColors[i]+'">'+op.ld+'</div>'
-          +'<div class="podio-sub">lin/día &middot; '+op.lineas.toLocaleString()+' total</div>'
-          +'</div>';
-      });
-    }
-  } else {
-    if(podioWrap) podioWrap.style.display='none';
-  }
-
-  // Tabla
-  var tbody=document.getElementById('rs-tbody');
-  tbody.innerHTML='';
-  var grpLabels={picking:'Picking',pie:'Pie Máquina',muestra:'Muestra Simple',control:'Control'};
-  var grpColors={picking:'#2563eb',pie:'#d97706',muestra:'#7c3aed',control:'#64748b'};
-  var maxLD=rows.length?Math.max.apply(null,rows.map(function(r){return r.ld;})):1;
-  if(!rows.length){
-    tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:28px;color:#aaa">Sin datos para el período seleccionado</td></tr>';
-  } else {
-    rows.forEach(function(op,i){
-      var tr=document.createElement('tr');
-      var gc=grpColors[op.grupo]||'#64748b';
-      var gl=grpLabels[op.grupo]||op.grupo;
-      var ldC=op.grupo==='picking'?perfColor(op.ld):'#333';
-      var pct=maxLD>0?Math.round(op.ld/maxLD*100):0;
-      var barColor=op.grupo==='picking'?perfColor(op.ld):'#9ca3af';
-      var ldCell='<div class="pb-wrap"><span style="font-weight:700;color:'+ldC+';min-width:36px">'+op.ld+'</span>'
-        +'<div class="pb-mini"><div class="pb-mini-fill" style="width:'+pct+'%;background:'+barColor+'"></div></div></div>';
-      var tgtHtml=op.grupo==='picking'?('<span style="font-weight:700;color:'+(op.ld>=TARGET?'#16a34a':op.ld>=70?'#d97706':'#dc2626')+'">'+Math.round(op.ld/TARGET*100)+'%</span>'):'-';
-      var recC=op.recCnt===0?'#16a34a':op.recCnt<=3?'#d97706':'#dc2626';
-      var recCell=op.recCnt>0
-        ?'<span style="background:'+recC+';color:white;padding:1px 9px;border-radius:12px;font-size:12px;font-weight:600;cursor:pointer" onclick="openRecModal(\''+op.resp.replace(/'/g,'')+'\',\''+op.resp.replace(/'/g,'')+'\')" title="Ver detalle de reclamos">'+op.recCnt+' &#128269;</span>'
-        :'<span style="background:'+recC+';color:white;padding:1px 9px;border-radius:12px;font-size:12px;font-weight:600">0</span>';
-      if(op.recCnt>0){tr.style.cursor='pointer'; tr.title='Clic para ver detalle'; tr.onclick=function(){openRecModal(op.resp,op.resp);};}
-      tr.innerHTML='<td style="color:#999;text-align:center">'+(i+1)+'</td>'
-        +'<td style="font-weight:600">'+op.resp+'</td>'
-        +'<td><span style="background:'+gc+'22;color:'+gc+';padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600">'+gl+'</span></td>'
-        +'<td style="text-align:right">'+op.lineas.toLocaleString()+'</td>'
-        +'<td style="text-align:right">'+(op.ordenes||0).toLocaleString()+'</td>'
-        +'<td>'+ldCell+'</td>'
-        +'<td style="text-align:center">'+tgtHtml+'</td>'
-        +'<td style="text-align:center">'+recCell+'</td>';
-      tbody.appendChild(tr);
-    });
-  }
-
-  // KPIs
-  var pkR=Object.values(byOp).filter(function(o){return o.grupo==='picking';});
-  var piR=Object.values(byOp).filter(function(o){return o.grupo==='pie';});
-  var lzR=Object.values(byOp).filter(function(o){return o.grupo==='muestra';});
-  function avgLd(arr){return arr.length?Math.round(arr.reduce(function(s,o){return s+(o.ldN?o.ldSum/o.ldN:0);},0)/arr.length*10)/10:0;}
-  document.getElementById('rs-pk-ops').textContent=pkR.length||'—';
-  document.getElementById('rs-pk-sub').textContent=pkR.length?'Prom: '+avgLd(pkR)+' lin/día':'Sin datos';
-  document.getElementById('rs-pie-ops').textContent=piR.length||'—';
-  document.getElementById('rs-pie-sub').textContent=piR.length?'Prom: '+avgLd(piR)+' lin/día':'Sin datos';
-  document.getElementById('rs-lez-ops').textContent=lzR.length||'—';
-  document.getElementById('rs-lez-sub').textContent=lzR.length?'Prom: '+avgLd(lzR)+' lin/día':'Sin datos';
-  var pLabel=selKeys.length===1?monLabels[idx[0]]:(selKeys.length+' meses');
-  document.getElementById('rs-sub').textContent='Período: '+pLabel+' — '+rows.length+' operario'+(rows.length!==1?'s':'');
-
-  // Chart reclamos
-  var recArr=rows.filter(function(r){return r.recCnt>0;}).sort(function(a,b){return b.recCnt-a.recCnt;}).slice(0,12);
-  chartResRec.data.labels=recArr.map(function(r){return r.resp;});
-  chartResRec.data.datasets[0].data=recArr.map(function(r){return r.recCnt;});
-  chartResRec.data.datasets[0].backgroundColor=recArr.map(function(r){return r.recCnt<=2?'#d97706':'#dc2626';});
-  document.getElementById('rs-rec-sub').textContent=recArr.length?'Top '+recArr.length+' operarios con reclamos':'Sin reclamos en el período';
-  chartResRec.update();
-}
-
-// ===== MAQUINISTAS =====
-function buildMaquinistas(){
-  var noDataEl=document.getElementById('maqNoData');
-  var tableEl=document.getElementById('maqTable');
-  if(!maqData||!maqData.length||!maqNamesArr||!maqNamesArr.length){
-    if(noDataEl) noDataEl.style.display='';
-    return;
-  }
-  if(noDataEl) noDataEl.style.display='none';
-  var isDark=document.body.classList.contains('dark');
-  var html='<table style="width:100%;border-collapse:collapse;font-size:12.5px">';
-  html+='<thead><tr style="background:'+(isDark?'#1e293b':'#f5f5f5')+'">';
-  html+='<th style="padding:8px 12px;text-align:left;border-bottom:2px solid #e0e0e0;white-space:nowrap">Mes</th>';
-  html+='<th style="padding:8px 12px;text-align:right;border-bottom:2px solid #e0e0e0">D&iacute;as</th>';
-  maqNamesArr.forEach(function(nm){
-    html+='<th style="padding:8px 12px;text-align:right;border-bottom:2px solid #e0e0e0;white-space:nowrap">'+nm+'</th>';
-  });
-  html+='</tr></thead><tbody>';
-  var alt=false;
-  maqData.forEach(function(row){
-    var bg=alt?(isDark?'#1e293b':'#f9f9f9'):(isDark?'#0f172a':'#fff'); alt=!alt;
-    var maxDias=0;
-    row.ops.forEach(function(op){if(op.dias>maxDias) maxDias=op.dias;});
-    html+='<tr style="background:'+bg+'">';
-    html+='<td style="padding:7px 12px;font-weight:600;white-space:nowrap">'+row.lbl+'</td>';
-    html+='<td style="padding:7px 12px;text-align:right;color:#888">'+maxDias+'</td>';
-    row.ops.forEach(function(op){
-      var clr=op.mov>100?'#16a34a':op.mov>30?'#d97706':op.mov>0?'#dc2626':'#ccc';
-      var fw=op.mov>0?'700':'400';
-      html+='<td style="padding:7px 12px;text-align:right;color:'+clr+';font-weight:'+fw+'">'+(op.mov>0?op.mov.toLocaleString():'&mdash;')+'</td>';
-    });
-    html+='</tr>';
-  });
-  html+='</tbody></table>';
-  if(tableEl) tableEl.innerHTML=html;
-}
-
-// ===== EFICIENCIA =====
-var eficCurTab='pick';
-
-function initEficiencia(){
-  var sel=document.getElementById('efMesSel');
-  if(!sel) return;
-  if(!sel.options.length){
-    var months={};
-    Object.keys(resumeData||{}).forEach(function(m){
-      var p=m.split('-');
-      months[m]=MES[parseInt(p[1])]+' '+p[0];
-    });
-    (maqData||[]).forEach(function(m){ if(!months[m.ym]) months[m.ym]=m.lbl; });
-    Object.keys(months).sort().reverse().forEach(function(ym){
-      var o=document.createElement('option');
-      o.value=ym; o.textContent=months[ym];
-      sel.appendChild(o);
-    });
-  }
-  buildEficiencia();
-}
-
-function switchEficTab(tab){
-  eficCurTab=tab;
-  ['pick','maq','ctrl','pie'].forEach(function(t){
-    var btn=document.getElementById('ebt-'+t);
-    if(!btn) return;
-    var active=(t===tab);
-    btn.style.background=active?'#2563eb':'transparent';
-    btn.style.color=active?'#fff':'#888';
-    btn.style.borderColor=active?'#2563eb':'#ccc';
-  });
-  buildEficiencia();
-}
-
-function calcBonoEfic(nivel,grupal){
-  var b=5;
-  if(nivel>=1) b+=2.5;
-  if(nivel>=2) b+=4.5;
-  if(grupal) b+=3;
-  return b;
-}
-
-function efNivelBadge(nivel){
-  if(nivel===2) return '<span style="color:#16a34a;font-weight:700">N2</span>';
-  if(nivel===1) return '<span style="color:#2563eb;font-weight:700">N1</span>';
-  return '<span style="color:#aaa">&mdash;</span>';
-}
-
-function efBonoBadge(bono){
-  var clr=bono>=12?'#16a34a':bono>=7.5?'#2563eb':bono>=5?'#d97706':'#aaa';
-  return '<span style="color:'+clr+';font-weight:700">'+bono+'%</span>';
-}
-
-function efTableHeader(cols){
-  var isDark=document.body.classList.contains('dark');
-  var thBg=isDark?'#1e3a5f':'#1e40af';
-  var h='<table style="width:100%;border-collapse:collapse;font-size:12.5px">';
-  h+='<thead><tr style="background:'+thBg+';color:#fff">';
-  cols.forEach(function(c){
-    h+='<th style="padding:8px 12px;text-align:'+(c.r?'right':'left')+';white-space:nowrap">'+c.t+'</th>';
-  });
-  return h+'</tr></thead><tbody>';
-}
-
-function buildEficiencia(){
-  var grupal=document.getElementById('efGrupalCheck')&&document.getElementById('efGrupalCheck').checked;
-  var ym=document.getElementById('efMesSel')&&document.getElementById('efMesSel').value;
-  var el=document.getElementById('eficContent');
-  if(!el||!ym) return;
-  var isDark=document.body.classList.contains('dark');
-  var alt=false;
-  var html='';
-
-  if(eficCurTab==='pick'){
-    var ops=((resumeData[ym]&&resumeData[ym].picking)||[]).filter(function(op){return op.dias>0;});
-    if(!ops.length){el.innerHTML='<div style="padding:20px;color:#888">Sin datos de picking para el per&iacute;odo.</div>';return;}
-    html+=efTableHeader([{t:'Operario'},{t:'D&iacute;as',r:true},{t:'L/D&iacute;a',r:true},{t:'Cumpl%',r:true},{t:'Nivel',r:true},{t:'Grupal',r:true},{t:'% Bono',r:true}]);
-    ops.forEach(function(op){
-      var cumpl=op.cumpl||0;
-      var nivel=cumpl>=120?2:cumpl>=100?1:0;
-      var bono=calcBonoEfic(nivel,grupal);
-      var bg=alt?(isDark?'#1e293b':'#f9f9f9'):(isDark?'#0f172a':'#fff'); alt=!alt;
-      var cumplClr=cumpl>=120?'#16a34a':cumpl>=100?'#2563eb':cumpl>=80?'#d97706':'#dc2626';
-      html+='<tr style="background:'+bg+'">';
-      html+='<td style="padding:7px 12px;font-weight:600">'+op.resp+'</td>';
-      html+='<td style="padding:7px 12px;text-align:right;color:#888">'+op.dias+'</td>';
-      html+='<td style="padding:7px 12px;text-align:right">'+((op.ld||0).toFixed(1))+'</td>';
-      html+='<td style="padding:7px 12px;text-align:right;color:'+cumplClr+';font-weight:600">'+cumpl.toFixed(1)+'%</td>';
-      html+='<td style="padding:7px 12px;text-align:right">'+efNivelBadge(nivel)+'</td>';
-      html+='<td style="padding:7px 12px;text-align:right">'+(grupal?'<span style="color:#16a34a">+3%</span>':'<span style="color:#aaa">&mdash;</span>')+'</td>';
-      html+='<td style="padding:7px 12px;text-align:right">'+efBonoBadge(bono)+'</td>';
-      html+='</tr>';
-    });
-    html+='</tbody></table>';
-
-  } else if(eficCurTab==='maq'){
-    var mMaq=(maqData||[]).find(function(m){return m.ym===ym;});
-    if(!mMaq||!mMaq.ops||!mMaq.ops.length){el.innerHTML='<div style="padding:20px;color:#888">Sin datos de Maquinistas para el per&iacute;odo.</div>';return;}
-    html+=efTableHeader([{t:'Maquinista'},{t:'D&iacute;as',r:true},{t:'Mov/D&iacute;a',r:true},{t:'Nivel',r:true},{t:'Grupal',r:true},{t:'% Bono',r:true}]);
-    mMaq.ops.forEach(function(op){
-      if(!op.dias||op.dias<1) return;
-      var movdia=op.mov/op.dias;
-      var nivel=movdia>=120?2:movdia>=100?1:0;
-      var bono=calcBonoEfic(nivel,grupal);
-      var bg=alt?(isDark?'#1e293b':'#f9f9f9'):(isDark?'#0f172a':'#fff'); alt=!alt;
-      var movClr=movdia>=120?'#16a34a':movdia>=100?'#2563eb':movdia>=60?'#d97706':'#dc2626';
-      html+='<tr style="background:'+bg+'">';
-      html+='<td style="padding:7px 12px;font-weight:600">'+op.nm+'</td>';
-      html+='<td style="padding:7px 12px;text-align:right;color:#888">'+op.dias+'</td>';
-      html+='<td style="padding:7px 12px;text-align:right;color:'+movClr+';font-weight:600">'+movdia.toFixed(1)+'</td>';
-      html+='<td style="padding:7px 12px;text-align:right">'+efNivelBadge(nivel)+'</td>';
-      html+='<td style="padding:7px 12px;text-align:right">'+(grupal?'<span style="color:#16a34a">+3%</span>':'<span style="color:#aaa">&mdash;</span>')+'</td>';
-      html+='<td style="padding:7px 12px;text-align:right">'+efBonoBadge(bono)+'</td>';
-      html+='</tr>';
-    });
-    html+='</tbody></table>';
-
-  } else if(eficCurTab==='ctrl'){
-    html+=buildCtrlTable(ym,grupal,isDark);
-  } else if(eficCurTab==='pie'){
-    html+=buildPieTable(ym,grupal,isDark);
-  }
-
-  el.innerHTML=html;
-}
-
-// ── CONTROL (manual) ──
-function getCtrlStore(){ try{return JSON.parse(localStorage.getItem('eficCtrl')||'{}');}catch(e){return{};} }
-function saveCtrlStore(s){ localStorage.setItem('eficCtrl',JSON.stringify(s)); }
-
-function buildCtrlTable(ym,grupal,isDark){
-  var store=getCtrlStore();
-  if(!store[ym]) store[ym]={};
-  var entries=Object.entries(store[ym]);
-  var inpSt='width:60px;border:1px solid #ccc;border-radius:4px;padding:2px 6px;font-size:12px;text-align:right;background:transparent;color:inherit';
-  var h='<div style="margin-bottom:12px"><button onclick="addCtrlOp()" style="background:#2563eb;color:#fff;border:none;border-radius:6px;padding:6px 16px;cursor:pointer;font-size:12px;font-weight:600">+ Agregar operario</button></div>';
-  if(!entries.length) return h+'<div style="padding:20px;color:#888">Sin operarios. Clic en &ldquo;Agregar operario&rdquo;.</div>';
-  h+=efTableHeader([{t:'Operario'},{t:'D&iacute;as',r:true},{t:'Und/D&iacute;a',r:true},{t:'Reclamos',r:true},{t:'Nivel',r:true},{t:'Grupal',r:true},{t:'% Bono',r:true},{t:'',r:true}]);
-  var alt=false;
-  entries.forEach(function(e){
-    var nm=e[0],d=e[1];
-    var und=d.und||0,rec=d.rec||0,dias=d.dias||0;
-    var nivel=(und>3500&&rec===0)?2:(und>3000&&rec<=1)?1:0;
-    var bono=calcBonoEfic(nivel,grupal);
-    var bg=alt?(isDark?'#1e293b':'#f9f9f9'):(isDark?'#0f172a':'#fff'); alt=!alt;
-    var nmEsc=nm.replace(/'/g,'');
-    h+='<tr style="background:'+bg+'">';
-    h+='<td style="padding:7px 12px;font-weight:600">'+nm+'</td>';
-    h+='<td style="padding:4px 12px;text-align:right"><input type="number" value="'+dias+'" style="'+inpSt+'" onchange="ctrlUpd(\''+ym+'\',\''+nmEsc+'\',\'dias\',this.value)"></td>';
-    h+='<td style="padding:4px 12px;text-align:right"><input type="number" value="'+und+'" style="'+inpSt+'" onchange="ctrlUpd(\''+ym+'\',\''+nmEsc+'\',\'und\',this.value)"></td>';
-    h+='<td style="padding:4px 12px;text-align:right"><input type="number" value="'+rec+'" style="'+inpSt+';width:50px" onchange="ctrlUpd(\''+ym+'\',\''+nmEsc+'\',\'rec\',this.value)"></td>';
-    h+='<td style="padding:7px 12px;text-align:right">'+efNivelBadge(nivel)+'</td>';
-    h+='<td style="padding:7px 12px;text-align:right">'+(grupal?'<span style="color:#16a34a">+3%</span>':'<span style="color:#aaa">&mdash;</span>')+'</td>';
-    h+='<td style="padding:7px 12px;text-align:right">'+efBonoBadge(bono)+'</td>';
-    h+='<td style="padding:7px 12px;text-align:right"><button onclick="delCtrlOp(\''+ym+'\',\''+nmEsc+'\')" style="background:none;border:none;color:#dc2626;cursor:pointer;font-size:16px">&times;</button></td>';
-    h+='</tr>';
-  });
-  return h+'</tbody></table>';
-}
-
-function addCtrlOp(){
-  var ym=document.getElementById('efMesSel').value;
-  var nm=prompt('Nombre del operario de Control:');
-  if(!nm||!nm.trim()) return;
-  var store=getCtrlStore();
-  if(!store[ym]) store[ym]={};
-  store[ym][nm.trim()]={dias:0,und:0,rec:0};
-  saveCtrlStore(store);
-  buildEficiencia();
-}
-
-function ctrlUpd(ym,nm,field,val){
-  var store=getCtrlStore();
-  if(!store[ym]) store[ym]={};
-  if(!store[ym][nm]) store[ym][nm]={dias:0,und:0,rec:0};
-  store[ym][nm][field]=parseFloat(val)||0;
-  saveCtrlStore(store);
-  buildEficiencia();
-}
-
-function delCtrlOp(ym,nm){
-  var store=getCtrlStore();
-  if(store[ym]) delete store[ym][nm];
-  saveCtrlStore(store);
-  buildEficiencia();
-}
-
-// ── PIE DE MAQUINA (manual) ──
-function getPieStore(){ try{return JSON.parse(localStorage.getItem('eficPie')||'{}');}catch(e){return{};} }
-function savePieStore(s){ localStorage.setItem('eficPie',JSON.stringify(s)); }
-
-function buildPieTable(ym,grupal,isDark){
-  var store=getPieStore();
-  if(!store[ym]) store[ym]={};
-  var entries=Object.entries(store[ym]);
-  var inpSt='width:60px;border:1px solid #ccc;border-radius:4px;padding:2px 6px;font-size:12px;text-align:right;background:transparent;color:inherit';
-  var h='<div style="margin-bottom:12px"><button onclick="addPieOp()" style="background:#2563eb;color:#fff;border:none;border-radius:6px;padding:6px 16px;cursor:pointer;font-size:12px;font-weight:600">+ Agregar operario</button></div>';
-  if(!entries.length) return h+'<div style="padding:20px;color:#888">Sin operarios. Clic en &ldquo;Agregar operario&rdquo;.</div>';
-  h+=efTableHeader([{t:'Operario'},{t:'D&iacute;as',r:true},{t:'Errores',r:true},{t:'Nivel',r:true},{t:'Grupal',r:true},{t:'% Bono',r:true},{t:'',r:true}]);
-  var alt=false;
-  entries.forEach(function(e){
-    var nm=e[0],d=e[1];
-    var err=d.err||0,dias=d.dias||0;
-    var nivel=err===0?2:err<=1?1:0;
-    var bono=calcBonoEfic(nivel,grupal);
-    var bg=alt?(isDark?'#1e293b':'#f9f9f9'):(isDark?'#0f172a':'#fff'); alt=!alt;
-    var nmEsc=nm.replace(/'/g,'');
-    h+='<tr style="background:'+bg+'">';
-    h+='<td style="padding:7px 12px;font-weight:600">'+nm+'</td>';
-    h+='<td style="padding:4px 12px;text-align:right"><input type="number" value="'+dias+'" style="'+inpSt+'" onchange="pieUpd(\''+ym+'\',\''+nmEsc+'\',\'dias\',this.value)"></td>';
-    h+='<td style="padding:4px 12px;text-align:right"><input type="number" value="'+err+'" style="'+inpSt+'" onchange="pieUpd(\''+ym+'\',\''+nmEsc+'\',\'err\',this.value)"></td>';
-    h+='<td style="padding:7px 12px;text-align:right">'+efNivelBadge(nivel)+'</td>';
-    h+='<td style="padding:7px 12px;text-align:right">'+(grupal?'<span style="color:#16a34a">+3%</span>':'<span style="color:#aaa">&mdash;</span>')+'</td>';
-    h+='<td style="padding:7px 12px;text-align:right">'+efBonoBadge(bono)+'</td>';
-    h+='<td style="padding:7px 12px;text-align:right"><button onclick="delPieOp(\''+ym+'\',\''+nmEsc+'\')" style="background:none;border:none;color:#dc2626;cursor:pointer;font-size:16px">&times;</button></td>';
-    h+='</tr>';
-  });
-  return h+'</tbody></table>';
-}
-
-function addPieOp(){
-  var ym=document.getElementById('efMesSel').value;
-  var nm=prompt('Nombre del operario de Pie de Máquina:');
-  if(!nm||!nm.trim()) return;
-  var store=getPieStore();
-  if(!store[ym]) store[ym]={};
-  store[ym][nm.trim()]={dias:0,err:0};
-  savePieStore(store);
-  buildEficiencia();
-}
-
-function pieUpd(ym,nm,field,val){
-  var store=getPieStore();
-  if(!store[ym]) store[ym]={};
-  if(!store[ym][nm]) store[ym][nm]={dias:0,err:0};
-  store[ym][nm][field]=parseFloat(val)||0;
-  savePieStore(store);
-  buildEficiencia();
-}
-
-function delPieOp(ym,nm){
-  var store=getPieStore();
-  if(store[ym]) delete store[ym][nm];
-  savePieStore(store);
-  buildEficiencia();
-}
-
-// ===== LIQUIDACION =====
-function initLiquidacion(){
-  var sel=document.getElementById('selLiqMes');
-  if(!sel) return;
-  sel.innerHTML='';
-  var mons=Object.keys(resumeData).sort().reverse();
-  mons.forEach(function(m){
-    var o=document.createElement('option');
-    o.value=m;
-    var p=m.split('-');
-    o.textContent=MES[parseInt(p[1])]+' '+p[0];
-    sel.appendChild(o);
-  });
-  buildLiquidacion();
-}
-function buildLiquidacion(){
-  var sel=document.getElementById('selLiqMes');
-  var mon=sel?sel.value:null;
-  var el=document.getElementById('liqTable');
-  if(!mon||!resumeData[mon]){if(el) el.innerHTML='<p style="color:#aaa;padding:20px">Sin datos para este per&iacute;odo.</p>'; return;}
-  var d=resumeData[mon];
-  var ops=(d.picking||[]).filter(function(op){return op.dias>0;});
-  if(!ops.length){if(el) el.innerHTML='<p style="color:#aaa;padding:20px">Sin operarios con datos en este mes.</p>'; return;}
-  var isDark=document.body.classList.contains('dark');
-  var thBg=isDark?'#1e3a5f':'#1e40af';
-  var html='<table style="width:100%;border-collapse:collapse;font-size:12.5px">';
-  html+='<thead><tr style="background:'+thBg+';color:#fff">';
-  html+='<th style="padding:9px 12px;text-align:left">Operario</th>';
-  html+='<th style="padding:9px 12px;text-align:right">D&iacute;as</th>';
-  html+='<th style="padding:9px 12px;text-align:right">L&iacute;neas</th>';
-  html+='<th style="padding:9px 12px;text-align:right">L/D&iacute;a</th>';
-  html+='<th style="padding:9px 12px;text-align:right">Cumpl.</th>';
-  html+='<th style="padding:9px 12px;text-align:center">Nivel</th>';
-  html+='<th style="padding:9px 12px;text-align:right">% Bono</th>';
-  html+='</tr></thead><tbody>';
-  var alt=false;
-  ops.forEach(function(op){
-    var cum=op.cumpl||0;
-    var nivel=cum>=100?'N2':cum>=80?'N1':cum>=60?'PRES':'&mdash;';
-    var pct=cum>=100?'10%':cum>=80?'7,5%':cum>=60?'5%':'&mdash;';
-    var clr=cum>=100?'#16a34a':cum>=80?'#2563eb':cum>=60?'#d97706':'#dc2626';
-    var bg=alt?(isDark?'#1e293b':'#f9f9f9'):(isDark?'#0f172a':'#fff'); alt=!alt;
-    html+='<tr style="background:'+bg+'">';
-    html+='<td style="padding:8px 12px;font-weight:600">'+op.resp+'</td>';
-    html+='<td style="padding:8px 12px;text-align:right">'+op.dias+'</td>';
-    html+='<td style="padding:8px 12px;text-align:right">'+((op.lineas||0).toLocaleString())+'</td>';
-    html+='<td style="padding:8px 12px;text-align:right">'+((op.ld||0).toFixed(0))+'</td>';
-    html+='<td style="padding:8px 12px;text-align:right;font-weight:700;color:'+clr+'">'+(cum.toFixed(0))+'%</td>';
-    html+='<td style="padding:8px 12px;text-align:center;font-weight:700;color:'+clr+'">'+nivel+'</td>';
-    html+='<td style="padding:8px 12px;text-align:right;font-weight:700;color:'+clr+'">'+pct+'</td>';
-    html+='</tr>';
-  });
-  html+='</tbody></table>';
-  if(el) el.innerHTML=html;
-}
-
 // ===== DARK / LIGHT THEME =====
-var _allCharts=[chartRanking,chartTeamTrend,chartStaff,chartEvol,chartMerma,chartPie,chartLez,chartRecMon,chartRecCat,chartRecOp,chartEvol30,chartResGrp,chartResRec];
+var _allCharts=[chartRanking,chartTeamTrend,chartStaff,chartEvol,chartMerma,chartPie,chartLez,chartRecMon,chartRecCat,chartRecOp,chartEvol30];
 function updateChartColors(dark){
   var grid=dark?'#334155':'#eeeeee';
   var tick=dark?'#94a3b8':'#666666';
@@ -1910,8 +1139,6 @@ try {
   applyFilter();
   // Poblar tabla 7 dias (datos estaticos, filtrable por grupo)
   _build7dTable();
-  // Inicializar Resumen (precarga datos para que el tab sea instantáneo)
-  buildResumen();
   // Si ya hay dark mode guardado, aplicar colores a los charts recién creados
   if(document.body.classList.contains('dark')) updateChartColors(true);
 } catch(err) {
