@@ -35,6 +35,14 @@ $MaqEmailMap = @{
     "tomassandovalzecat@gmail.com"     = "SANDOVAL TOMAS"
 }
 
+$CtrlEmailMap = @{
+    "danabarrioszecat@gmail.com"    = "BARRIOS DANA"
+    "josepenidazecat@gmail.com"     = "PENIDA JOSE"
+    "romeromelaniezecat@gmail.com"  = "ROMERO MELANIE"
+    "tamaraarmoazecat@gmail.com"    = "ARMOA TAMARA"
+    "tomaspittalazecat@gmail.com"   = "PITTALA TOMAS"
+}
+
 function rgb($r,$g,$b){ [long]$r + [long]$g*256 + [long]$b*65536 }
 $C = @{
     NavyHdr    = rgb 31  56  100;  BlueHdr   = rgb 46  117 182
@@ -287,18 +295,40 @@ try {
     $wsMaq=$srcWb.Sheets.Item("Maquinista"); $mArr=$wsMaq.UsedRange.Value2; $mRows=$mArr.GetUpperBound(0)
     $maqMes=@{}; $maqDay=@{}; $maqNames=@{}
     $ctrlHasData=($srcWb.Sheets.Item("Control").UsedRange.Rows.Count -gt 1)
+    $ctrlMes=@{}
 
     for($r=2; $r -le $mRows; $r++){
-        $email="$($mArr[$r,2])".Trim(); $dv=$mArr[$r,1]; $mov=[double]($mArr[$r,3] -as [double])
+        $email="$($mArr[$r,2])".Trim(); $dv=$mArr[$r,1]
         if(-not $email -or -not $dv){continue}
         $dt=$null; try{$dt=[datetime]::FromOADate([double]$dv)}catch{continue}
         $nombre=if($MaqEmailMap[$email]){$MaqEmailMap[$email]}else{$email}
         $ym="$($dt.Year)-$('{0:00}' -f $dt.Month)"; $ymd=$dt.ToString("yyyy-MM-dd")
+        $pa02=[double]($mArr[$r,3] -as [double]); $rec=[double]($mArr[$r,5] -as [double])
+        $rl01=[double]($mArr[$r,7] -as [double]); $pallet=[double]($mArr[$r,9] -as [double])
+        $flow=[double]($mArr[$r,11] -as [double]); $totMov=[double]($mArr[$r,13] -as [double])
+        $totUnd=[double]($mArr[$r,14] -as [double])
         $key="$nombre|$ym"
-        if(-not $maqMes[$key]){$maqMes[$key]=@{Mov=0;Days=@{}}}
-        $maqMes[$key].Mov+=$mov; $maqMes[$key].Days[$ymd]=$true
-        $dk="$nombre|$ymd"; if(-not $maqDay[$dk]){$maqDay[$dk]=0}; $maqDay[$dk]+=$mov
+        if(-not $maqMes[$key]){$maqMes[$key]=@{Mov=0;Und=0;Pa02=0;Rec=0;Rl01=0;Pallet=0;Flow=0;Days=@{}}}
+        $maqMes[$key].Mov+=$totMov; $maqMes[$key].Und+=$totUnd
+        $maqMes[$key].Pa02+=$pa02; $maqMes[$key].Rec+=$rec
+        $maqMes[$key].Rl01+=$rl01; $maqMes[$key].Pallet+=$pallet
+        $maqMes[$key].Flow+=$flow; $maqMes[$key].Days[$ymd]=$true
+        $dk="$nombre|$ymd"; if(-not $maqDay[$dk]){$maqDay[$dk]=0}; $maqDay[$dk]+=$totMov
         $maqNames[$nombre]=$true
+    }
+    if($ctrlHasData){
+        $wsCtrl=$srcWb.Sheets.Item("Control"); $cArr=$wsCtrl.UsedRange.Value2; $cRows=$cArr.GetUpperBound(0)
+        for($r=2; $r -le $cRows; $r++){
+            $dv=$cArr[$r,1]; $email="$($cArr[$r,2])".Trim()
+            $ord=[double]($cArr[$r,3] -as [double]); $und=[double]($cArr[$r,4] -as [double])
+            if(-not $dv -or -not $email){continue}
+            $dt=$null; try{$dt=[datetime]::FromOADate([double]$dv)}catch{continue}
+            $nombre=if($CtrlEmailMap[$email]){$CtrlEmailMap[$email]}else{$email}
+            $ym="$($dt.Year)-$('{0:00}' -f $dt.Month)"; $ymd=$dt.ToString("yyyy-MM-dd")
+            $key="$nombre|$ym"
+            if(-not $ctrlMes[$key]){$ctrlMes[$key]=@{Ord=0;Und=0;Days=@{}}}
+            $ctrlMes[$key].Ord+=$ord; $ctrlMes[$key].Und+=$und; $ctrlMes[$key].Days[$ymd]=$true
+        }
     }
 
     $srcWb.Close($false)
@@ -1501,6 +1531,37 @@ try {
     $jsInitYear = $latestYMP[0]
     $jsInitMon  = [int]$latestYMP[1]
 
+    # JSON para Control
+    $ctrlYMParts=[System.Collections.Generic.List[string]]::new()
+    $ctrlByYM=@{}
+    foreach($key in $ctrlMes.Keys){
+        $pts=$key.Split("|"); $nm=$pts[0]; $ym=$pts[1]
+        if(-not $ctrlByYM[$ym]){$ctrlByYM[$ym]=[System.Collections.Generic.List[string]]::new()}
+        $mc=$ctrlMes[$key]; $dias=$mc.Days.Count
+        $ctrlByYM[$ym].Add("{nm:'$nm',und:$([int]$mc.Und),ord:$([int]$mc.Ord),dias:$dias}")
+    }
+    foreach($ym in ($ctrlByYM.Keys|Sort-Object)){
+        $arr="["+($ctrlByYM[$ym] -join ",")+"]"
+        $ctrlYMParts.Add("'$ym':$arr")
+    }
+    $jsCtrlData="{"+($ctrlYMParts -join ",")+"}"
+
+    # JSON para Maquinistas
+    $maqYMParts=[System.Collections.Generic.List[string]]::new()
+    $maqByYM=@{}
+    foreach($key in $maqMes.Keys){
+        $pts=$key.Split("|"); $nm=$pts[0]; $ym=$pts[1]
+        if(-not $maqByYM[$ym]){$maqByYM[$ym]=[System.Collections.Generic.List[string]]::new()}
+        $mm=$maqMes[$key]; $dias=$mm.Days.Count
+        $maqByYM[$ym].Add("{nm:'$nm',mov:$([int]$mm.Mov),und:$([int]$mm.Und),dias:$dias,pa02:$([int]$mm.Pa02),rec:$([int]$mm.Rec),rl01:$([int]$mm.Rl01),pallet:$([int]$mm.Pallet),flow:$([int]$mm.Flow)}")
+    }
+    foreach($ym in ($maqByYM.Keys|Sort-Object)){
+        $ymP=$ym.Split("-"); $lbl="$($MES_NOM[[int]$ymP[1]]) $($ymP[0])"
+        $ops="["+($maqByYM[$ym] -join ",")+"]"
+        $maqYMParts.Add("'$ym':{lbl:'$lbl',ops:$ops}")
+    }
+    $jsMaqDetailData="{"+($maqYMParts -join ",")+"}"
+
     # JS evolucion individual por picker
     $pickersJs=""
     $pickerColors=@('#2563eb','#16a34a','#d97706','#dc2626','#7c3aed','#0891b2','#be185d','#ca8a04','#15803d','#b45309')
@@ -1740,6 +1801,7 @@ body.dark .grp-btn.active{background:#2563eb;border-color:#2563eb;color:white}
   <button class="tab-btn" onclick="switchTab('muestra')" id="btn-muestra">&#128203; Muestra Simple</button>
   <button class="tab-btn" onclick="switchTab('reclamos')" id="btn-reclamos">&#128683; Reclamos</button>
   <button class="tab-btn" onclick="switchTab('control')" id="btn-control">&#128269; Control</button>
+  <button class="tab-btn" onclick="switchTab('maquinistas')" id="btn-maquinistas">&#128295; Maquinistas</button>
 </nav>
 
 <div class="container">
@@ -1967,8 +2029,33 @@ body.dark .grp-btn.active{background:#2563eb;border-color:#2563eb;color:white}
 
 <!-- ===== SECCION: CONTROL ===== -->
 <div id="sec-control" class="sec">
-  <div class="nodata" style="margin-top:0">&#128269; La secci&oacute;n Control est&aacute; en desarrollo.<br><br>Cuando la pesta&ntilde;a Control del Excel fuente tenga datos, los indicadores aparecer&aacute;n aqu&iacute; autom&aacute;ticamente.</div>
+  <div class="kpi-grid g4" style="margin-bottom:18px">
+    <div class="kpi-card blue"><div class="kpi-label">UND Procesadas</div><div class="kpi-value" id="ctrlKpiUnd">&#8212;</div><div class="kpi-sub" id="ctrlKpiUndSub"></div></div>
+    <div class="kpi-card amber"><div class="kpi-label">ORD Procesadas</div><div class="kpi-value" id="ctrlKpiOrd">&#8212;</div><div class="kpi-sub" id="ctrlKpiOrdSub"></div></div>
+    <div class="kpi-card green"><div class="kpi-label">UND/d&iacute;a promedio</div><div class="kpi-value" id="ctrlKpiUdpd">&#8212;</div><div class="kpi-sub" id="ctrlKpiUdpdSub"></div></div>
+    <div class="kpi-card teal"><div class="kpi-label">Operarios</div><div class="kpi-value" id="ctrlKpiOps">&#8212;</div><div class="kpi-sub" id="ctrlKpiOpsSub"></div></div>
+  </div>
+  <div class="charts-grid" style="margin-bottom:18px">
+    <div class="chart-card"><div class="chart-title">Evoluci&oacute;n mensual &mdash; UND/d&iacute;a</div><canvas id="chartCtrlEvol" height="220"></canvas></div>
+    <div class="chart-card"><div class="chart-title">Ranking operarios &mdash; UND totales</div><canvas id="chartCtrlRank" height="220"></canvas></div>
+  </div>
+  <div class="chart-card" style="padding:14px"><div class="rank-title">Detalle mensual</div><div id="ctrlTable"></div></div>
 </div><!-- /sec-control -->
+
+<!-- ===== SECCION: MAQUINISTAS ===== -->
+<div id="sec-maquinistas" class="sec">
+  <div class="kpi-grid g4" style="margin-bottom:18px">
+    <div class="kpi-card blue"><div class="kpi-label">Total MOV</div><div class="kpi-value" id="maqKpiMov">&#8212;</div><div class="kpi-sub" id="maqKpiMovSub"></div></div>
+    <div class="kpi-card teal"><div class="kpi-label">Total UND</div><div class="kpi-value" id="maqKpiUnd">&#8212;</div><div class="kpi-sub" id="maqKpiUndSub"></div></div>
+    <div class="kpi-card green"><div class="kpi-label">MOV/d&iacute;a promedio</div><div class="kpi-value" id="maqKpiMpd">&#8212;</div><div class="kpi-sub" id="maqKpiMpdSub"></div></div>
+    <div class="kpi-card amber"><div class="kpi-label">Operarios</div><div class="kpi-value" id="maqKpiOps">&#8212;</div><div class="kpi-sub" id="maqKpiOpsSub"></div></div>
+  </div>
+  <div class="charts-grid" style="margin-bottom:18px">
+    <div class="chart-card"><div class="chart-title">Evoluci&oacute;n MOV/d&iacute;a &mdash; por operario</div><canvas id="chartMaqEvol" height="220"></canvas></div>
+    <div class="chart-card"><div id="maqBreakSub" class="chart-title">Desglose por tarea</div><canvas id="chartMaqBreak" height="220"></canvas></div>
+  </div>
+  <div class="chart-card" style="padding:14px"><div class="rank-title">Detalle mensual completo</div><div id="maqDetailTable"></div></div>
+</div><!-- /sec-maquinistas -->
 
 </div><!-- /container -->
 <footer>Dashboard v5 &mdash; Zecat Art&iacute;culos Promocionales SA &nbsp;|&nbsp; $($NOW.ToString('dd/MM/yyyy HH:mm'))</footer>
@@ -2001,6 +2088,88 @@ const evol30CL=$jsEvol30CL;
 const evol30SL=$jsEvol30SL;
 const evol30Target=$jsEvol30Target;
 var _grpFilter='all';
+const ctrlExcelData=$jsCtrlData;
+const maqDetailData=$jsMaqDetailData;
+var _chartCtrlEvol=null,_chartCtrlRank=null,_chartMaqEvol=null,_chartMaqBreak=null;
+
+function chartColors(){var dark=document.body.classList.contains('dark');return{grid:dark?'rgba(255,255,255,0.08)':'rgba(0,0,0,0.08)',tick:dark?'#94a3b8':'#555',leg:dark?'#cbd5e1':'#333'};}
+function buildControl(){
+  if(!ctrlExcelData||!Object.keys(ctrlExcelData).length)return;
+  var anio=document.getElementById('selAnio')?document.getElementById('selAnio').value:'all';
+  var mes=document.getElementById('selMes')?document.getElementById('selMes').value:'all';
+  var months=Object.keys(ctrlExcelData).sort();
+  var sel=months.filter(function(ym){var p=ym.split('-');if(anio!=='all'&&p[0]!==anio)return false;if(mes!=='all'&&parseInt(p[1])!==parseInt(mes))return false;return true;});
+  if(!sel.length)sel=[months[months.length-1]];
+  var cc=chartColors();
+  var opsMap={};sel.forEach(function(ym){(ctrlExcelData[ym]||[]).forEach(function(op){if(!opsMap[op.nm])opsMap[op.nm]={nm:op.nm,und:0,ord:0,dias:0};opsMap[op.nm].und+=op.und;opsMap[op.nm].ord+=op.ord;opsMap[op.nm].dias+=op.dias;});});
+  var ops=Object.values(opsMap).sort(function(a,b){return b.und-a.und;});
+  var totUnd=ops.reduce(function(s,o){return s+o.und;},0),totOrd=ops.reduce(function(s,o){return s+o.ord;},0),totDias=ops.reduce(function(s,o){return s+o.dias;},0);
+  var avgUpd=totDias?Math.round(totUnd/totDias):0;
+  document.getElementById('ctrlKpiUnd').textContent=totUnd.toLocaleString('es-AR');
+  document.getElementById('ctrlKpiUndSub').textContent=avgUpd+' und/dia prom';
+  document.getElementById('ctrlKpiOrd').textContent=totOrd.toLocaleString('es-AR');
+  document.getElementById('ctrlKpiOrdSub').textContent=totOrd.toLocaleString('es-AR')+' ordenes';
+  document.getElementById('ctrlKpiUdpd').textContent=avgUpd.toLocaleString('es-AR');
+  document.getElementById('ctrlKpiUdpdSub').textContent=sel.length+' mes'+(sel.length>1?'es':'');
+  document.getElementById('ctrlKpiOps').textContent=ops.length;
+  document.getElementById('ctrlKpiOpsSub').textContent='operarios';
+  var CLRS=['#2563eb','#16a34a','#d97706','#7c3aed','#0891b2'];
+  var MON_S=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  var monLbl=months.map(function(ym){var p=ym.split('-');return MON_S[parseInt(p[1])]+' '+p[0].slice(2);});
+  var allNms=[];months.forEach(function(ym){(ctrlExcelData[ym]||[]).forEach(function(op){if(allNms.indexOf(op.nm)<0)allNms.push(op.nm);});});
+  var evolDs=allNms.map(function(nm,i){return{label:nm.split(' ')[0],data:months.map(function(ym){var op=(ctrlExcelData[ym]||[]).find(function(o){return o.nm===nm;});return(op&&op.dias)?Math.round(op.und/op.dias):null;}),borderColor:CLRS[i%CLRS.length],backgroundColor:CLRS[i%CLRS.length]+'33',tension:0.35,spanGaps:true,pointRadius:4,fill:false};});
+  var el=document.getElementById('chartCtrlEvol');
+  if(_chartCtrlEvol){_chartCtrlEvol.data.labels=monLbl;_chartCtrlEvol.data.datasets=evolDs;_chartCtrlEvol.update();}
+  else if(el){_chartCtrlEvol=new Chart(el,{type:'line',data:{labels:monLbl,datasets:evolDs},options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{labels:{color:cc.leg,font:{size:11}}}},scales:{x:{grid:{color:cc.grid},ticks:{color:cc.tick}},y:{grid:{color:cc.grid},ticks:{color:cc.tick},title:{display:true,text:'UND/dia',color:cc.tick,font:{size:11}}}}}}});}
+  var rkDs=[{label:'UND',data:ops.map(function(o){return o.und;}),backgroundColor:ops.map(function(o,i){return CLRS[i%CLRS.length]+'cc';}),borderRadius:4}];
+  var rk=document.getElementById('chartCtrlRank');
+  if(_chartCtrlRank){_chartCtrlRank.data.labels=ops.map(function(o){return o.nm.split(' ')[0];});_chartCtrlRank.data.datasets=rkDs;_chartCtrlRank.update();}
+  else if(rk){_chartCtrlRank=new Chart(rk,{type:'bar',data:{labels:ops.map(function(o){return o.nm.split(' ')[0];}),datasets:rkDs},options:{responsive:true,maintainAspectRatio:true,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{grid:{color:cc.grid},ticks:{color:cc.tick}},y:{grid:{color:cc.grid},ticks:{color:cc.tick}}}}});}
+  var isDark=document.body.classList.contains('dark'),thBg=isDark?'#1e293b':'#f5f5f5';
+  var MON=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  var h='<table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr style="background:'+thBg+'"><th style="padding:8px 12px;text-align:left;border-bottom:2px solid #e0e0e0">Mes</th><th style="padding:8px 12px;text-align:left;border-bottom:2px solid #e0e0e0">Operario</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #e0e0e0">Dias</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #e0e0e0">UND</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #e0e0e0">UND/dia</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #e0e0e0">ORD</th></tr></thead><tbody>';
+  var alt=false;months.forEach(function(ym){(ctrlExcelData[ym]||[]).forEach(function(op){var upd=op.dias?Math.round(op.und/op.dias):0,clr=upd>=150?'#16a34a':upd>=80?'#2563eb':upd>=40?'#d97706':'#dc2626',bg=alt?(isDark?'#1e293b':'#f9f9f9'):(isDark?'#0f172a':'#fff'),p=ym.split('-');alt=!alt;h+='<tr style="background:'+bg+'"><td style="padding:7px 12px;color:#888">'+MON[parseInt(p[1])]+' '+p[0]+'</td><td style="padding:7px 12px;font-weight:600">'+op.nm+'</td><td style="padding:7px 12px;text-align:right;color:#888">'+op.dias+'</td><td style="padding:7px 12px;text-align:right;font-weight:700">'+op.und.toLocaleString('es-AR')+'</td><td style="padding:7px 12px;text-align:right;color:'+clr+';font-weight:700">'+upd+'</td><td style="padding:7px 12px;text-align:right;color:#888">'+op.ord+'</td></tr>';});});
+  h+='</tbody></table>';document.getElementById('ctrlTable').innerHTML=h;
+}
+function buildMaquinistas(){
+  if(!maqDetailData||!Object.keys(maqDetailData).length)return;
+  var anio=document.getElementById('selAnio')?document.getElementById('selAnio').value:'all';
+  var mes=document.getElementById('selMes')?document.getElementById('selMes').value:'all';
+  var months=Object.keys(maqDetailData).sort();
+  var sel=months.filter(function(ym){var p=ym.split('-');if(anio!=='all'&&p[0]!==anio)return false;if(mes!=='all'&&parseInt(p[1])!==parseInt(mes))return false;return true;});
+  if(!sel.length)sel=[months[months.length-1]];
+  var cc=chartColors();
+  var opsMap={};sel.forEach(function(ym){(maqDetailData[ym]||{ops:[]}).ops.forEach(function(op){if(!opsMap[op.nm])opsMap[op.nm]={nm:op.nm,mov:0,und:0,dias:0};opsMap[op.nm].mov+=op.mov;opsMap[op.nm].und+=op.und;opsMap[op.nm].dias+=op.dias;});});
+  var ops=Object.values(opsMap).sort(function(a,b){return b.mov-a.mov;});
+  var totMov=ops.reduce(function(s,o){return s+o.mov;},0),totUnd=ops.reduce(function(s,o){return s+o.und;},0),totDias=ops.reduce(function(s,o){return s+o.dias;},0);
+  var avgMpd=totDias?Math.round(totMov/totDias):0;
+  document.getElementById('maqKpiMov').textContent=totMov.toLocaleString('es-AR');
+  document.getElementById('maqKpiMovSub').textContent=avgMpd+' mov/dia prom';
+  document.getElementById('maqKpiUnd').textContent=totUnd>0?totUnd.toLocaleString('es-AR'):'N/D';
+  document.getElementById('maqKpiMpd').textContent=avgMpd.toLocaleString('es-AR');
+  document.getElementById('maqKpiMpdSub').textContent=totMov.toLocaleString('es-AR')+' mov totales';
+  document.getElementById('maqKpiOps').textContent=ops.length;
+  document.getElementById('maqKpiOpsSub').textContent=sel.length+' mes'+(sel.length>1?'es':'');
+  var CLRS=['#2563eb','#16a34a','#d97706','#7c3aed'];
+  var allNms=[];months.forEach(function(ym){(maqDetailData[ym]||{ops:[]}).ops.forEach(function(op){if(allNms.indexOf(op.nm)<0)allNms.push(op.nm);});});
+  var MON_S=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  var monLbl=months.map(function(ym){var p=ym.split('-');return MON_S[parseInt(p[1])]+' '+p[0].slice(2);});
+  var evolDs=allNms.map(function(nm,i){return{label:nm.split(' ')[0]+' '+(nm.split(' ')[1]||'').charAt(0)+'.',data:months.map(function(ym){var op=(maqDetailData[ym]||{ops:[]}).ops.find(function(o){return o.nm===nm;});return(op&&op.dias)?Math.round(op.mov/op.dias):null;}),borderColor:CLRS[i%CLRS.length],backgroundColor:CLRS[i%CLRS.length]+'33',tension:0.35,spanGaps:true,pointRadius:4,fill:false};});
+  var maqEvolEl=document.getElementById('chartMaqEvol');
+  if(_chartMaqEvol){_chartMaqEvol.data.labels=monLbl;_chartMaqEvol.data.datasets=evolDs;_chartMaqEvol.update();}
+  else if(maqEvolEl){_chartMaqEvol=new Chart(maqEvolEl,{type:'line',data:{labels:monLbl,datasets:evolDs},options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{labels:{color:cc.leg,font:{size:11}}}},scales:{x:{grid:{color:cc.grid},ticks:{color:cc.tick}},y:{grid:{color:cc.grid},ticks:{color:cc.tick},title:{display:true,text:'MOV/dia',color:cc.tick,font:{size:11}}}}}}}); }
+  var lastYm=sel[sel.length-1],lastOps=(maqDetailData[lastYm]||{ops:[]}).ops;
+  var TASK_LABELS=['PA02','Recep.','RL01','Pallet','Flow'],TASK_KEYS=['pa02','rec','rl01','pallet','flow'];
+  var breakDs=lastOps.map(function(op,i){return{label:op.nm.split(' ')[0],data:TASK_KEYS.map(function(k){return op[k]||0;}),backgroundColor:CLRS[i%CLRS.length],borderRadius:4};});
+  var maqBrkEl=document.getElementById('chartMaqBreak');
+  document.getElementById('maqBreakSub').textContent='Desglose - '+(maqDetailData[lastYm]||{lbl:lastYm}).lbl;
+  if(_chartMaqBreak){_chartMaqBreak.data.datasets=breakDs;_chartMaqBreak.update();}
+  else if(maqBrkEl){_chartMaqBreak=new Chart(maqBrkEl,{type:'bar',data:{labels:TASK_LABELS,datasets:breakDs},options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{labels:{color:cc.leg,font:{size:11}}}},scales:{x:{grid:{color:cc.grid},ticks:{color:cc.tick}},y:{grid:{color:cc.grid},ticks:{color:cc.tick}}}}}}); }
+  var isDark=document.body.classList.contains('dark'),thBg=isDark?'#1e293b':'#f5f5f5';
+  var h='<table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr style="background:'+thBg+'"><th style="padding:8px 12px;text-align:left;border-bottom:2px solid #e0e0e0">Mes</th><th style="padding:8px 12px;text-align:left;border-bottom:2px solid #e0e0e0">Operario</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #e0e0e0">Dias</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #e0e0e0">MOV</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #e0e0e0">MOV/dia</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #e0e0e0">PA02</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #e0e0e0">Recep.</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #e0e0e0">RL01</th></tr></thead><tbody>';
+  var alt=false;months.forEach(function(ym){var md=maqDetailData[ym]||{lbl:ym,ops:[]};md.ops.forEach(function(op){var mpd=op.dias?Math.round(op.mov/op.dias):0,clr=mpd>=60?'#16a34a':mpd>=30?'#2563eb':mpd>=10?'#d97706':'#dc2626',bg=alt?(isDark?'#1e293b':'#f9f9f9'):(isDark?'#0f172a':'#fff');alt=!alt;h+='<tr style="background:'+bg+'"><td style="padding:7px 12px;color:#888">'+md.lbl+'</td><td style="padding:7px 12px;font-weight:600">'+op.nm+'</td><td style="padding:7px 12px;text-align:right;color:#888">'+op.dias+'</td><td style="padding:7px 12px;text-align:right;font-weight:700">'+op.mov.toLocaleString('es-AR')+'</td><td style="padding:7px 12px;text-align:right;color:'+clr+';font-weight:700">'+mpd+'</td><td style="padding:7px 12px;text-align:right;color:#888">'+op.pa02+'</td><td style="padding:7px 12px;text-align:right;color:#888">'+op.rec+'</td><td style="padding:7px 12px;text-align:right;color:#888">'+op.rl01+'</td></tr>';});});
+  h+='</tbody></table>';document.getElementById('maqDetailTable').innerHTML=h;
+}
 
 // Tab navigation
 function switchTab(name){
@@ -2008,8 +2177,9 @@ function switchTab(name){
   document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
   document.getElementById('sec-'+name).classList.add('active');
   document.getElementById('btn-'+name).classList.add('active');
-  // Mostrar filtro de operario en Picking y Reclamos
-  document.getElementById('opFilterWrap').style.display=(name==='picking'||name==='reclamos')?'':'none';
+  document.getElementById('opFilterWrap').style.display=(name==='picking'||name==='reclamos'||name==='control'||name==='maquinistas')?'':'none';
+  if(name==='control') buildControl();
+  if(name==='maquinistas') buildMaquinistas();
 }
 
 // Poblar selector de anios
@@ -2040,6 +2210,9 @@ function getFilteredIndices(){
 }
 
 function applyFilter(){
+  var _s=document.querySelector('.sec.active');var _id=_s?_s.id:'';
+  if(_id==='sec-control'){buildControl();return;}
+  if(_id==='sec-maquinistas'){buildMaquinistas();return;}
   var idx=getFilteredIndices();
   var labels=idx.map(function(i){return monLabels[i];});
   var selKeys=idx.map(function(i){return allMonKeys[i];});
