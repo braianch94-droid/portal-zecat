@@ -1804,6 +1804,8 @@ body.dark .grp-btn.active{background:#2563eb;border-color:#2563eb;color:white}
   <button class="tab-btn" onclick="switchTab('reclamos')" id="btn-reclamos">&#128683; Reclamos</button>
   <button class="tab-btn" onclick="switchTab('control')" id="btn-control">&#128269; Control</button>
   <button class="tab-btn" onclick="switchTab('maquinistas')" id="btn-maquinistas">&#128295; Maquinistas</button>
+  <button class="tab-btn" onclick="switchTab('resumen')" id="btn-resumen">&#128202; Resumen General</button>
+  <button class="tab-btn" onclick="switchTab('eficiencia')" id="btn-eficiencia">&#127942; Bonos</button>
 </nav>
 
 <div class="container">
@@ -2059,6 +2061,23 @@ body.dark .grp-btn.active{background:#2563eb;border-color:#2563eb;color:white}
   <div class="chart-card" style="padding:14px"><div class="rank-title">Detalle mensual completo</div><div id="maqDetailTable"></div></div>
 </div><!-- /sec-maquinistas -->
 
+<!-- ===== SECCION: RESUMEN GENERAL ===== -->
+<div id="sec-resumen" class="sec">
+<div id="resumenContent"></div>
+</div><!-- /sec-resumen -->
+
+<!-- ===== SECCION: BONOS ===== -->
+<div id="sec-eficiencia" class="sec">
+<div class="grp-btns" style="margin-bottom:16px">
+  <button class="grp-btn active" id="bonBtn-pick" onclick="bonSetSub('pick')">Pickeadores</button>
+  <button class="grp-btn" id="bonBtn-maq" onclick="bonSetSub('maq')">Maquinistas</button>
+  <button class="grp-btn" id="bonBtn-ctrl" onclick="bonSetSub('ctrl')">Control</button>
+  <button class="grp-btn" id="bonBtn-pie" onclick="bonSetSub('pie')">Pie de M&aacute;quina</button>
+</div>
+<div id="bonGrupalWrap" style="margin-bottom:12px"></div>
+<div id="bonContent"></div>
+</div><!-- /sec-eficiencia -->
+
 </div><!-- /container -->
 <footer>Dashboard v5 &mdash; Zecat Art&iacute;culos Promocionales SA &nbsp;|&nbsp; $($NOW.ToString('dd/MM/yyyy HH:mm'))</footer>
 
@@ -2181,6 +2200,190 @@ function buildMaquinistas(){
   h+='</tbody></table>';document.getElementById('maqDetailTable').innerHTML=h;
 }
 
+// Helper: filtrar meses ctrl/maq segun selectores activos
+function _bonFiltMon(months){
+  var anio=document.getElementById('selAnio').value;
+  var mes=document.getElementById('selMes').value;
+  var s=months.filter(function(ym){var p=ym.split('-');if(anio!=='all'&&p[0]!==anio)return false;if(mes!=='all'&&parseInt(p[1])!==parseInt(mes))return false;return true;});
+  return s.length?s:[months[months.length-1]];
+}
+
+// ===========================================================
+// RESUMEN GENERAL
+// ===========================================================
+function buildResumen(){
+  var idx=getFilteredIndices();
+  var selKeys=idx.map(function(i){return allMonKeys[i];});
+  var isDark=document.body.classList.contains('dark');
+  var thBg=isDark?'#1e293b':'#f8fafc';
+  var brd=isDark?'#334155':'#e5e7eb';
+  var rowEven=isDark?'#1e293b':'#f9f9f9';
+  var rowOdd=isDark?'#0f172a':'#fff';
+  var pkL=0,pkU=0,pkRC=0,pkOlas=0,pkLDSum=0,pkValidM=0;
+  selKeys.forEach(function(k){var d=monthlyData[k];if(!d)return;pkValidM++;pkL+=d.totL;pkU+=d.totU;pkRC+=d.totRC;pkOlas+=d.totOlas;pkLDSum+=d.avgLD;});
+  var pkAvgLD=pkValidM?Math.round(pkLDSum/pkValidM*10)/10:0;
+  var pkCumpl=Math.round(pkAvgLD/TARGET*1000)/10;
+  var lezL=0,lezLDSum=0,lezValidM=0;
+  selKeys.forEach(function(k){var d=lezMonthly[k];if(!d)return;lezValidM++;lezL+=d.lineas;lezLDSum+=d.ld;});
+  var lezAvgLD=lezValidM?Math.round(lezLDSum/lezValidM*10)/10:0;
+  var recTotal=0;
+  selKeys.forEach(function(k){var d=recMonthly[k];if(d)recTotal+=d.cnt;});
+  var recTasa=pkL?Math.round(recTotal/(pkL/1000)*100)/100:0;
+  var ctrlMs=_bonFiltMon(Object.keys(ctrlExcelData).sort());
+  var ctrlTotUnd=0,ctrlTotDias=0,ctrlOps={};
+  ctrlMs.forEach(function(ym){(ctrlExcelData[ym]||[]).forEach(function(op){ctrlTotUnd+=op.und;ctrlTotDias+=op.dias;ctrlOps[op.nm]=true;});});
+  var ctrlAvgUpd=ctrlTotDias?Math.round(ctrlTotUnd/ctrlTotDias):0;
+  var maqMs=_bonFiltMon(Object.keys(maqDetailData).sort());
+  var maqTotMov=0,maqTotDias=0,maqOps={};
+  maqMs.forEach(function(ym){(maqDetailData[ym]||{ops:[]}).ops.forEach(function(op){maqTotMov+=op.mov;maqTotDias+=op.dias;maqOps[op.nm]=true;});});
+  var maqAvgMpd=maqTotDias?Math.round(maqTotMov/maqTotDias):0;
+  var pieM1Vals=idx.map(function(i){return merma1[i];}).filter(function(v){return v!==null&&v!==undefined;});
+  var pieM2Vals=idx.map(function(i){return merma2[i];}).filter(function(v){return v!==null&&v!==undefined;});
+  var pieM1Avg=pieM1Vals.length?Math.round(pieM1Vals.reduce(function(s,v){return s+v;},0)/pieM1Vals.length*10)/10:0;
+  var pieM2Avg=pieM2Vals.length?Math.round(pieM2Vals.reduce(function(s,v){return s+v;},0)/pieM2Vals.length*10)/10:0;
+  var cumplC=pkCumpl>=100?'#16a34a':pkCumpl>=83?'#d97706':'#dc2626';
+  var recC=recTasa===0?'#16a34a':recTasa<=3?'#d97706':'#dc2626';
+  var MON_S=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  var periodLabel=selKeys.length===1?(function(){var p=selKeys[0].split('-');return MON_S[parseInt(p[1])]+' '+p[0];}()):(idx.length+' meses');
+  function kCard(label,val,sub,color){return '<div style="padding:14px 18px;border-radius:10px;border:1px solid '+brd+';border-left:4px solid '+color+';background:'+thBg+'"><div style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:#888;margin-bottom:4px">'+label+'</div><div style="font-size:26px;font-weight:800;color:'+color+'">'+val+'</div><div style="font-size:11px;color:#888;margin-top:2px">'+sub+'</div></div>';}
+  function stBadge(ok){return ok?'<span style="background:#dcfce7;color:#16a34a;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700">&#10003; OK</span>':'<span style="background:#fee2e2;color:#dc2626;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700">&#9888; Revisar</span>';}
+  var html='<div class="rank-title" style="margin-bottom:14px">&#128202; Resumen General &mdash; '+periodLabel+'</div>';
+  html+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">';
+  html+=kCard('Picking &mdash; Lin/D&iacute;a',pkAvgLD,pkCumpl+'% cumpl &mdash; '+pkL.toLocaleString('es-AR')+' lin &mdash; '+pkOlas+' olas',cumplC);
+  html+=kCard('Muestra Simple &mdash; Lin/D&iacute;a',lezAvgLD?lezAvgLD:'-',lezL.toLocaleString('es-AR')+' lineas totales','#7c3aed');
+  html+=kCard('Reclamos',recTotal,'Tasa: '+recTasa+'/1000 lin &mdash; '+pkU.toLocaleString('es-AR')+' und picking',recC);
+  html+=kCard('Control &mdash; UND/D&iacute;a',ctrlAvgUpd?ctrlAvgUpd:'-',ctrlTotUnd.toLocaleString('es-AR')+' und &mdash; '+Object.keys(ctrlOps).length+' ops','#0891b2');
+  html+=kCard('Maquinistas &mdash; MOV/D&iacute;a',maqAvgMpd?maqAvgMpd:'-',maqTotMov.toLocaleString('es-AR')+' mov &mdash; '+Object.keys(maqOps).length+' ops','#2563eb');
+  html+=kCard('Pie de M&aacute;quina &mdash; T1',pieM1Avg?pieM1Avg:'-','Lin/d&iacute;a prom &mdash; T2: '+(pieM2Avg?pieM2Avg:'-'),'#0891b2');
+  html+='</div>';
+  html+='<div class="chart-card" style="padding:16px"><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:'+thBg+'"><th style="padding:8px 14px;text-align:left;border-bottom:2px solid '+brd+'">Secci&oacute;n</th><th style="padding:8px 14px;text-align:right;border-bottom:2px solid '+brd+'">&Iacute;ndice</th><th style="padding:8px 14px;text-align:right;border-bottom:2px solid '+brd+'">Acumulado</th><th style="padding:8px 14px;text-align:right;border-bottom:2px solid '+brd+'">Estado</th></tr></thead><tbody>';
+  html+='<tr style="background:'+rowEven+'"><td style="padding:8px 14px;font-weight:600">&#128230; Picking Regular</td><td style="text-align:right;padding:8px 14px;font-weight:700;color:'+cumplC+'">'+pkAvgLD+' lin/d&iacute;a ('+pkCumpl+'%)</td><td style="text-align:right;padding:8px 14px">'+pkL.toLocaleString('es-AR')+' lin / '+pkU.toLocaleString('es-AR')+' und</td><td style="text-align:right;padding:8px 14px">'+stBadge(pkCumpl>=83)+'</td></tr>';
+  html+='<tr style="background:'+rowOdd+'"><td style="padding:8px 14px;font-weight:600">&#128203; Muestra Simple</td><td style="text-align:right;padding:8px 14px;font-weight:700;color:#7c3aed">'+lezAvgLD+' lin/d&iacute;a</td><td style="text-align:right;padding:8px 14px">'+lezL.toLocaleString('es-AR')+' lin</td><td style="text-align:right;padding:8px 14px">'+stBadge(lezAvgLD>0)+'</td></tr>';
+  html+='<tr style="background:'+rowEven+'"><td style="padding:8px 14px;font-weight:600">&#128683; Reclamos</td><td style="text-align:right;padding:8px 14px;font-weight:700;color:'+recC+'">'+recTasa+'/1000 lin</td><td style="text-align:right;padding:8px 14px">'+recTotal+' reclamos &mdash; '+pkOlas+' olas</td><td style="text-align:right;padding:8px 14px">'+stBadge(recTasa<=3)+'</td></tr>';
+  html+='<tr style="background:'+rowOdd+'"><td style="padding:8px 14px;font-weight:600">&#128269; Control</td><td style="text-align:right;padding:8px 14px;font-weight:700;color:#0891b2">'+ctrlAvgUpd+' und/d&iacute;a</td><td style="text-align:right;padding:8px 14px">'+ctrlTotUnd.toLocaleString('es-AR')+' und &mdash; '+Object.keys(ctrlOps).length+' ops</td><td style="text-align:right;padding:8px 14px">'+stBadge(ctrlAvgUpd>3000)+'</td></tr>';
+  html+='<tr style="background:'+rowEven+'"><td style="padding:8px 14px;font-weight:600">&#128295; Maquinistas</td><td style="text-align:right;padding:8px 14px;font-weight:700;color:#2563eb">'+maqAvgMpd+' mov/d&iacute;a</td><td style="text-align:right;padding:8px 14px">'+maqTotMov.toLocaleString('es-AR')+' mov &mdash; '+Object.keys(maqOps).length+' ops</td><td style="text-align:right;padding:8px 14px">'+stBadge(maqAvgMpd>=100)+'</td></tr>';
+  html+='<tr style="background:'+rowOdd+'"><td style="padding:8px 14px;font-weight:600">&#9881; Pie de M&aacute;quina</td><td style="text-align:right;padding:8px 14px;font-weight:700;color:#0891b2">T1: '+pieM1Avg+' &mdash; T2: '+pieM2Avg+'</td><td style="text-align:right;padding:8px 14px">lin/d&iacute;a prom</td><td style="text-align:right;padding:8px 14px">'+stBadge(pieM1Avg>0||pieM2Avg>0)+'</td></tr>';
+  html+='</tbody></table></div>';
+  document.getElementById('resumenContent').innerHTML=html;
+}
+
+// ===========================================================
+// BONOS
+// ===========================================================
+var _bonSub='pick';
+var _bonGrupal=true;
+var _bonPres={};
+var _bonCtrlRec={};
+var _bonPieErr=0;
+
+function bonSetSub(sub){
+  _bonSub=sub;
+  ['pick','maq','ctrl','pie'].forEach(function(s){var b=document.getElementById('bonBtn-'+s);if(b)b.classList.toggle('active',s===sub);});
+  _bonRenderContent();
+}
+function bonToggleGrupal(){
+  var el=document.getElementById('bonGrupalChk');
+  if(el)_bonGrupal=el.checked;
+  _bonRenderContent();
+}
+function bonTogglePres(key){
+  var el=document.getElementById('bonPres-'+key);
+  if(el)_bonPres[key]=el.checked;
+  _bonRenderContent();
+}
+function _bonCalc(pres,n1,n2,grupal){
+  var t=0;if(pres)t+=5;if(n1)t+=2.5;if(n2)t+=4.5;if(grupal)t+=3;return Math.min(t,15);
+}
+function _bonBadge(pct){
+  var c=pct>=12?'#16a34a':pct>=7.5?'#2563eb':pct>=5?'#d97706':'#888';
+  return '<span style="font-weight:800;font-size:15px;color:'+c+'">'+pct+'%</span>';
+}
+function buildEficiencia(){
+  var isDark=document.body.classList.contains('dark');
+  var thBg=isDark?'#1e293b':'#f8fafc';var brd=isDark?'#334155':'#e5e7eb';
+  var gw=document.getElementById('bonGrupalWrap');
+  if(gw){gw.innerHTML='<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:'+thBg+';border-radius:10px;border:1px solid '+brd+';border-left:4px solid #16a34a"><label style="display:flex;align-items:center;gap:8px;font-weight:600;cursor:pointer"><input type="checkbox" id="bonGrupalChk" '+(_bonGrupal?'checked':'')+' onchange="bonToggleGrupal()" style="width:16px;height:16px;cursor:pointer"> Bono Grupal Dep&oacute;sito <span style="color:#16a34a;font-weight:700">+3%</span></label><span style="color:#888;font-size:12px">Aplica a todos cuando el dep&oacute;sito cumple el objetivo grupal</span></div>';}
+  _bonRenderContent();
+}
+function _bonRenderContent(){
+  var isDark=document.body.classList.contains('dark');
+  var thBg=isDark?'#1e293b':'#f8fafc';var brd=isDark?'#334155':'#e5e7eb';
+  var rowEven=isDark?'#1e293b':'#f9f9f9';var rowOdd=isDark?'#0f172a':'#fff';
+  var html='';
+  function boolIcon(v){return v?'<span style="color:#16a34a;font-weight:700">&#10003;</span>':'<span style="color:#dc2626">&#8212;</span>';}
+  function presCheck(key){var chk=(_bonPres[key]!==undefined)?_bonPres[key]:true;return '<input type="checkbox" '+(chk?'checked':'')+' onchange="bonTogglePres(''+key+'')" id="bonPres-'+key+'" style="width:15px;height:15px;cursor:pointer">';}
+  function tblHdr(extra){return '<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:'+thBg+'"><th style="padding:8px 12px;text-align:left;border-bottom:2px solid '+brd+'">Operario</th>'+extra+'<th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Presentismo<br><span style="font-size:10px;font-weight:400">5%</span></th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">N1<br><span style="font-size:10px;font-weight:400">+2.5%</span></th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">N2<br><span style="font-size:10px;font-weight:400">+4.5%</span></th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Grupal<br><span style="font-size:10px;font-weight:400">+3%</span></th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">TOTAL</th></tr></thead><tbody>';}
+  if(_bonSub==='pick'){
+    var idx=getFilteredIndices();
+    var selKeys=idx.map(function(i){return allMonKeys[i];});
+    var opsMap={};
+    selKeys.forEach(function(k){var d=monthlyData[k];if(!d)return;d.pickers.forEach(function(pk){if(!opsMap[pk.resp])opsMap[pk.resp]={dias:0,lineas:0};opsMap[pk.resp].dias+=pk.dias;opsMap[pk.resp].lineas+=pk.lineas;});});
+    var pickers=Object.entries(opsMap).map(function(e){var resp=e[0],p=e[1];var ld=p.dias?Math.round(p.lineas/p.dias*10)/10:0;var cumpl=Math.round(ld/TARGET*1000)/10;return{nm:resp,ld:ld,cumpl:cumpl,n1:cumpl>=100,n2:cumpl>=120};}).sort(function(a,b){return b.ld-a.ld;});
+    html+=tblHdr('<th style="padding:8px 12px;text-align:right;border-bottom:2px solid '+brd+'">Lin/D&iacute;a</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid '+brd+'">Cumpl%</th>');
+    var alt=false;
+    pickers.forEach(function(p){
+      var key='pk'+p.nm.replace(/[^A-Za-z0-9]/g,'_');
+      var bg=alt?rowEven:rowOdd;alt=!alt;
+      var cumplC=p.cumpl>=100?'#16a34a':p.cumpl>=83?'#d97706':'#dc2626';
+      var t=_bonCalc((_bonPres[key]!==undefined?_bonPres[key]:true),p.n1,p.n2,_bonGrupal);
+      html+='<tr style="background:'+bg+'"><td style="padding:8px 12px;font-weight:600">'+p.nm+'</td><td style="text-align:right;padding:8px 12px;font-weight:700;color:'+cumplC+'">'+p.ld+'</td><td style="text-align:right;padding:8px 12px;color:'+cumplC+'">'+p.cumpl+'%</td><td style="text-align:center;padding:8px 12px">'+presCheck(key)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(p.n1)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(p.n2)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(_bonGrupal)+'</td><td style="text-align:center;padding:8px 12px">'+_bonBadge(t)+'</td></tr>';
+    });
+    if(!pickers.length)html+='<tr><td colspan="8" style="text-align:center;padding:20px;color:#888">Sin datos para el per&iacute;odo seleccionado</td></tr>';
+    html+='</tbody></table>';
+  }
+  else if(_bonSub==='maq'){
+    var maqMs=_bonFiltMon(Object.keys(maqDetailData).sort());
+    var opsMapM={};
+    maqMs.forEach(function(ym){(maqDetailData[ym]||{ops:[]}).ops.forEach(function(op){if(!opsMapM[op.nm])opsMapM[op.nm]={mov:0,dias:0};opsMapM[op.nm].mov+=op.mov;opsMapM[op.nm].dias+=op.dias;});});
+    var maqOps=Object.entries(opsMapM).map(function(e){var nm=e[0],o=e[1];var mpd=o.dias?Math.round(o.mov/o.dias):0;return{nm:nm,mpd:mpd,n1:mpd>=100,n2:mpd>=120};}).sort(function(a,b){return b.mpd-a.mpd;});
+    html+=tblHdr('<th style="padding:8px 12px;text-align:right;border-bottom:2px solid '+brd+'">MOV/D&iacute;a</th>');
+    var alt=false;
+    maqOps.forEach(function(p){
+      var key='mq'+p.nm.replace(/[^A-Za-z0-9]/g,'_');
+      var bg=alt?rowEven:rowOdd;alt=!alt;
+      var mpdC=p.mpd>=100?'#16a34a':p.mpd>=50?'#d97706':'#dc2626';
+      var t=_bonCalc((_bonPres[key]!==undefined?_bonPres[key]:true),p.n1,p.n2,_bonGrupal);
+      html+='<tr style="background:'+bg+'"><td style="padding:8px 12px;font-weight:600">'+p.nm+'</td><td style="text-align:right;padding:8px 12px;font-weight:700;color:'+mpdC+'">'+p.mpd+'</td><td style="text-align:center;padding:8px 12px">'+presCheck(key)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(p.n1)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(p.n2)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(_bonGrupal)+'</td><td style="text-align:center;padding:8px 12px">'+_bonBadge(t)+'</td></tr>';
+    });
+    if(!maqOps.length)html+='<tr><td colspan="7" style="text-align:center;padding:20px;color:#888">Sin datos para el per&iacute;odo seleccionado</td></tr>';
+    html+='</tbody></table>';
+  }
+  else if(_bonSub==='ctrl'){
+    var ctrlMs=_bonFiltMon(Object.keys(ctrlExcelData).sort());
+    var opsMapC={};
+    ctrlMs.forEach(function(ym){(ctrlExcelData[ym]||[]).forEach(function(op){if(!opsMapC[op.nm])opsMapC[op.nm]={und:0,dias:0};opsMapC[op.nm].und+=op.und;opsMapC[op.nm].dias+=op.dias;});});
+    var ctrlOps=Object.entries(opsMapC).map(function(e){var nm=e[0],o=e[1];var upd=o.dias?Math.round(o.und/o.dias):0;return{nm:nm,upd:upd};}).sort(function(a,b){return b.upd-a.upd;});
+    html+='<div style="background:#fef9c3;border:1px solid #fde047;border-radius:8px;padding:10px 14px;font-size:12px;color:#713f12;margin-bottom:12px">&#9888; Ingresá los reclamos por operario para calcular N1 y N2.</div>';
+    html+=tblHdr('<th style="padding:8px 12px;text-align:right;border-bottom:2px solid '+brd+'">UND/D&iacute;a</th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Reclamos</th>');
+    var alt=false;
+    ctrlOps.forEach(function(p){
+      var key='ct'+p.nm.replace(/[^A-Za-z0-9]/g,'_');
+      var rec=(_bonCtrlRec[key]!==undefined)?_bonCtrlRec[key]:0;
+      var n1=p.upd>3000&&rec<=1;
+      var n2=p.upd>3500&&rec===0;
+      var bg=alt?rowEven:rowOdd;alt=!alt;
+      var updC=p.upd>3500?'#16a34a':p.upd>3000?'#2563eb':p.upd>1500?'#d97706':'#dc2626';
+      var t=_bonCalc((_bonPres[key]!==undefined?_bonPres[key]:true),n1,n2,_bonGrupal);
+      html+='<tr style="background:'+bg+'"><td style="padding:8px 12px;font-weight:600">'+p.nm+'</td><td style="text-align:right;padding:8px 12px;font-weight:700;color:'+updC+'">'+p.upd.toLocaleString('es-AR')+'</td><td style="text-align:center;padding:8px 12px"><input type="number" min="0" max="99" value="'+rec+'" onchange="var k=''+key+'';_bonCtrlRec[k]=parseInt(this.value)||0;_bonRenderContent();" style="width:60px;text-align:center;border:1px solid '+brd+';border-radius:4px;padding:2px 4px;font-size:13px;background:'+rowOdd+'"></td><td style="text-align:center;padding:8px 12px">'+presCheck(key)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(n1)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(n2)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(_bonGrupal)+'</td><td style="text-align:center;padding:8px 12px">'+_bonBadge(t)+'</td></tr>';
+    });
+    if(!ctrlOps.length)html+='<tr><td colspan="8" style="text-align:center;padding:20px;color:#888">Sin datos para el per&iacute;odo seleccionado</td></tr>';
+    html+='</tbody></table>';
+  }
+  else if(_bonSub==='pie'){
+    var n1Pie=_bonPieErr<=1;var n2Pie=_bonPieErr===0;
+    var tPie=_bonCalc(true,n1Pie,n2Pie,_bonGrupal);
+    var tC=tPie>=12?'#16a34a':tPie>=7.5?'#2563eb':tPie>=5?'#d97706':'#888';
+    html+='<div class="chart-card" style="padding:20px;max-width:520px"><div class="rank-title" style="margin-bottom:16px">&#9881;&#65039; Pie de M&aacute;quina &mdash; Datos Manuales</div>';
+    html+='<div style="margin-bottom:20px"><label style="display:block;font-weight:600;margin-bottom:8px">N&uacute;mero de errores en el per&iacute;odo:</label><input type="number" min="0" max="99" value="'+_bonPieErr+'" onchange="_bonPieErr=parseInt(this.value)||0;_bonRenderContent();" style="font-size:20px;padding:8px 16px;border:2px solid '+brd+';border-radius:8px;width:130px;text-align:center"></div>';
+    html+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">';
+    html+='<div style="padding:14px;border-radius:8px;border:1px solid '+brd+';text-align:center;border-top:3px solid '+(n2Pie?'#16a34a':'#e5e7eb')+'"><div style="font-size:11px;color:#888;text-transform:uppercase;margin-bottom:6px">N2 &mdash; 0 errores</div><div style="font-size:24px;font-weight:800;color:'+(n2Pie?'#16a34a':'#888')+'">'+(n2Pie?'&#10003;':'&#8212;')+'</div><div style="font-size:11px;color:#888">+4.5%</div></div>';
+    html+='<div style="padding:14px;border-radius:8px;border:1px solid '+brd+';text-align:center;border-top:3px solid '+(n1Pie?'#2563eb':'#e5e7eb')+'"><div style="font-size:11px;color:#888;text-transform:uppercase;margin-bottom:6px">N1 &mdash; &le;1 error</div><div style="font-size:24px;font-weight:800;color:'+(n1Pie?'#2563eb':'#888')+'">'+(n1Pie?'&#10003;':'&#8212;')+'</div><div style="font-size:11px;color:#888">+2.5%</div></div>';
+    html+='<div style="padding:14px;border-radius:8px;border:1px solid '+brd+';text-align:center;border-top:3px solid '+tC+'"><div style="font-size:11px;color:#888;text-transform:uppercase;margin-bottom:6px">Total Bono</div><div style="font-size:28px;font-weight:900;color:'+tC+'">'+tPie+'%</div><div style="font-size:11px;color:#888">m&aacute;x 15%</div></div>';
+    html+='</div><div style="margin-top:14px;font-size:12px;color:#888;padding:10px;background:'+rowEven+';border-radius:6px">Presentismo (5%) incluido. Grupal '+(_bonGrupal?'activado &#10003;':'desactivado &#8212;')+'.</div></div>';
+  }
+  document.getElementById('bonContent').innerHTML=html;
+}
+
 // Tab navigation
 function switchTab(name){
   document.querySelectorAll('.sec').forEach(function(s){s.classList.remove('active');});
@@ -2190,6 +2393,8 @@ function switchTab(name){
   document.getElementById('opFilterWrap').style.display=(name==='picking'||name==='reclamos'||name==='control'||name==='maquinistas')?'':'none';
   if(name==='control') buildControl();
   if(name==='maquinistas') buildMaquinistas();
+  if(name==='resumen') buildResumen();
+  if(name==='eficiencia') buildEficiencia();
 }
 
 // Poblar selector de anios
@@ -2223,6 +2428,8 @@ function applyFilter(){
   var _s=document.querySelector('.sec.active');var _id=_s?_s.id:'';
   if(_id==='sec-control'){buildControl();return;}
   if(_id==='sec-maquinistas'){buildMaquinistas();return;}
+  if(_id==='sec-resumen'){buildResumen();return;}
+  if(_id==='sec-eficiencia'){buildEficiencia();return;}
   var idx=getFilteredIndices();
   var labels=idx.map(function(i){return monLabels[i];});
   var selKeys=idx.map(function(i){return allMonKeys[i];});
