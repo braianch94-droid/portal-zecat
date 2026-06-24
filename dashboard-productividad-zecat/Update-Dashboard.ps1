@@ -41,6 +41,7 @@ $CtrlEmailMap = @{
     "romeromelaniezecat@gmail.com"  = "ROMERO MELANIE"
     "tamaraarmoazecat@gmail.com"    = "ARMOA TAMARA"
     "tomaspittalazecat@gmail.com"   = "PITTALA TOMAS"
+    "bejermanwmszecat@gmail.com"    = "BEJERMAN"
 }
 
 function rgb($r,$g,$b){ [long]$r + [long]$g*256 + [long]$b*65536 }
