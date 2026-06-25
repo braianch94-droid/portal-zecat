@@ -20,6 +20,11 @@ $NOW     = Get-Date
 # Agregar más separados por coma. "Falta definir" se excluye siempre.
 $ExcludeFromProd = @("AIRALA","Falta definir","Pie de Maquina","MAQUINA","Muestra Simple","LEZCANO")
 
+# Normalizacion de nombres de picker con variantes en el Excel (APELLIDO NOMBRE canónico)
+$PickerNameMap = @{
+    "FAVIO CAÑETE" = "CAÑETE FAVIO"
+}
+
 function IsExcludedFromProd($name){
     foreach($ex in $ExcludeFromProd){ if($name -like "*$ex*"){return $true} }
     return $false
@@ -45,7 +50,13 @@ $CtrlEmailMap = @{
     "tomasbrunzecat@gmail.com"      = "BRUN TOMAS"
     "adrianromerozecat@gmail.com"   = "ADRIAN ROMERO"
     "braianarielocampo@gmail.com"   = "OCAMPO BRIAN"
+    "logistica2@zecat.com"          = "AIRALA CESAR"
+    "mcamerano@zecat.com"           = "PRODUCCION"
+    "magwmszecat@gmail.com"         = "SISTEMA WMS"
 }
+
+# Emails a excluir de la seccion Control (no pertenecen al deposito AR)
+$CtrlExclude = @("admdeposito.ch@zecat.cl")
 
 function rgb($r,$g,$b){ [long]$r + [long]$g*256 + [long]$b*65536 }
 $C = @{
@@ -192,7 +203,7 @@ try {
             $staffByMes[$ym].TotalL += $L
             if($dow -ge 1 -and $dow -le 5){ $staffByMes[$ym].WorkDays[$ymd]=$true }
             if(-not $pk -or $pk -eq "Falta Pickeador"){ continue }
-            $picker    = $pk
+            $picker    = if($PickerNameMap[$pk]){$PickerNameMap[$pk]}else{$pk}
             $isRegular = $true
             $allResp[$picker] = $true
         }
@@ -326,6 +337,7 @@ try {
             $dv=$cArr[$r,1]; $email="$($cArr[$r,2])".Trim()
             $ord=[double]($cArr[$r,3] -as [double]); $und=[double]($cArr[$r,4] -as [double])
             if(-not $dv -or -not $email){continue}
+            if($CtrlExclude -contains $email){continue}
             $dt=$null; try{$dt=[datetime]::FromOADate([double]$dv)}catch{continue}
             $nombre=if($CtrlEmailMap[$email]){$CtrlEmailMap[$email]}else{$email}
             $ym="$($dt.Year)-$('{0:00}' -f $dt.Month)"; $ymd=$dt.ToString("yyyy-MM-dd")
