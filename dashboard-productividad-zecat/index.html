@@ -124,7 +124,7 @@ body.dark .grp-btn.active{background:#2563eb;border-color:#2563eb;color:white}
       <h1>Dashboard de Productividad</h1>
     </div>
   </div>
-  <div class="badge">Actualizado: 25/06/2026 11:10<br>Target picking: 84 lin/d&iacute;a</div>
+  <div class="badge">Actualizado: 25/06/2026 11:29<br>Target picking: 84 lin/d&iacute;a</div>
   <button id="themeToggle" onclick="toggleTheme()" title="Cambiar tema claro / oscuro" aria-label="Cambiar tema"><span id="themeIcon">&#9790;</span></button>
 </header>
 
@@ -401,6 +401,7 @@ body.dark .grp-btn.active{background:#2563eb;border-color:#2563eb;color:white}
 <!-- ===== SECCION: BONOS ===== -->
 <div id="sec-eficiencia" class="sec">
 <div class="grp-btns" style="margin-bottom:16px">
+  <button class="grp-btn" id="bonBtn-gen" onclick="bonSetSub('gen')">&#127775; General</button>
   <button class="grp-btn active" id="bonBtn-pick" onclick="bonSetSub('pick')">Pickeadores</button>
   <button class="grp-btn" id="bonBtn-maq" onclick="bonSetSub('maq')">Maquinistas</button>
   <button class="grp-btn" id="bonBtn-ctrl" onclick="bonSetSub('ctrl')">Control</button>
@@ -411,7 +412,7 @@ body.dark .grp-btn.active{background:#2563eb;border-color:#2563eb;color:white}
 </div><!-- /sec-eficiencia -->
 
 </div><!-- /container -->
-<footer>Dashboard v5 &mdash; Zecat Art&iacute;culos Promocionales SA &nbsp;|&nbsp; 25/06/2026 11:10</footer>
+<footer>Dashboard v5 &mdash; Zecat Art&iacute;culos Promocionales SA &nbsp;|&nbsp; 25/06/2026 11:29</footer>
 
 <script>
 Chart.defaults.font.family='Arial,sans-serif';
@@ -421,15 +422,15 @@ const TARGET=84;
 const TARGET_WARN=70;
 const allMonKeys=['2026-01','2026-02','2026-03','2026-04','2026-05','2026-06'];
 const monLabels=['Enero 2026','Febrero 2026','Marzo 2026','Abril 2026','Mayo 2026','Junio 2026'];
-const teamLD=[61.6,62.9,67.7,80.4,99.3,78.2];
-const teamColors=['#dc2626','#dc2626','#dc2626','#d97706','#16a34a','#d97706'];
+const teamLD=[26.4,35.9,33.9,35.7,44.1,78.2];
+const teamColors=['#dc2626','#dc2626','#dc2626','#dc2626','#dc2626','#d97706'];
 const staffNec=[2.2,3.3,4.1,3.8,4.9,3.7];
-const staffAct=[3,4,4,4,4,4.8];
+const staffAct=[4.6,5.9,6,6.9,7,4.8];
 const merma1=[28.4,21.3,29.4,25.4,23.1,22.1];
 const merma2=[22.2,38,13.8,16.6,16,15.3];
 const pie1=[null,null,null,null,null,null];
 const pie2=[null,null,null,null,null,null];
-const monthlyData={'2026-01':{totOps:7,pickeadores:3,avgLD:61.6,cumAv:73.3,totL:3880,totU:314550,totRC:12,rateG:3.09,totOlas:284,staffNec:2.2,staffAct:3,pickers:[{resp:'BRUN TOMAS',dias:22,olas:102,lineas:1409,ld:64,cumpl:76.2,unidades:108737,recCnt:5,trend:'▼ -17.9'},{resp:'ARMOA TAMARA',dias:12,olas:30,lineas:727,ld:60.6,cumpl:72.1,unidades:38925,recCnt:3,trend:'▼ -3.6'},{resp:'ROMERO MELANIE',dias:14,olas:71,lineas:803,ld:57.4,cumpl:68.3,unidades:72382,recCnt:2,trend:'-'},{resp:'LAURATO MARTINEZ',dias:21,olas:76,lineas:927,ld:44.1,cumpl:52.5,unidades:81727,recCnt:2,trend:'▼ -24.8'},{resp:'ARCE ELIAS',dias:1,olas:1,lineas:8,ld:8,cumpl:9.5,unidades:742,recCnt:0,trend:'-'},{resp:'DEMARCHIS EMILIANO',dias:1,olas:1,lineas:3,ld:3,cumpl:3.6,unidades:12000,recCnt:0,trend:'-'},{resp:'OCAMPO BRIAN',dias:2,olas:3,lineas:3,ld:1.5,cumpl:1.8,unidades:37,recCnt:0,trend:'-'}]},'2026-02':{totOps:7,pickeadores:4,avgLD:62.9,cumAv:74.9,totL:4526,totU:411711,totRC:19,rateG:4.2,totOlas:240,staffNec:3.3,staffAct:4,pickers:[{resp:'BRUN TOMAS',dias:14,olas:59,lineas:1236,ld:88.3,cumpl:105.1,unidades:172902,recCnt:4,trend:'▼ -17.9'},{resp:'ARMOA TAMARA',dias:12,olas:39,lineas:926,ld:77.2,cumpl:91.9,unidades:54745,recCnt:5,trend:'▼ -3.6'},{resp:'LAURATO MARTINEZ',dias:20,olas:85,lineas:1241,ld:62,cumpl:73.8,unidades:106847,recCnt:5,trend:'▼ -24.8'},{resp:'ROMERO MELANIE',dias:15,olas:43,lineas:877,ld:58.5,cumpl:69.6,unidades:67135,recCnt:4,trend:'-'},{resp:'OCAMPO BRIAN',dias:9,olas:10,lineas:219,ld:24.3,cumpl:28.9,unidades:5211,recCnt:0,trend:'-'},{resp:'ARCE ELIAS',dias:1,olas:1,lineas:9,ld:9,cumpl:10.7,unidades:431,recCnt:1,trend:'-'},{resp:'CAÑETE FAVIO',dias:2,olas:3,lineas:18,ld:9,cumpl:10.7,unidades:4440,recCnt:0,trend:'-'}]},'2026-03':{totOps:8,pickeadores:4,avgLD:67.7,cumAv:80.6,totL:5690,totU:552993,totRC:18,rateG:3.16,totOlas:360,staffNec:4.1,staffAct:4,pickers:[{resp:'BRUN TOMAS',dias:21,olas:118,lineas:1903,ld:90.6,cumpl:107.9,unidades:217052,recCnt:9,trend:'▼ -17.9'},{resp:'ARMOA TAMARA',dias:19,olas:65,lineas:1591,ld:83.7,cumpl:99.6,unidades:87492,recCnt:4,trend:'▼ -3.6'},{resp:'LAURATO MARTINEZ',dias:21,olas:93,lineas:1330,ld:63.3,cumpl:75.4,unidades:155836,recCnt:2,trend:'▼ -24.8'},{resp:'ROMERO DAMIAN',dias:12,olas:43,lineas:535,ld:44.6,cumpl:53.1,unidades:60282,recCnt:0,trend:'-'},{resp:'MARIN LAUTARO',dias:2,olas:6,lineas:63,ld:31.5,cumpl:37.5,unidades:6622,recCnt:0,trend:'-'},{resp:'ROMERO MELANIE',dias:4,olas:8,lineas:86,ld:21.5,cumpl:25.6,unidades:8626,recCnt:2,trend:'-'},{resp:'OCAMPO BRIAN',dias:12,olas:26,lineas:181,ld:15.1,cumpl:18,unidades:15073,recCnt:1,trend:'-'},{resp:'DEMARCHIS EMILIANO',dias:1,olas:1,lineas:1,ld:1,cumpl:1.2,unidades:2010,recCnt:0,trend:'-'}]},'2026-04':{totOps:9,pickeadores:4,avgLD:80.4,cumAv:95.7,totL:6432,totU:483306,totRC:22,rateG:3.42,totOlas:462,staffNec:3.8,staffAct:4,pickers:[{resp:'ARMOA TAMARA',dias:20,olas:117,lineas:1996,ld:99.8,cumpl:118.8,unidades:99906,recCnt:12,trend:'▼ -3.6'},{resp:'BRUN TOMAS',dias:20,olas:119,lineas:1852,ld:92.6,cumpl:110.2,unidades:130264,recCnt:8,trend:'▼ -17.9'},{resp:'LAURATO MARTINEZ',dias:20,olas:123,lineas:1518,ld:75.9,cumpl:90.4,unidades:140312,recCnt:2,trend:'▼ -24.8'},{resp:'SANDOVAL TOMAS',dias:1,olas:2,lineas:50,ld:50,cumpl:59.5,unidades:972,recCnt:0,trend:'-'},{resp:'CACERES EDISON',dias:6,olas:19,lineas:202,ld:33.7,cumpl:40.1,unidades:25186,recCnt:0,trend:'▼ -11'},{resp:'ROMERO MELANIE',dias:6,olas:15,lineas:184,ld:30.7,cumpl:36.5,unidades:1873,recCnt:0,trend:'-'},{resp:'CHOQUE LEANDRO',dias:9,olas:30,lineas:255,ld:28.3,cumpl:33.7,unidades:54875,recCnt:0,trend:'-'},{resp:'DEMARCHIS EMILIANO',dias:2,olas:2,lineas:50,ld:25,cumpl:29.8,unidades:395,recCnt:0,trend:'-'},{resp:'OCAMPO BRIAN',dias:20,olas:35,lineas:325,ld:16.2,cumpl:19.3,unidades:29523,recCnt:0,trend:'-'}]},'2026-05':{totOps:9,pickeadores:4,avgLD:99.3,cumAv:118.2,totL:7548,totU:370270,totRC:35,rateG:4.64,totOlas:434,staffNec:4.9,staffAct:4,pickers:[{resp:'BRUN TOMAS',dias:18,olas:105,lineas:2108,ld:117.1,cumpl:139.4,unidades:90214,recCnt:11,trend:'▼ -17.9'},{resp:'ARMOA TAMARA',dias:18,olas:87,lineas:2015,ld:111.9,cumpl:133.2,unidades:62131,recCnt:11,trend:'▼ -3.6'},{resp:'LAURATO MARTINEZ',dias:18,olas:109,lineas:1798,ld:99.9,cumpl:118.9,unidades:89392,recCnt:10,trend:'▼ -24.8'},{resp:'CACERES EDISON',dias:19,olas:78,lineas:896,ld:47.2,cumpl:56.2,unidades:75175,recCnt:2,trend:'▼ -11'},{resp:'OCAMPO BRIAN',dias:11,olas:40,lineas:506,ld:46,cumpl:54.8,unidades:45520,recCnt:0,trend:'-'},{resp:'ROMERO MELANIE',dias:4,olas:9,lineas:143,ld:35.8,cumpl:42.6,unidades:5028,recCnt:1,trend:'-'},{resp:'DEMARCHIS EMILIANO',dias:1,olas:2,lineas:24,ld:24,cumpl:28.6,unidades:454,recCnt:0,trend:'-'},{resp:'SANDOVAL TOMAS',dias:3,olas:3,lineas:57,ld:19,cumpl:22.6,unidades:2351,recCnt:0,trend:'-'},{resp:'ADRIAN ROMERO',dias:1,olas:1,lineas:1,ld:1,cumpl:1.2,unidades:5,recCnt:0,trend:'-'}]},'2026-06':{totOps:4,pickeadores:4,avgLD:78.2,cumAv:93.1,totL:3753,totU:294001,totRC:15,rateG:4,totOlas:249,staffNec:3.7,staffAct:4,pickers:[{resp:'ARMOA TAMARA',dias:12,olas:84,lineas:1300,ld:108.3,cumpl:128.9,unidades:82980,recCnt:8,trend:'▼ -3.6'},{resp:'BRUN TOMAS',dias:12,olas:74,lineas:1190,ld:99.2,cumpl:118.1,unidades:83132,recCnt:4,trend:'▼ -17.9'},{resp:'LAURATO MARTINEZ',dias:12,olas:71,lineas:901,ld:75.1,cumpl:89.4,unidades:96513,recCnt:3,trend:'▼ -24.8'},{resp:'CACERES EDISON',dias:10,olas:20,lineas:362,ld:36.2,cumpl:43.1,unidades:31376,recCnt:0,trend:'▼ -11'}]}};
+const monthlyData={'2026-01':{totOps:7,pickeadores:7,avgLD:26.4,cumAv:31.4,totL:3880,totU:314550,totRC:12,rateG:3.09,totOlas:284,staffNec:2.2,staffAct:7,pickers:[{resp:'BRUN TOMAS',dias:22,olas:102,lineas:1409,ld:64,cumpl:76.2,unidades:108737,recCnt:5,trend:'▼ -17.9'},{resp:'ARMOA TAMARA',dias:12,olas:30,lineas:727,ld:60.6,cumpl:72.1,unidades:38925,recCnt:3,trend:'▼ -3.6'},{resp:'ROMERO MELANIE',dias:14,olas:71,lineas:803,ld:57.4,cumpl:68.3,unidades:72382,recCnt:2,trend:'-'},{resp:'LAURATO MARTINEZ',dias:21,olas:76,lineas:927,ld:44.1,cumpl:52.5,unidades:81727,recCnt:2,trend:'▼ -24.8'},{resp:'ARCE ELIAS',dias:1,olas:1,lineas:8,ld:8,cumpl:9.5,unidades:742,recCnt:0,trend:'-'},{resp:'DEMARCHIS EMILIANO',dias:1,olas:1,lineas:3,ld:3,cumpl:3.6,unidades:12000,recCnt:0,trend:'-'},{resp:'OCAMPO BRIAN',dias:2,olas:3,lineas:3,ld:1.5,cumpl:1.8,unidades:37,recCnt:0,trend:'-'}]},'2026-02':{totOps:7,pickeadores:7,avgLD:35.9,cumAv:42.7,totL:4526,totU:411711,totRC:19,rateG:4.2,totOlas:240,staffNec:3.3,staffAct:7,pickers:[{resp:'BRUN TOMAS',dias:14,olas:59,lineas:1236,ld:88.3,cumpl:105.1,unidades:172902,recCnt:4,trend:'▼ -17.9'},{resp:'ARMOA TAMARA',dias:12,olas:39,lineas:926,ld:77.2,cumpl:91.9,unidades:54745,recCnt:5,trend:'▼ -3.6'},{resp:'LAURATO MARTINEZ',dias:20,olas:85,lineas:1241,ld:62,cumpl:73.8,unidades:106847,recCnt:5,trend:'▼ -24.8'},{resp:'ROMERO MELANIE',dias:15,olas:43,lineas:877,ld:58.5,cumpl:69.6,unidades:67135,recCnt:4,trend:'-'},{resp:'OCAMPO BRIAN',dias:9,olas:10,lineas:219,ld:24.3,cumpl:28.9,unidades:5211,recCnt:0,trend:'-'},{resp:'ARCE ELIAS',dias:1,olas:1,lineas:9,ld:9,cumpl:10.7,unidades:431,recCnt:1,trend:'-'},{resp:'CAÑETE FAVIO',dias:2,olas:3,lineas:18,ld:9,cumpl:10.7,unidades:4440,recCnt:0,trend:'-'}]},'2026-03':{totOps:8,pickeadores:8,avgLD:33.9,cumAv:40.4,totL:5690,totU:552993,totRC:18,rateG:3.16,totOlas:360,staffNec:4.1,staffAct:8,pickers:[{resp:'BRUN TOMAS',dias:21,olas:118,lineas:1903,ld:90.6,cumpl:107.9,unidades:217052,recCnt:9,trend:'▼ -17.9'},{resp:'ARMOA TAMARA',dias:19,olas:65,lineas:1591,ld:83.7,cumpl:99.6,unidades:87492,recCnt:4,trend:'▼ -3.6'},{resp:'LAURATO MARTINEZ',dias:21,olas:93,lineas:1330,ld:63.3,cumpl:75.4,unidades:155836,recCnt:2,trend:'▼ -24.8'},{resp:'ROMERO DAMIAN',dias:12,olas:43,lineas:535,ld:44.6,cumpl:53.1,unidades:60282,recCnt:0,trend:'-'},{resp:'MARIN LAUTARO',dias:2,olas:6,lineas:63,ld:31.5,cumpl:37.5,unidades:6622,recCnt:0,trend:'-'},{resp:'ROMERO MELANIE',dias:4,olas:8,lineas:86,ld:21.5,cumpl:25.6,unidades:8626,recCnt:2,trend:'-'},{resp:'OCAMPO BRIAN',dias:12,olas:26,lineas:181,ld:15.1,cumpl:18,unidades:15073,recCnt:1,trend:'-'},{resp:'DEMARCHIS EMILIANO',dias:1,olas:1,lineas:1,ld:1,cumpl:1.2,unidades:2010,recCnt:0,trend:'-'}]},'2026-04':{totOps:9,pickeadores:9,avgLD:35.7,cumAv:42.5,totL:6432,totU:483306,totRC:22,rateG:3.42,totOlas:462,staffNec:3.8,staffAct:9,pickers:[{resp:'ARMOA TAMARA',dias:20,olas:117,lineas:1996,ld:99.8,cumpl:118.8,unidades:99906,recCnt:12,trend:'▼ -3.6'},{resp:'BRUN TOMAS',dias:20,olas:119,lineas:1852,ld:92.6,cumpl:110.2,unidades:130264,recCnt:8,trend:'▼ -17.9'},{resp:'LAURATO MARTINEZ',dias:20,olas:123,lineas:1518,ld:75.9,cumpl:90.4,unidades:140312,recCnt:2,trend:'▼ -24.8'},{resp:'SANDOVAL TOMAS',dias:1,olas:2,lineas:50,ld:50,cumpl:59.5,unidades:972,recCnt:0,trend:'-'},{resp:'CACERES EDISON',dias:6,olas:19,lineas:202,ld:33.7,cumpl:40.1,unidades:25186,recCnt:0,trend:'▼ -11'},{resp:'ROMERO MELANIE',dias:6,olas:15,lineas:184,ld:30.7,cumpl:36.5,unidades:1873,recCnt:0,trend:'-'},{resp:'CHOQUE LEANDRO',dias:9,olas:30,lineas:255,ld:28.3,cumpl:33.7,unidades:54875,recCnt:0,trend:'-'},{resp:'DEMARCHIS EMILIANO',dias:2,olas:2,lineas:50,ld:25,cumpl:29.8,unidades:395,recCnt:0,trend:'-'},{resp:'OCAMPO BRIAN',dias:20,olas:35,lineas:325,ld:16.2,cumpl:19.3,unidades:29523,recCnt:0,trend:'-'}]},'2026-05':{totOps:9,pickeadores:9,avgLD:44.1,cumAv:52.5,totL:7548,totU:370270,totRC:35,rateG:4.64,totOlas:434,staffNec:4.9,staffAct:9,pickers:[{resp:'BRUN TOMAS',dias:18,olas:105,lineas:2108,ld:117.1,cumpl:139.4,unidades:90214,recCnt:11,trend:'▼ -17.9'},{resp:'ARMOA TAMARA',dias:18,olas:87,lineas:2015,ld:111.9,cumpl:133.2,unidades:62131,recCnt:11,trend:'▼ -3.6'},{resp:'LAURATO MARTINEZ',dias:18,olas:109,lineas:1798,ld:99.9,cumpl:118.9,unidades:89392,recCnt:10,trend:'▼ -24.8'},{resp:'CACERES EDISON',dias:19,olas:78,lineas:896,ld:47.2,cumpl:56.2,unidades:75175,recCnt:2,trend:'▼ -11'},{resp:'OCAMPO BRIAN',dias:11,olas:40,lineas:506,ld:46,cumpl:54.8,unidades:45520,recCnt:0,trend:'-'},{resp:'ROMERO MELANIE',dias:4,olas:9,lineas:143,ld:35.8,cumpl:42.6,unidades:5028,recCnt:1,trend:'-'},{resp:'DEMARCHIS EMILIANO',dias:1,olas:2,lineas:24,ld:24,cumpl:28.6,unidades:454,recCnt:0,trend:'-'},{resp:'SANDOVAL TOMAS',dias:3,olas:3,lineas:57,ld:19,cumpl:22.6,unidades:2351,recCnt:0,trend:'-'},{resp:'ADRIAN ROMERO',dias:1,olas:1,lineas:1,ld:1,cumpl:1.2,unidades:5,recCnt:0,trend:'-'}]},'2026-06':{totOps:4,pickeadores:4,avgLD:78.2,cumAv:93.1,totL:3753,totU:294001,totRC:15,rateG:4,totOlas:249,staffNec:3.7,staffAct:4,pickers:[{resp:'ARMOA TAMARA',dias:12,olas:84,lineas:1300,ld:108.3,cumpl:128.9,unidades:82980,recCnt:8,trend:'▼ -3.6'},{resp:'BRUN TOMAS',dias:12,olas:74,lineas:1190,ld:99.2,cumpl:118.1,unidades:83132,recCnt:4,trend:'▼ -17.9'},{resp:'LAURATO MARTINEZ',dias:12,olas:71,lineas:901,ld:75.1,cumpl:89.4,unidades:96513,recCnt:3,trend:'▼ -24.8'},{resp:'CACERES EDISON',dias:10,olas:20,lineas:362,ld:36.2,cumpl:43.1,unidades:31376,recCnt:0,trend:'▼ -11'}]}};
 const lezMonthly={'2026-01':null,'2026-02':{ld:581.5,lineas:2326,dias:4,olas:25,unidades:2327,recCnt:0,vsTeam:534.6},'2026-03':{ld:6007,lineas:6007,dias:1,olas:28,unidades:6020,recCnt:0,vsTeam:5963.1},'2026-04':{ld:766.5,lineas:1533,dias:2,olas:9,unidades:1535,recCnt:0,vsTeam:716.3},'2026-05':{ld:274.5,lineas:1647,dias:6,olas:12,unidades:1647,recCnt:0,vsTeam:218.7},'2026-06':{ld:892,lineas:892,dias:1,olas:6,unidades:893,recCnt:0,vsTeam:812.3}};
 const merma1L=[454,256,617,431,392,177];
 const merma2L=[133,342,83,133,112,46];
@@ -614,7 +615,7 @@ try{var _bc=localStorage.getItem('zecat-bon-ctrl');if(_bc)_bonCtrlRec=JSON.parse
 
 function bonSetSub(sub){
   _bonSub=sub;
-  ['pick','maq','ctrl','pie'].forEach(function(s){var b=document.getElementById('bonBtn-'+s);if(b)b.classList.toggle('active',s===sub);});
+  ['gen','pick','maq','ctrl','pie'].forEach(function(s){var b=document.getElementById('bonBtn-'+s);if(b)b.classList.toggle('active',s===sub);});
   _bonRenderContent();
 }
 function bonToggleGrupal(){
@@ -657,17 +658,20 @@ function _bonRenderContent(){
     var selKeys=idx.map(function(i){return allMonKeys[i];});
     var opsMap={};
     selKeys.forEach(function(k){var d=monthlyData[k];if(!d)return;d.pickers.forEach(function(pk){if(!opsMap[pk.resp])opsMap[pk.resp]={dias:0,lineas:0};opsMap[pk.resp].dias+=pk.dias;opsMap[pk.resp].lineas+=pk.lineas;});});
-    var pickers=Object.entries(opsMap).map(function(e){var resp=e[0],p=e[1];var ld=p.dias?Math.round(p.lineas/p.dias*10)/10:0;var cumpl=Math.round(ld/TARGET*1000)/10;return{nm:resp,ld:ld,cumpl:cumpl,n1:cumpl>=100,n2:cumpl>=120};}).sort(function(a,b){return b.ld-a.ld;});
-    html+=tblHdr('<th style="padding:8px 12px;text-align:right;border-bottom:2px solid '+brd+'">Lin/D&iacute;a</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid '+brd+'">Cumpl%</th>');
+    var recByPick={};
+    selKeys.forEach(function(k){var d=recMonthly[k];if(!d)return;Object.keys(d.byOp).forEach(function(op){recByPick[op]=(recByPick[op]||0)+d.byOp[op];});});
+    var pickers=Object.entries(opsMap).map(function(e){var resp=e[0],p=e[1];var ld=p.dias?Math.round(p.lineas/p.dias*10)/10:0;var cumpl=Math.round(ld/TARGET*1000)/10;var rec=recByPick[resp]||0;return{nm:resp,ld:ld,cumpl:cumpl,rec:rec,n1:cumpl>=100,n2:cumpl>=120};}).sort(function(a,b){return b.ld-a.ld;});
+    html+=tblHdr('<th style="padding:8px 12px;text-align:right;border-bottom:2px solid '+brd+'">Lin/D&iacute;a</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid '+brd+'">Cumpl%</th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Reclamos</th>');
     var alt=false;
     pickers.forEach(function(p){
       var key='pk'+p.nm.replace(/[^A-Za-z0-9]/g,'_');
       var bg=alt?rowEven:rowOdd;alt=!alt;
       var cumplC=p.cumpl>=100?'#16a34a':p.cumpl>=83?'#d97706':'#dc2626';
+      var recC=p.rec===0?'#16a34a':p.rec<=2?'#d97706':'#dc2626';
       var t=_bonCalc((_bonPres[key]!==undefined?_bonPres[key]:true),p.n1,p.n2,_bonGrupal);
-      html+='<tr style="background:'+bg+'"><td style="padding:8px 12px;font-weight:600">'+p.nm+'</td><td style="text-align:right;padding:8px 12px;font-weight:700;color:'+cumplC+'">'+p.ld+'</td><td style="text-align:right;padding:8px 12px;color:'+cumplC+'">'+p.cumpl+'%</td><td style="text-align:center;padding:8px 12px">'+presCheck(key)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(p.n1)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(p.n2)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(_bonGrupal)+'</td><td style="text-align:center;padding:8px 12px">'+_bonBadge(t)+'</td></tr>';
+      html+='<tr style="background:'+bg+'"><td style="padding:8px 12px;font-weight:600">'+p.nm+'</td><td style="text-align:right;padding:8px 12px;font-weight:700;color:'+cumplC+'">'+p.ld+'</td><td style="text-align:right;padding:8px 12px;color:'+cumplC+'">'+p.cumpl+'%</td><td style="text-align:center;padding:8px 12px;font-weight:700;color:'+recC+'">'+p.rec+'</td><td style="text-align:center;padding:8px 12px">'+presCheck(key)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(p.n1)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(p.n2)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(_bonGrupal)+'</td><td style="text-align:center;padding:8px 12px">'+_bonBadge(t)+'</td></tr>';
     });
-    if(!pickers.length)html+='<tr><td colspan="8" style="text-align:center;padding:20px;color:#888">Sin datos para el per&iacute;odo seleccionado</td></tr>';
+    if(!pickers.length)html+='<tr><td colspan="9" style="text-align:center;padding:20px;color:#888">Sin datos para el per&iacute;odo seleccionado</td></tr>';
     html+='</tbody></table>';
   }
   else if(_bonSub==='maq'){
@@ -719,6 +723,43 @@ function _bonRenderContent(){
     html+='<div style="padding:14px;border-radius:8px;border:1px solid '+brd+';text-align:center;border-top:3px solid '+(n1Pie?'#2563eb':'#e5e7eb')+'"><div style="font-size:11px;color:#888;text-transform:uppercase;margin-bottom:6px">N1 &mdash; &le;1 error</div><div style="font-size:24px;font-weight:800;color:'+(n1Pie?'#2563eb':'#888')+'">'+(n1Pie?'&#10003;':'&#8212;')+'</div><div style="font-size:11px;color:#888">+2.5%</div></div>';
     html+='<div style="padding:14px;border-radius:8px;border:1px solid '+brd+';text-align:center;border-top:3px solid '+tC+'"><div style="font-size:11px;color:#888;text-transform:uppercase;margin-bottom:6px">Total Bono</div><div style="font-size:28px;font-weight:900;color:'+tC+'">'+tPie+'%</div><div style="font-size:11px;color:#888">m&aacute;x 15%</div></div>';
     html+='</div><div style="margin-top:14px;font-size:12px;color:#888;padding:10px;background:'+rowEven+';border-radius:6px">Presentismo (5%) incluido. Grupal '+(_bonGrupal?'activado &#10003;':'desactivado &#8212;')+'.</div></div>';
+  }
+  else if(_bonSub==='gen'){
+    var idx=getFilteredIndices();
+    var selKeys=idx.map(function(i){return allMonKeys[i];});
+    // --- Picking ---
+    var opsMapG={};
+    selKeys.forEach(function(k){var d=monthlyData[k];if(!d)return;d.pickers.forEach(function(pk){if(!opsMapG[pk.resp])opsMapG[pk.resp]={dias:0,lineas:0};opsMapG[pk.resp].dias+=pk.dias;opsMapG[pk.resp].lineas+=pk.lineas;});});
+    var recByPickG={};
+    selKeys.forEach(function(k){var d=recMonthly[k];if(!d)return;Object.keys(d.byOp).forEach(function(op){recByPickG[op]=(recByPickG[op]||0)+d.byOp[op];});});
+    var pickersG=Object.entries(opsMapG).map(function(e){var resp=e[0],p=e[1];var ld=p.dias?Math.round(p.lineas/p.dias*10)/10:0;var cumpl=Math.round(ld/TARGET*1000)/10;var rec=recByPickG[resp]||0;var key='pk'+resp.replace(/[^A-Za-z0-9]/g,'_');var t=_bonCalc((_bonPres[key]!==undefined?_bonPres[key]:true),cumpl>=100,cumpl>=120,_bonGrupal);return{grupo:'Picking',nm:resp,metric:ld+'  lin/d',cumpl:cumpl,rec:rec,t:t};}).sort(function(a,b){return b.cumpl-a.cumpl;});
+    // --- Maquinistas ---
+    var maqMsG=_bonFiltMon(Object.keys(maqDetailData).sort());
+    var opsMapMG={};
+    maqMsG.forEach(function(ym){(maqDetailData[ym]||{ops:[]}).ops.forEach(function(op){if(!opsMapMG[op.nm])opsMapMG[op.nm]={mov:0,dias:0};opsMapMG[op.nm].mov+=op.mov;opsMapMG[op.nm].dias+=op.dias;});});
+    var maqG=Object.entries(opsMapMG).map(function(e){var nm=e[0],o=e[1];var mpd=o.dias?Math.round(o.mov/o.dias):0;var cumpl=Math.round(mpd/100*100);var key='mq'+nm.replace(/[^A-Za-z0-9]/g,'_');var t=_bonCalc((_bonPres[key]!==undefined?_bonPres[key]:true),mpd>=100,mpd>=120,_bonGrupal);return{grupo:'Maquinistas',nm:nm,metric:mpd+'  mov/d',cumpl:cumpl,rec:'-',t:t};}).sort(function(a,b){return b.t-a.t;});
+    // --- Control ---
+    var ctrlMsG=_bonFiltMon(Object.keys(ctrlExcelData).sort());
+    var opsMapCG={};
+    ctrlMsG.forEach(function(ym){(ctrlExcelData[ym]||[]).forEach(function(op){if(!opsMapCG[op.nm])opsMapCG[op.nm]={und:0,dias:0};opsMapCG[op.nm].und+=op.und;opsMapCG[op.nm].dias+=op.dias;});});
+    var ctrlG=Object.entries(opsMapCG).map(function(e){var nm=e[0],o=e[1];var upd=o.dias?Math.round(o.und/o.dias):0;var key='ct'+nm.replace(/[^A-Za-z0-9]/g,'_');var rec=_bonCtrlRec[key]||0;var t=_bonCalc((_bonPres[key]!==undefined?_bonPres[key]:true),upd>3000&&rec<=1,upd>3500&&rec===0,_bonGrupal);return{grupo:'Control',nm:nm,metric:upd.toLocaleString('es-AR')+' und/d',cumpl:'-',rec:rec,t:t};}).sort(function(a,b){return b.t-a.t;});
+    // --- Pie de Máquina ---
+    var n1PieG=_bonPieErr<=1;var n2PieG=_bonPieErr===0;
+    var tPieG=_bonCalc(true,n1PieG,n2PieG,_bonGrupal);
+    var pieG=[{grupo:'Pie de M&aacute;q',nm:'Pie de M&aacute;quina',metric:_bonPieErr+' errores',cumpl:'-',rec:'-',t:tPieG}];
+    var allRows=pickersG.concat(maqG).concat(ctrlG).concat(pieG);
+    // render tabla
+    html+='<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:'+thBg+'"><th style="padding:8px 12px;text-align:left;border-bottom:2px solid '+brd+'">Grupo</th><th style="padding:8px 12px;text-align:left;border-bottom:2px solid '+brd+'">Operario</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid '+brd+'">M&eacute;trica</th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Reclamos</th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Bono</th></tr></thead><tbody>';
+    var lastGrupo='';var alt2=false;
+    allRows.forEach(function(r){
+      if(r.grupo!==lastGrupo){alt2=!alt2;lastGrupo=r.grupo;}
+      var bg=alt2?rowEven:rowOdd;
+      var tC2=r.t>=12?'#16a34a':r.t>=7.5?'#2563eb':r.t>=5?'#d97706':'#888';
+      var recC2=(r.rec==='-'||r.rec===0)?'#16a34a':(r.rec<=2?'#d97706':'#dc2626');
+      html+='<tr style="background:'+bg+'"><td style="padding:7px 12px;font-size:11px;color:#888">'+r.grupo+'</td><td style="padding:7px 12px;font-weight:600">'+r.nm+'</td><td style="text-align:right;padding:7px 12px">'+r.metric+'</td><td style="text-align:center;padding:7px 12px;font-weight:700;color:'+recC2+'">'+r.rec+'</td><td style="text-align:center;padding:7px 12px"><span style="font-weight:800;font-size:15px;color:'+tC2+'">'+r.t+'%</span></td></tr>';
+    });
+    if(!allRows.length)html+='<tr><td colspan="5" style="text-align:center;padding:20px;color:#888">Sin datos para el per&iacute;odo seleccionado</td></tr>';
+    html+='</tbody></table>';
   }
   document.getElementById('bonContent').innerHTML=html;
 }
@@ -1176,7 +1217,7 @@ const chartRanking=new Chart('chartRanking',{type:'bar',data:{
 
 const chartTeamTrend=new Chart('chartTeamTrend',{type:'line',data:{
   labels:['Enero 2026','Febrero 2026','Marzo 2026','Abril 2026','Mayo 2026','Junio 2026'],datasets:[
-    {label:'Lin/Dia equipo',data:[61.6,62.9,67.7,80.4,99.3,78.2],borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.1)',borderWidth:2.5,tension:.3,fill:true,pointRadius:4,pointBackgroundColor:['#dc2626','#dc2626','#dc2626','#d97706','#16a34a','#d97706']},
+    {label:'Lin/Dia equipo',data:[26.4,35.9,33.9,35.7,44.1,78.2],borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.1)',borderWidth:2.5,tension:.3,fill:true,pointRadius:4,pointBackgroundColor:['#dc2626','#dc2626','#dc2626','#dc2626','#dc2626','#d97706']},
     {label:'Target 84',data:Array(6).fill(84),borderColor:'#16a34a',borderWidth:1.5,borderDash:[6,4],pointRadius:0,fill:false}
   ]},options:{responsive:true,maintainAspectRatio:false,
   plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11},color:'#444444'}}},
@@ -1185,7 +1226,7 @@ const chartTeamTrend=new Chart('chartTeamTrend',{type:'line',data:{
 const chartStaff=new Chart('chartStaff',{type:'bar',data:{
   labels:['Enero 2026','Febrero 2026','Marzo 2026','Abril 2026','Mayo 2026','Junio 2026'],datasets:[
     {label:'Necesarias',data:[2.2,3.3,4.1,3.8,4.9,3.7],backgroundColor:'rgba(68,114,196,.8)',borderRadius:4},
-    {label:'Activas (prom/dia)',data:[3,4,4,4,4,4.8],backgroundColor:'rgba(22,163,74,.7)',borderRadius:4}
+    {label:'Activas (prom/dia)',data:[4.6,5.9,6,6.9,7,4.8],backgroundColor:'rgba(22,163,74,.7)',borderRadius:4}
   ]},options:{responsive:true,maintainAspectRatio:false,
   plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11},color:'#444444'}}},
   scales:{y:{min:0,grid:{color:'#eeeeee'},ticks:{stepSize:1,color:'#666666'}},x:{grid:{display:false},ticks:{color:'#666666'}}}}});
