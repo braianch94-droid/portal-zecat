@@ -124,7 +124,7 @@ body.dark .grp-btn.active{background:#2563eb;border-color:#2563eb;color:white}
       <h1>Dashboard de Productividad</h1>
     </div>
   </div>
-  <div class="badge">Actualizado: 25/06/2026 09:28<br>Target picking: 84 lin/d&iacute;a</div>
+  <div class="badge">Actualizado: 25/06/2026 09:33<br>Target picking: 84 lin/d&iacute;a</div>
   <button id="themeToggle" onclick="toggleTheme()" title="Cambiar tema claro / oscuro" aria-label="Cambiar tema"><span id="themeIcon">&#9790;</span></button>
 </header>
 
@@ -201,7 +201,7 @@ body.dark .grp-btn.active{background:#2563eb;border-color:#2563eb;color:white}
 
 <div class="table-card" style="margin-bottom:18px">
   <div class="rank-title">&#128197; Resumen &mdash; &Uacute;ltimos 7 d&iacute;as de picking regular</div>
-  <div class="rank-sub">Total equipo (SIN LOGO + CON LOGO) &mdash; target 84 lin/operario/d&iacute;a</div>
+  <div class="rank-sub">Total equipo (SIN LOGO + CON LOGO) &mdash; target 84 lin/operario/d&iacute;a &mdash; <em>datos actuales, no filtran por per&iacute;odo</em></div>
   <table>
     <thead><tr>
       <th>Fecha</th><th>D&iacute;a</th>
@@ -411,7 +411,7 @@ body.dark .grp-btn.active{background:#2563eb;border-color:#2563eb;color:white}
 </div><!-- /sec-eficiencia -->
 
 </div><!-- /container -->
-<footer>Dashboard v5 &mdash; Zecat Art&iacute;culos Promocionales SA &nbsp;|&nbsp; 25/06/2026 09:28</footer>
+<footer>Dashboard v5 &mdash; Zecat Art&iacute;culos Promocionales SA &nbsp;|&nbsp; 25/06/2026 09:33</footer>
 
 <script>
 Chart.defaults.font.family='Arial,sans-serif';
@@ -608,6 +608,9 @@ var _bonGrupal=true;
 var _bonPres={};
 var _bonCtrlRec={};
 var _bonPieErr=0;
+try{var _bg=localStorage.getItem('zecat-bon-grupal');if(_bg!==null)_bonGrupal=_bg==='1';}catch(e){}
+try{var _bp=localStorage.getItem('zecat-bon-pres');if(_bp)_bonPres=JSON.parse(_bp);}catch(e){}
+try{var _bc=localStorage.getItem('zecat-bon-ctrl');if(_bc)_bonCtrlRec=JSON.parse(_bc);}catch(e){}
 
 function bonSetSub(sub){
   _bonSub=sub;
@@ -617,11 +620,13 @@ function bonSetSub(sub){
 function bonToggleGrupal(){
   var el=document.getElementById('bonGrupalChk');
   if(el)_bonGrupal=el.checked;
+  try{localStorage.setItem('zecat-bon-grupal',_bonGrupal?'1':'0');}catch(e){}
   _bonRenderContent();
 }
 function bonTogglePres(key){
   var el=document.getElementById('bonPres-'+key);
   if(el)_bonPres[key]=el.checked;
+  try{localStorage.setItem('zecat-bon-pres',JSON.stringify(_bonPres));}catch(e){}
   _bonRenderContent();
 }
 function _bonCalc(pres,n1,n2,grupal){
@@ -697,7 +702,7 @@ function _bonRenderContent(){
       var bg=alt?rowEven:rowOdd;alt=!alt;
       var updC=p.upd>3500?'#16a34a':p.upd>3000?'#2563eb':p.upd>1500?'#d97706':'#dc2626';
       var t=_bonCalc((_bonPres[key]!==undefined?_bonPres[key]:true),n1,n2,_bonGrupal);
-      html+='<tr style="background:'+bg+'"><td style="padding:8px 12px;font-weight:600">'+p.nm+'</td><td style="text-align:right;padding:8px 12px;font-weight:700;color:'+updC+'">'+p.upd.toLocaleString('es-AR')+'</td><td style="text-align:center;padding:8px 12px"><input type="number" min="0" max="99" value="'+rec+'" data-key="'+key+'" onchange="_bonCtrlRec[this.dataset.key]=parseInt(this.value)||0;_bonRenderContent();" style="width:60px;text-align:center;border:1px solid '+brd+';border-radius:4px;padding:2px 4px;font-size:13px;background:'+rowOdd+'"></td><td style="text-align:center;padding:8px 12px">'+presCheck(key)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(n1)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(n2)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(_bonGrupal)+'</td><td style="text-align:center;padding:8px 12px">'+_bonBadge(t)+'</td></tr>';
+      html+='<tr style="background:'+bg+'"><td style="padding:8px 12px;font-weight:600">'+p.nm+'</td><td style="text-align:right;padding:8px 12px;font-weight:700;color:'+updC+'">'+p.upd.toLocaleString('es-AR')+'</td><td style="text-align:center;padding:8px 12px"><input type="number" min="0" max="99" value="'+rec+'" data-key="'+key+'" onchange="_bonCtrlRec[this.dataset.key]=parseInt(this.value)||0;try{localStorage.setItem('zecat-bon-ctrl',JSON.stringify(_bonCtrlRec));}catch(e){};_bonRenderContent();" style="width:60px;text-align:center;border:1px solid '+brd+';border-radius:4px;padding:2px 4px;font-size:13px;background:'+rowOdd+'"></td><td style="text-align:center;padding:8px 12px">'+presCheck(key)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(n1)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(n2)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(_bonGrupal)+'</td><td style="text-align:center;padding:8px 12px">'+_bonBadge(t)+'</td></tr>';
     });
     if(!ctrlOps.length)html+='<tr><td colspan="8" style="text-align:center;padding:20px;color:#888">Sin datos para el per&iacute;odo seleccionado</td></tr>';
     html+='</tbody></table>';
@@ -806,6 +811,26 @@ function applyFilter(){
       if(selOp!=='all'){aggL+=pk.lineas;aggU+=pk.unidades;aggRC+=pk.recCnt;aggOlas+=pk.olas;opLDSum+=pk.ld;opValidM++;}
     });
   });
+
+  // Tendencia dinámica: si se filtra por un solo mes, calcular vs el mes anterior en allMonKeys
+  if(selKeys.length===1){
+    var curMonIdx=allMonKeys.indexOf(selKeys[0]);
+    if(curMonIdx>0){
+      var prevMonData=monthlyData[allMonKeys[curMonIdx-1]];
+      if(prevMonData){
+        var prevLdMap={};
+        prevMonData.pickers.forEach(function(pk){prevLdMap[pk.resp]=pk.ld;});
+        Object.keys(rankMap).forEach(function(resp){
+          var curLd=rankMap[resp].dias?Math.round(rankMap[resp].lineas/rankMap[resp].dias*10)/10:0;
+          var pLd=prevLdMap[resp];
+          if(pLd!==undefined&&pLd>0){
+            var delta=Math.round((curLd-pLd)*10)/10;
+            rankMap[resp].trend=delta>3?'▲ +'+delta:delta<-3?'▼ '+delta:'→ '+delta;
+          }else{rankMap[resp].trend='-';}
+        });
+      }
+    }else{Object.keys(rankMap).forEach(function(resp){rankMap[resp].trend='-';});}
+  }
 
   var dv=teamValidM||1;
   var mAvgLD=selOp==='all'?(teamValidM?Math.round(aggLDSum/dv*10)/10:0):(opValidM?Math.round(opLDSum/opValidM*10)/10:0);
