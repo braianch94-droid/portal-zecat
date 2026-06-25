@@ -124,7 +124,7 @@ body.dark .grp-btn.active{background:#2563eb;border-color:#2563eb;color:white}
       <h1>Dashboard de Productividad</h1>
     </div>
   </div>
-  <div class="badge">Actualizado: 25/06/2026 09:33<br>Target picking: 84 lin/d&iacute;a</div>
+  <div class="badge">Actualizado: 25/06/2026 09:43<br>Target picking: 84 lin/d&iacute;a</div>
   <button id="themeToggle" onclick="toggleTheme()" title="Cambiar tema claro / oscuro" aria-label="Cambiar tema"><span id="themeIcon">&#9790;</span></button>
 </header>
 
@@ -411,7 +411,7 @@ body.dark .grp-btn.active{background:#2563eb;border-color:#2563eb;color:white}
 </div><!-- /sec-eficiencia -->
 
 </div><!-- /container -->
-<footer>Dashboard v5 &mdash; Zecat Art&iacute;culos Promocionales SA &nbsp;|&nbsp; 25/06/2026 09:33</footer>
+<footer>Dashboard v5 &mdash; Zecat Art&iacute;culos Promocionales SA &nbsp;|&nbsp; 25/06/2026 09:43</footer>
 
 <script>
 Chart.defaults.font.family='Arial,sans-serif';
@@ -1357,14 +1357,24 @@ function toggleTheme(){
   document.getElementById('themeIcon').innerHTML=dark?'&#9728;':'&#9790;';
   updateChartColors(dark);
 }
-// Aplicar tema guardado al cargar (antes del try de init)
+// Aplicar tema guardado al cargar
 (function(){
   if(localStorage.getItem('zecat-theme')==='dark'){
     document.body.classList.add('dark');
     document.getElementById('themeIcon').innerHTML='&#9728;';
-    // Los charts se actualizan después del init
   }
 })();
+// Sincronizar tema con el portal cuando se usa como iframe
+window.addEventListener('message',function(e){
+  if(e.data&&e.data.type==='zecat-theme'){
+    var d=e.data.dark;
+    document.body.classList.toggle('dark',d);
+    document.getElementById('themeIcon').innerHTML=d?'&#9728;':'&#9790;';
+    try{localStorage.setItem('zecat-theme',d?'dark':'light');}catch(ex){}
+    updateChartColors(d);
+  }
+});
+try{window.parent.postMessage({type:'zecat-theme-ready'},'*');}catch(e){}
 
 // Inicializar tab y filtro al ultimo mes disponible
 try {

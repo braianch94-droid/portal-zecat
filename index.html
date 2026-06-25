@@ -720,11 +720,14 @@ const PAGE_ID = {
 };
 
 let currentModule = 'productividad';
-let isDark = false;
-document.body.classList.add('light');
+let isDark = localStorage.getItem('zecat-portal-theme') === 'dark';
+document.body.classList.toggle('light', !isDark);
 // Fallback: si productividad no carga en 6s, revelar igual
 setTimeout(() => revealModule('productividad'), 6000);
-let isSidebarCollapsed = false;
+let isSidebarCollapsed = localStorage.getItem('zecat-portal-sb') === '1';
+if (isSidebarCollapsed) document.getElementById('sidebar').classList.add('collapsed');
+document.getElementById('theme-ico').textContent = isDark ? '🌙' : '☀️';
+document.getElementById('theme-lbl').textContent  = isDark ? 'Modo oscuro' : 'Modo claro';
 const loaded = { productividad: false, asistencia: false, ciclico: false, transporte: false, personal: false, productividadchile: false, ciclicochile: false };
 const pending = {};
 
@@ -763,6 +766,13 @@ function onLoad(module) {
 function toggleSidebar() {
   isSidebarCollapsed = !isSidebarCollapsed;
   document.getElementById('sidebar').classList.toggle('collapsed', isSidebarCollapsed);
+  localStorage.setItem('zecat-portal-sb', isSidebarCollapsed ? '1' : '0');
+  setTimeout(() => {
+    try {
+      const win = document.getElementById('ifr-' + currentModule).contentWindow;
+      if (win && win.Chart) Object.values(win.Chart.instances).forEach(c => c.resize());
+    } catch(e) {}
+  }, 280);
 }
 
 function expandSidebar() {
@@ -862,6 +872,7 @@ function switchContent(module, tab, page) {
 function toggleTheme() {
   isDark = !isDark;
   document.body.classList.toggle('light', !isDark);
+  localStorage.setItem('zecat-portal-theme', isDark ? 'dark' : 'light');
 
   document.getElementById('theme-ico').textContent = isDark ? '🌙' : '☀️';
   document.getElementById('theme-lbl').textContent  = isDark ? 'Modo oscuro' : 'Modo claro';

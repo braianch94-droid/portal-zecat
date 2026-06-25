@@ -3027,14 +3027,24 @@ function toggleTheme(){
   document.getElementById('themeIcon').innerHTML=dark?'&#9728;':'&#9790;';
   updateChartColors(dark);
 }
-// Aplicar tema guardado al cargar (antes del try de init)
+// Aplicar tema guardado al cargar
 (function(){
   if(localStorage.getItem('zecat-theme')==='dark'){
     document.body.classList.add('dark');
     document.getElementById('themeIcon').innerHTML='&#9728;';
-    // Los charts se actualizan después del init
   }
 })();
+// Sincronizar tema con el portal cuando se usa como iframe
+window.addEventListener('message',function(e){
+  if(e.data&&e.data.type==='zecat-theme'){
+    var d=e.data.dark;
+    document.body.classList.toggle('dark',d);
+    document.getElementById('themeIcon').innerHTML=d?'&#9728;':'&#9790;';
+    try{localStorage.setItem('zecat-theme',d?'dark':'light');}catch(ex){}
+    updateChartColors(d);
+  }
+});
+try{window.parent.postMessage({type:'zecat-theme-ready'},'*');}catch(e){}
 
 // Inicializar tab y filtro al ultimo mes disponible
 try {
