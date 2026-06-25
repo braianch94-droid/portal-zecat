@@ -124,7 +124,7 @@ body.dark .grp-btn.active{background:#2563eb;border-color:#2563eb;color:white}
       <h1>Dashboard de Productividad</h1>
     </div>
   </div>
-  <div class="badge">Actualizado: 25/06/2026 09:43<br>Target picking: 84 lin/d&iacute;a</div>
+  <div class="badge">Actualizado: 25/06/2026 11:10<br>Target picking: 84 lin/d&iacute;a</div>
   <button id="themeToggle" onclick="toggleTheme()" title="Cambiar tema claro / oscuro" aria-label="Cambiar tema"><span id="themeIcon">&#9790;</span></button>
 </header>
 
@@ -411,7 +411,7 @@ body.dark .grp-btn.active{background:#2563eb;border-color:#2563eb;color:white}
 </div><!-- /sec-eficiencia -->
 
 </div><!-- /container -->
-<footer>Dashboard v5 &mdash; Zecat Art&iacute;culos Promocionales SA &nbsp;|&nbsp; 25/06/2026 09:43</footer>
+<footer>Dashboard v5 &mdash; Zecat Art&iacute;culos Promocionales SA &nbsp;|&nbsp; 25/06/2026 11:10</footer>
 
 <script>
 Chart.defaults.font.family='Arial,sans-serif';
@@ -629,6 +629,7 @@ function bonTogglePres(key){
   try{localStorage.setItem('zecat-bon-pres',JSON.stringify(_bonPres));}catch(e){}
   _bonRenderContent();
 }
+function _bonSaveCtrl(){try{localStorage.setItem('zecat-bon-ctrl',JSON.stringify(_bonCtrlRec));}catch(e){}}
 function _bonCalc(pres,n1,n2,grupal){
   var t=0;if(pres)t+=5;if(n1)t+=2.5;if(n2)t+=4.5;if(grupal)t+=3;return Math.min(t,15);
 }
@@ -702,7 +703,7 @@ function _bonRenderContent(){
       var bg=alt?rowEven:rowOdd;alt=!alt;
       var updC=p.upd>3500?'#16a34a':p.upd>3000?'#2563eb':p.upd>1500?'#d97706':'#dc2626';
       var t=_bonCalc((_bonPres[key]!==undefined?_bonPres[key]:true),n1,n2,_bonGrupal);
-      html+='<tr style="background:'+bg+'"><td style="padding:8px 12px;font-weight:600">'+p.nm+'</td><td style="text-align:right;padding:8px 12px;font-weight:700;color:'+updC+'">'+p.upd.toLocaleString('es-AR')+'</td><td style="text-align:center;padding:8px 12px"><input type="number" min="0" max="99" value="'+rec+'" data-key="'+key+'" onchange="_bonCtrlRec[this.dataset.key]=parseInt(this.value)||0;try{localStorage.setItem('zecat-bon-ctrl',JSON.stringify(_bonCtrlRec));}catch(e){};_bonRenderContent();" style="width:60px;text-align:center;border:1px solid '+brd+';border-radius:4px;padding:2px 4px;font-size:13px;background:'+rowOdd+'"></td><td style="text-align:center;padding:8px 12px">'+presCheck(key)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(n1)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(n2)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(_bonGrupal)+'</td><td style="text-align:center;padding:8px 12px">'+_bonBadge(t)+'</td></tr>';
+      html+='<tr style="background:'+bg+'"><td style="padding:8px 12px;font-weight:600">'+p.nm+'</td><td style="text-align:right;padding:8px 12px;font-weight:700;color:'+updC+'">'+p.upd.toLocaleString('es-AR')+'</td><td style="text-align:center;padding:8px 12px"><input type="number" min="0" max="99" value="'+rec+'" data-key="'+key+'" onchange="_bonCtrlRec[this.dataset.key]=parseInt(this.value)||0;_bonSaveCtrl();_bonRenderContent();" style="width:60px;text-align:center;border:1px solid '+brd+';border-radius:4px;padding:2px 4px;font-size:13px;background:'+rowOdd+'"></td><td style="text-align:center;padding:8px 12px">'+presCheck(key)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(n1)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(n2)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(_bonGrupal)+'</td><td style="text-align:center;padding:8px 12px">'+_bonBadge(t)+'</td></tr>';
     });
     if(!ctrlOps.length)html+='<tr><td colspan="8" style="text-align:center;padding:20px;color:#888">Sin datos para el per&iacute;odo seleccionado</td></tr>';
     html+='</tbody></table>';
