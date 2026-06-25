@@ -529,18 +529,6 @@ iframe { width: 100%; height: 100%; border: none; display: block; }
         </div>
       </div>
 
-      <!-- Asistencia -->
-      <div class="section">
-        <div class="sec-header" onclick="onSectionClick(this)" title="Asistencia">
-          <svg class="sec-ico" viewBox="0 0 24 24"><path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-1V1h-2zm3 18H5V8h14v11z"/></svg>
-          <span class="sec-label">Asistencia</span>
-          <span class="chevron">›</span>
-        </div>
-        <div class="sec-items">
-          <div class="nav-item" data-module="asistencia" onclick="navigate(this)"><span class="nav-dot"></span>Reporte Asistencia</div>
-        </div>
-      </div>
-
     </div><!-- /country-body ARG -->
   </div><!-- /country-group ARG -->
 
@@ -615,17 +603,6 @@ iframe { width: 100%; height: 100%; border: none; display: block; }
     </iframe>
   </div>
 
-  <!-- Asistencia frame -->
-  <div class="frame-wrap" id="fw-asistencia">
-    <div class="splash" id="splash-asistencia">
-      <div class="splash-icon">Z</div>
-      <span class="splash-label">Cargando Asistencia…</span>
-    </div>
-    <iframe id="ifr-asistencia"
-      data-src="./reporte-personal-zecat/index.html"
-      onload="onLoad('asistencia')">
-    </iframe>
-  </div>
 
   <!-- Inventario Cíclico frame -->
   <div class="frame-wrap" id="fw-ciclico">
@@ -696,11 +673,6 @@ const INJECT = {
     body { overflow: auto !important; }
     #app, .app-root { padding-top: 0 !important; }
   `,
-  asistencia: `
-    header { display: none !important; }
-    .main-tabs { display: none !important; }
-    body { overflow: auto !important; }
-  `,
   ciclico: `
     #themeBtn { display: none !important; }
     body { overflow: auto !important; }
@@ -740,7 +712,7 @@ let isSidebarCollapsed = localStorage.getItem('zecat-portal-sb') === '1';
 if (isSidebarCollapsed) document.getElementById('sidebar').classList.add('collapsed');
 document.getElementById('theme-ico').textContent = isDark ? '🌙' : '☀️';
 document.getElementById('theme-lbl').textContent  = isDark ? 'Modo oscuro' : 'Modo claro';
-const loaded = { productividad: false, asistencia: false, ciclico: false, transporte: false, personal: false, productividadchile: false, ciclicochile: false };
+const loaded = { productividad: false, ciclico: false, transporte: false, personal: false, productividadchile: false, ciclicochile: false };
 const pending = {};
 
 function revealModule(module) {
