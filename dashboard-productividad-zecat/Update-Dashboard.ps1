@@ -12,7 +12,8 @@ param(
     [string]$LezFilter = "Lezcano"
 )
 
-$TARGET  = 84
+$TARGET      = 84   # Líneas/operario/día para verde
+$TARGET_WARN = 70   # Umbral mínimo aceptable (naranja); ajustar junto con TARGET si cambia
 $NOW     = Get-Date
 
 # Operarios excluidos del cálculo de PRODUCTIVIDAD del equipo (extras, no-pickers regulares)
@@ -1880,7 +1881,7 @@ body.dark .grp-btn.active{background:#2563eb;border-color:#2563eb;color:white}
   <div class="kpi-card green"><div class="kpi-label">Total L&iacute;neas</div><div class="kpi-value" style="font-size:22px" id="kpiL">-</div><div class="kpi-sub">Picking regular acumulado</div></div>
 </div>
 
-<div class="info-box">&#127919; Target: <strong>$TARGET lineas/d&iacute;a</strong> &mdash; Verde &ge; $TARGET &mdash; Naranja &ge; 70 &mdash; Rojo &lt; 70</div>
+<div class="info-box">&#127919; Target: <strong>$TARGET lineas/d&iacute;a</strong> &mdash; Verde &ge; $TARGET &mdash; Naranja &ge; $TARGET_WARN &mdash; Rojo &lt; $TARGET_WARN</div>
 
 <div class="table-card" style="margin-bottom:18px">
   <div class="rank-title">&#128197; Resumen &mdash; &Uacute;ltimos 7 d&iacute;as de picking regular</div>
@@ -2101,6 +2102,7 @@ Chart.defaults.font.family='Arial,sans-serif';
 Chart.defaults.font.size=12;
 
 const TARGET=$TARGET;
+const TARGET_WARN=$TARGET_WARN;
 const allMonKeys=[$jsAllMons];
 const monLabels=[$jsMonLabels];
 const teamLD=[$jsTeamLD];
@@ -2422,8 +2424,12 @@ const operarios=[$jsOperarios];
 const selOpEl=document.getElementById('selOp');
 operarios.forEach(function(op){var o=document.createElement('option');o.value=op;o.textContent=op;selOpEl.appendChild(o);});
 
+// Ocultar meses sin datos del selector
+(function(){var availMons=new Set(allMonKeys.map(function(k){return parseInt(k.split('-')[1]);}));
+Array.from(document.getElementById('selMes').options).forEach(function(opt){if(opt.value!=='all'&&!availMons.has(parseInt(opt.value)))opt.remove();});})();
+
 // Colores de rendimiento (verde/naranja/rojo)
-function perfColor(v){return v>=TARGET?'#16a34a':v>=70?'#d97706':'#dc2626';}
+function perfColor(v){return v>=TARGET?'#16a34a':v>=TARGET_WARN?'#d97706':'#dc2626';}
 function perfColorRec(v){return v===0?'#16a34a':v<=3?'#d97706':'#dc2626';}
 
 function getFilteredIndices(){
@@ -2898,7 +2904,7 @@ function _build7dTable(){
     var lpo=ops?Math.round(lines/ops*10)/10:0;
     var tgt=ops*$TARGET;
     var cum=tgt?Math.round(lines/tgt*1000)/10:0;
-    var cumC=cum>=100?'#16a34a':cum>=70?'#d97706':'#dc2626';
+    var cumC=cum>=100?'#16a34a':cum>=TARGET_WARN?'#d97706':'#dc2626';
     var dltStr=g!=='all'?'&mdash;':(r.dlt===null?'&mdash;':r.dlt>0?'<span style="color:#16a34a;font-weight:700">+'+r.dlt+'</span>':r.dlt<0?'<span style="color:#dc2626;font-weight:700">'+r.dlt+'</span>':'<span style="color:#999">0</span>');
     b.innerHTML+='<tr>'
       +'<td><strong>'+r.f+'</strong></td>'
@@ -2920,7 +2926,7 @@ function _build7dTable(){
     var t=op*$TARGET;
     return s+(t?li/t*100:0);
   },0)/day7Rows.length).toFixed(1);
-  var acC=parseFloat(aC)>=100?'#16a34a':parseFloat(aC)>=70?'#d97706':'#dc2626';
+  var acC=parseFloat(aC)>=100?'#16a34a':parseFloat(aC)>=TARGET_WARN?'#d97706':'#dc2626';
   f.innerHTML='<tr>'
     +'<td colspan="2" style="padding:9px 11px">PROM 7 D&Iacute;AS</td>'
     +'<td style="text-align:right;padding:9px 11px">'+aO+'</td>'
