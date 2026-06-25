@@ -42,6 +42,9 @@ $CtrlEmailMap = @{
     "tamaraarmoazecat@gmail.com"    = "ARMOA TAMARA"
     "tomaspittalazecat@gmail.com"   = "PITTALA TOMAS"
     "bejermanwmszecat@gmail.com"    = "BEJERMAN"
+    "tomasbrunzecat@gmail.com"      = "BRUN TOMAS"
+    "adrianromerozecat@gmail.com"   = "ADRIAN ROMERO"
+    "braianarielocampo@gmail.com"   = "OCAMPO BRIAN"
 }
 
 function rgb($r,$g,$b){ [long]$r + [long]$g*256 + [long]$b*65536 }
@@ -157,7 +160,7 @@ try {
         $U     = [double]($pkArr[$r,6] -as [double])
         $grp   = "$($pkArr[$r,9])".Trim().ToUpper()
         $pkRaw = $pkArr[$r,10]
-        $pk    = if($pkRaw -is [double] -and $pkRaw -lt 0){"Falta definir pickeador"}else{"$pkRaw".Trim()}  # #N/A → etiqueta
+        $pk    = if(($pkRaw -is [double] -or $pkRaw -is [int] -or $pkRaw -is [long]) -and $pkRaw -lt 0){"Falta definir pickeador"}else{"$pkRaw".Trim()}  # #N/A / errores int → etiqueta
         $dtStr = "$($pkArr[$r,7])"
         $dt    = $null
         if($dtStr){ try{ $dt=[datetime]::Parse($dtStr) }catch{} }
