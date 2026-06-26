@@ -124,7 +124,7 @@ body.dark .grp-btn.active{background:#2563eb;border-color:#2563eb;color:white}
       <h1>Dashboard de Productividad</h1>
     </div>
   </div>
-  <div class="badge">Actualizado: 26/06/2026 11:00<br>Target picking: 84 lin/d&iacute;a</div>
+  <div class="badge">Actualizado: 26/06/2026 11:04<br>Target picking: 84 lin/d&iacute;a</div>
   <button id="themeToggle" onclick="toggleTheme()" title="Cambiar tema claro / oscuro" aria-label="Cambiar tema"><span id="themeIcon">&#9790;</span></button>
 </header>
 
@@ -418,7 +418,7 @@ body.dark .grp-btn.active{background:#2563eb;border-color:#2563eb;color:white}
 </div>
 
 </div><!-- /container -->
-<footer>Dashboard v5 &mdash; Zecat Art&iacute;culos Promocionales SA &nbsp;|&nbsp; 26/06/2026 11:00</footer>
+<footer>Dashboard v5 &mdash; Zecat Art&iacute;culos Promocionales SA &nbsp;|&nbsp; 26/06/2026 11:04</footer>
 
 <script>
 Chart.defaults.font.family='Arial,sans-serif';
@@ -450,7 +450,7 @@ const evol30SL=[271,337,699,359,392,310,264,212,147,276,335,268,267,209,428,419,
 const evol30Target=[336,336,336,336,336,336,336,336,336,336,336,336,336,336,336,336,336,336,336,336,336,336,336,336,336,336,336,336,336,336];
 var _grpFilter='all';
 const ctrlExcelData={'2026-01':[{nm:'PENIDA JOSE',und:9823,ord:84,dias:13},{nm:'BRUN TOMAS',und:1047,ord:4,dias:2},{nm:'AIRALA CESAR',und:348,ord:4,dias:4},{nm:'OCAMPO BRIAN',und:3825,ord:17,dias:2},{nm:'BEJERMAN',und:4105,ord:59,dias:14},{nm:'BARRIOS DANA',und:47697,ord:521,dias:21},{nm:'ROMERO MELANIE',und:11028,ord:105,dias:7},{nm:'ARMOA TAMARA',und:2,ord:1,dias:1}],'2026-02':[{nm:'ARMOA TAMARA',und:11969,ord:112,dias:8},{nm:'SISTEMA WMS',und:71,ord:3,dias:3},{nm:'BARRIOS DANA',und:55836,ord:529,dias:16},{nm:'PENIDA JOSE',und:2605,ord:19,dias:3},{nm:'BRUN TOMAS',und:2,ord:1,dias:1},{nm:'ROMERO MELANIE',und:23984,ord:180,dias:15},{nm:'BEJERMAN',und:9453,ord:55,dias:18},{nm:'PRODUCCION',und:12957,ord:94,dias:16},{nm:'AIRALA CESAR',und:5999,ord:47,dias:10}],'2026-03':[{nm:'PITTALA TOMAS',und:31061,ord:178,dias:8},{nm:'BRUN TOMAS',und:3064,ord:21,dias:4},{nm:'BARRIOS DANA',und:38923,ord:72,dias:3},{nm:'ROMERO MELANIE',und:85136,ord:680,dias:21},{nm:'PRODUCCION',und:137084,ord:663,dias:24},{nm:'BEJERMAN',und:10511,ord:84,dias:21},{nm:'ADRIAN ROMERO',und:389,ord:1,dias:1},{nm:'ARMOA TAMARA',und:35956,ord:105,dias:13},{nm:'SISTEMA WMS',und:4631,ord:12,dias:9},{nm:'PENIDA JOSE',und:2998,ord:6,dias:5},{nm:'AIRALA CESAR',und:6580,ord:25,dias:14}],'2026-04':[{nm:'PRODUCCION',und:113450,ord:632,dias:24},{nm:'BEJERMAN',und:23092,ord:139,dias:21},{nm:'ARMOA TAMARA',und:908,ord:8,dias:5},{nm:'BRUN TOMAS',und:7,ord:1,dias:1},{nm:'OCAMPO BRIAN',und:3611,ord:14,dias:2},{nm:'PITTALA TOMAS',und:84217,ord:572,dias:20},{nm:'PENIDA JOSE',und:4920,ord:16,dias:3},{nm:'ROMERO MELANIE',und:79820,ord:613,dias:20},{nm:'AIRALA CESAR',und:1767,ord:10,dias:8}],'2026-05':[{nm:'PRODUCCION',und:70465,ord:448,dias:21},{nm:'BEJERMAN',und:19154,ord:116,dias:17},{nm:'PITTALA TOMAS',und:72001,ord:623,dias:18},{nm:'ROMERO MELANIE',und:64996,ord:497,dias:17},{nm:'BRUN TOMAS',und:265,ord:3,dias:2},{nm:'ARMOA TAMARA',und:17609,ord:82,dias:9},{nm:'AIRALA CESAR',und:1066,ord:7,dias:5}],'2026-06':[{nm:'PRODUCCION',und:29824,ord:277,dias:12},{nm:'ROMERO MELANIE',und:53144,ord:350,dias:12},{nm:'PITTALA TOMAS',und:61428,ord:381,dias:12},{nm:'SISTEMA WMS',und:419,ord:3,dias:1},{nm:'BRUN TOMAS',und:1323,ord:7,dias:2},{nm:'AIRALA CESAR',und:5302,ord:24,dias:4},{nm:'BEJERMAN',und:1945,ord:26,dias:9},{nm:'ARMOA TAMARA',und:4953,ord:30,dias:4}]};
-var _CTRL_EXCL=['PRODUCCION','SISTEMA WMS'];
+var _CTRL_EXCL=['PRODUCCION','SISTEMA WMS','BEJERMAN'];
 Object.keys(ctrlExcelData).forEach(function(ym){ctrlExcelData[ym]=(ctrlExcelData[ym]||[]).filter(function(op){return _CTRL_EXCL.indexOf(op.nm.toUpperCase())<0;});});
 const maqDetailData={'2026-01':{lbl:'Enero 2026',ops:[{nm:'DEMARCHIS EMILIANO',mov:627,und:194981,dias:14,pa02:440,rec:75,rl01:0,pallet:0,flow:112}]},'2026-02':{lbl:'Febrero 2026',ops:[{nm:'DEMARCHIS EMILIANO',mov:261,und:137390,dias:10,pa02:224,rec:37,rl01:0,pallet:0,flow:0}]},'2026-03':{lbl:'Marzo 2026',ops:[{nm:'DEMARCHIS EMILIANO',mov:913,und:643122,dias:18,pa02:690,rec:185,rl01:38,pallet:0,flow:0},{nm:'SANDOVAL TOMAS',mov:206,und:247106,dias:8,pa02:197,rec:7,rl01:2,pallet:0,flow:0}]},'2026-04':{lbl:'Abril 2026',ops:[{nm:'DEMARCHIS EMILIANO',mov:772,und:1127771,dias:14,pa02:594,rec:148,rl01:26,pallet:4,flow:0},{nm:'SANDOVAL TOMAS',mov:806,und:516426,dias:20,pa02:525,rec:239,rl01:24,pallet:18,flow:0}]},'2026-05':{lbl:'Mayo 2026',ops:[{nm:'SANDOVAL TOMAS',mov:606,und:641428,dias:19,pa02:459,rec:145,rl01:2,pallet:0,flow:0},{nm:'DEMARCHIS EMILIANO',mov:1066,und:2312165,dias:19,pa02:846,rec:202,rl01:18,pallet:0,flow:0}]},'2026-06':{lbl:'Junio 2026',ops:[{nm:'DEMARCHIS EMILIANO',mov:857,und:2835504,dias:10,pa02:648,rec:111,rl01:98,pallet:0,flow:0},{nm:'SANDOVAL TOMAS',mov:297,und:306561,dias:10,pa02:171,rec:126,rl01:0,pallet:0,flow:0}]}};
 var _chartCtrlEvol=null,_chartCtrlRank=null,_chartMaqEvol=null,_chartMaqBreak=null;
