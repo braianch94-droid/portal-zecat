@@ -658,6 +658,10 @@ th.center, td.center { text-align: center; }
           <datalist id="articulo-list"></datalist>
         </div>
         <div class="form-group">
+          <label>Físico</label>
+          <input type="number" id="f-fisico" placeholder="0" step="1">
+        </div>
+        <div class="form-group">
           <label>SKU WMS</label>
           <input type="text" id="f-sku" placeholder="Ej: A04-0001">
         </div>
@@ -669,10 +673,6 @@ th.center, td.center { text-align: center; }
         <div class="form-group">
           <label>Sistema</label>
           <input type="number" id="f-sistema" placeholder="0" step="1">
-        </div>
-        <div class="form-group">
-          <label>Físico</label>
-          <input type="number" id="f-fisico" placeholder="0" step="1">
         </div>
         <div class="form-group">
           <label>M.S (Mov. Stock)</label>
@@ -1782,7 +1782,7 @@ function renderHoy(d) {
         </table>
       </div>
       <div style="margin-top:16px;display:flex;justify-content:flex-end;align-items:center;gap:14px;flex-wrap:wrap;">
-        <span id="guardar-msg" style="font-size:12px;"></span>
+        <div id="guardar-msg" style="font-size:13px;font-weight:600;min-height:28px;display:flex;align-items:center;"></div>
         <button onclick="guardarConteoHoy()"
           style="background:#2563eb;color:#fff;font-weight:700;padding:9px 22px;border:none;border-radius:8px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;">
           💾 Guardar Conteo
@@ -1956,6 +1956,7 @@ async function loadCarga() {
   if (fa) {
     fa.addEventListener('change', autocompletarArticulo);
     fa.addEventListener('blur',   autocompletarArticulo);
+    fa.focus();
   }
 }
 
@@ -2226,8 +2227,10 @@ async function guardarConteo() {
       await apiAddConteo(body);
       mostrarAlerta('form-alert','success','Conteo registrado correctamente.');
     }
-    resetForm();
-    await cargarTablaConteos(paginaActual);
+    setTimeout(async () => {
+      resetForm();
+      await cargarTablaConteos(paginaActual);
+    }, 1500);
   } catch(e) {
     mostrarAlerta('form-alert','error','Error al guardar: ' + e.message);
   } finally {

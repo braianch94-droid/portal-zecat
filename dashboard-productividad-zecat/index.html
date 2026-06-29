@@ -457,7 +457,11 @@ var _chartCtrlEvol=null,_chartCtrlRank=null,_chartMaqEvol=null,_chartMaqBreak=nu
 
 function chartColors(){var dark=document.body.classList.contains('dark');return{grid:dark?'rgba(255,255,255,0.08)':'rgba(0,0,0,0.08)',tick:dark?'#94a3b8':'#555',leg:dark?'#cbd5e1':'#333'};}
 function buildControl(){
-  if(!ctrlExcelData||!Object.keys(ctrlExcelData).length)return;
+  if(!ctrlExcelData||!Object.keys(ctrlExcelData).length){
+    var t=document.getElementById('ctrlTable');
+    if(t)t.innerHTML='<p style="padding:24px 8px;color:#64748B;font-size:14px;">Sin datos para el período seleccionado.</p>';
+    return;
+  }
   var anio=document.getElementById('selAnio')?document.getElementById('selAnio').value:'all';
   var mes=document.getElementById('selMes')?document.getElementById('selMes').value:'all';
   var months=Object.keys(ctrlExcelData).sort();
@@ -1152,8 +1156,8 @@ function applyFilter(){
     document.getElementById('pieM2L').textContent='-';
   }
   chartPie.data.labels=labels;
-  chartPie.data.datasets[0].data=idx.map(function(i){return merma1[i];});
-  chartPie.data.datasets[1].data=idx.map(function(i){return merma2[i];});
+  chartPie.data.datasets[0].data=idx.map(function(i){return merma1[i]==null?NaN:merma1[i];});
+  chartPie.data.datasets[1].data=idx.map(function(i){return merma2[i]==null?NaN:merma2[i];});
   chartPie.update();
 
   // ===== MUESTRA SIMPLE SECTION =====

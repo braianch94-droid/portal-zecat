@@ -724,7 +724,7 @@ const PAGE_ID = {
   tarifas: 'ni-tar', zonas: 'ni-zonas', mejoras: 'ni-mej'
 };
 
-let currentModule = 'productividad';
+let currentModule = localStorage.getItem('zecat-portal-module') || 'productividad';
 let isDark = localStorage.getItem('zecat-portal-theme') === 'dark';
 document.body.classList.toggle('light', !isDark);
 // Fallback: si productividad no carga en 6s, revelar igual
@@ -843,6 +843,7 @@ function navigate(item) {
     document.getElementById('fw-' + currentModule).classList.remove('active');
     document.getElementById('fw-' + module).classList.add('active');
     currentModule = module;
+    localStorage.setItem('zecat-portal-module', module);
     setTimeout(() => {
       try {
         const win = document.getElementById('ifr-' + module).contentWindow;
