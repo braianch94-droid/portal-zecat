@@ -1243,17 +1243,55 @@ async function toggleUserActive(id, currentActive) {
   } catch(e){}
 }
 
-async function editUser(id, role, modulos, nombre) {
-  const newRole=prompt(`Nuevo rol para ${nombre}:\nadmin / editor / viewer\nActual: ${role}`, role);
-  if (!newRole||!['admin','editor','viewer'].includes(newRole.trim())) return;
-  const modsStr=prompt(`Módulos accesibles (separados por coma):\nproductividad, ciclico, transporte, personal, evaluaciones, productividadchile, ciclicochile\nActual: ${modulos.join(', ')||'ninguno'}`, modulos.join(', '));
-  if (modsStr===null) return;
-  const newMods=modsStr.split(',').map(s=>s.trim()).filter(Boolean);
-  const token=localStorage.getItem('zecat-token');
+let _editUserId = null;
+const editModulos = new Set();
+
+function editUser(id, role, modulos, nombre) {
+  _editUserId = id;
+  editModulos.clear();
+  modulos.forEach(m => editModulos.add(m));
+  document.getElementById('edit-user-title').textContent = 'Editar: ' + nombre;
+  document.getElementById('eu-role').value = role;
+  renderEditModulosChips();
+  const sect = document.getElementById('edit-user-sect');
+  sect.style.display = '';
+  sect.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+function renderEditModulosChips() {
+  document.getElementById('eu-modulos').innerHTML = MODULOS_LIST.map(m =>
+    `<span class="um-mod-chip ${editModulos.has(m.key)?'sel':''}" onclick="toggleEditMod('${m.key}',this)">${m.label}</span>`
+  ).join('');
+}
+
+function toggleEditMod(key, el) {
+  editModulos.has(key) ? (editModulos.delete(key), el.classList.remove('sel')) : (editModulos.add(key), el.classList.add('sel'));
+}
+
+function cancelEditUser() {
+  _editUserId = null;
+  editModulos.clear();
+  document.getElementById('edit-user-sect').style.display = 'none';
+}
+
+async function saveEditUser() {
+  if (!_editUserId) return;
+  const token = localStorage.getItem('zecat-token');
+  const role = document.getElementById('eu-role').value;
+  const modulos = [...editModulos];
+  const msgEl = document.getElementById('eu-msg');
+  msgEl.textContent = ''; msgEl.className = 'um-msg';
   try {
-    await fetch(AUTH_API+'/users/'+id,{method:'PUT',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({role:newRole.trim(),modulos:newMods})});
-    loadUsers();
-  } catch(e){}
+    const r = await fetch(AUTH_API+'/users/'+_editUserId, {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body: JSON.stringify({role, modulos})
+    });
+    const data = await r.json();
+    if (!r.ok) { msgEl.textContent = data.error||'Error al guardar'; msgEl.className='um-msg err'; return; }
+    msgEl.textContent = '✓ Guardado'; msgEl.className = 'um-msg ok';
+    setTimeout(() => { cancelEditUser(); loadUsers(); }, 800);
+  } catch(e) { msgEl.textContent = 'Error de conexión'; msgEl.className = 'um-msg err'; }
 }
 
 checkAuth();
@@ -1337,6 +1375,25 @@ checkAuth();
         </div>
         <button class="um-submit" onclick="createUser()">Crear usuario</button>
         <div id="nu-msg" class="um-msg"></div>
+      </div>
+      <div class="um-sect" id="edit-user-sect" style="display:none">
+        <h3 id="edit-user-title">Editar Usuario</h3>
+        <div class="um-form">
+          <select id="eu-role" class="um-sel">
+            <option value="viewer">Viewer — solo lectura</option>
+            <option value="editor">Editor — puede cargar datos</option>
+            <option value="admin">Admin — acceso completo</option>
+          </select>
+        </div>
+        <div style="margin-top:10px">
+          <div style="font-size:12px;color:var(--sb-text-dim,#64748b);margin-bottom:6px">Módulos accesibles:</div>
+          <div class="um-mod-grid" id="eu-modulos"></div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button class="um-submit" onclick="saveEditUser()">Guardar cambios</button>
+          <button class="um-submit" style="background:transparent;border:1px solid rgba(255,255,255,.12)" onclick="cancelEditUser()">Cancelar</button>
+        </div>
+        <div id="eu-msg" class="um-msg"></div>
       </div>
     </div>
   </div>
