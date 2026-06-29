@@ -7,3 +7,9 @@ binding = "CICLICO_DB"
 database_name = "ciclico-zecat"
 database_id = "4064f3e0-2459-4d9a-93a4-6a3d929fc4b3"
 preview_database_id = "4064f3e0-2459-4d9a-93a4-6a3d929fc4b3"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "evaluaciones-desempeno"
+database_id = "976f9621-96f2-4f74-b604-9e2ba594ff22"
+preview_database_id = "976f9621-96f2-4f74-b604-9e2ba594ff22"
