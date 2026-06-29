@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ZECAT · Evaluaciones de Desempeño</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='24' fill='%23E1251B'/%3E%3Ctext x='50' y='68' text-anchor='middle' font-family='Arial,Helvetica,sans-serif' font-weight='700' font-size='58' fill='white'%3Ez%3C/text%3E%3C/svg%3E" />
+<style>
+  :root{
+    --bg:#0f172a; --panel:#ffffff; --muted:#64748b; --line:#e2e8f0;
+    --ink:#0f172a; --brand:#4f46e5; --brand2:#6366f1; --soft:#f1f5f9;
+    --ok:#16a34a; --warn:#d97706; --bad:#dc2626; --okbg:#dcfce7; --warnbg:#fef3c7; --badbg:#fee2e2;
+    --shadow:0 1px 3px rgba(15,23,42,.08),0 1px 2px rgba(15,23,42,.04);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:#f8fafc;color:var(--ink);font-size:14px}
+  header{background:linear-gradient(135deg,#4f46e5,#6366f1);color:#fff;padding:14px 22px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  header h1{font-size:18px;margin:0;font-weight:700;letter-spacing:.2px}
+  header .sub{opacity:.85;font-size:12px}
+  .brand{display:flex;align-items:center;gap:9px;font-weight:800;font-size:22px;letter-spacing:2px}
+  .zico{width:34px;height:34px;border-radius:9px;display:block;flex:none}
+  header .ttl{padding-left:16px;border-left:1px solid rgba(255,255,255,.3)}
+  .brand-lg{justify-content:center;color:var(--ink);font-size:26px;margin-bottom:2px}
+  .brand-lg .zico{width:38px;height:38px}
+  header .spacer{flex:1}
+  header .who{display:flex;align-items:center;gap:8px;font-size:13px}
+  header input{border:0;border-radius:8px;padding:7px 10px;font-size:13px}
+  nav{display:flex;gap:4px;background:#fff;padding:0 18px;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20;overflow-x:auto}
+  nav button{background:none;border:0;padding:14px 16px;font-size:14px;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;font-weight:600;white-space:nowrap}
+  nav button.active{color:var(--brand);border-bottom-color:var(--brand)}
+  main{padding:22px;max-width:1200px;margin:0 auto}
+  .grid{display:grid;gap:16px}
+  .kpis{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
+  .kpi .v{font-size:30px;font-weight:800;line-height:1.1}
+  .kpi .l{color:var(--muted);font-size:12px;margin-top:4px;text-transform:uppercase;letter-spacing:.4px}
+  h2{font-size:15px;margin:0 0 14px}
+  .row{display:flex;gap:16px;flex-wrap:wrap}
+  .col{flex:1;min-width:300px}
+  label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px;font-weight:600}
+  input,select,textarea{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;font-size:14px;font-family:inherit;background:#fff}
+  textarea{resize:vertical;min-height:64px}
+  .btn{background:var(--brand);color:#fff;border:0;border-radius:10px;padding:11px 18px;font-size:14px;font-weight:700;cursor:pointer}
+  .btn:hover{background:#4338ca}
+  .btn.sec{background:var(--soft);color:var(--ink)}
+  .btn.sec:hover{background:#e2e8f0}
+  .btn.ghost{background:none;color:var(--brand);padding:6px 10px}
+  .btn.danger{background:var(--badbg);color:var(--bad)}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  table{width:100%;border-collapse:collapse}
+  th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);font-size:13px}
+  th{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.4px;font-weight:700}
+  tr:hover td{background:#fbfcfe}
+  .pill{display:inline-block;padding:3px 9px;border-radius:999px;font-size:11px;font-weight:700}
+  .bar{height:22px;border-radius:6px;background:linear-gradient(90deg,var(--brand2),var(--brand));min-width:2px}
+  .barwrap{background:var(--soft);border-radius:6px;overflow:hidden;flex:1}
+  .barrow{display:grid;grid-template-columns:200px 1fr 52px;gap:10px;align-items:center;margin-bottom:9px;font-size:13px}
+  .score-group{display:flex;gap:6px;flex-wrap:wrap}
+  .score-group button{flex:1;min-width:40px;padding:9px 4px;border:1px solid var(--line);background:#fff;border-radius:9px;cursor:pointer;font-weight:700;color:var(--muted);transition:.1s}
+  .score-group button:hover{border-color:var(--brand)}
+  .score-group button.sel{color:#fff;border-color:transparent}
+  .obj-row{padding:12px 0;border-bottom:1px solid var(--line)}
+  .obj-row .name{font-weight:600;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+  .muted{color:var(--muted)}
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px}
+  .toolbar > div{flex:1;min-width:140px}
+  .empty{text-align:center;color:var(--muted);padding:40px}
+  .toast{position:fixed;bottom:24px;right:24px;background:#0f172a;color:#fff;padding:13px 18px;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.2);z-index:100;opacity:0;transform:translateY(10px);transition:.25s}
+  .toast.show{opacity:1;transform:none}
+  .toast.err{background:var(--bad)}
+  .modal-bg{position:fixed;inset:0;background:rgba(15,23,42,.45);display:none;align-items:flex-start;justify-content:center;z-index:50;padding:30px 16px;overflow:auto}
+  .modal-bg.show{display:flex}
+  .modal{background:#fff;border-radius:16px;max-width:760px;width:100%;padding:24px}
+  .badge-ok{background:var(--okbg);color:var(--ok)}
+  .badge-warn{background:var(--warnbg);color:var(--warn)}
+  .badge-bad{background:var(--badbg);color:var(--bad)}
+  .badge-none{background:var(--soft);color:var(--muted)}
+  .scoreval{font-weight:800}
+  .small{font-size:12px}
+  .right{text-align:right}
+  .flexbetween{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:6px}
+  .legend span b{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:middle}
+  .login-bg{position:fixed;inset:0;background:linear-gradient(135deg,#4f46e5,#6366f1);display:flex;align-items:center;justify-content:center;z-index:200}
+  .login-card{background:#fff;border-radius:18px;padding:34px 30px;width:340px;box-shadow:0 20px 50px rgba(0,0,0,.25);text-align:center}
+  .login-card h1{font-size:20px;margin:0 0 4px}
+  .login-card p{color:var(--muted);font-size:13px;margin:0 0 20px}
+  .login-card input{text-align:center;font-size:16px;margin-bottom:12px}
+  .login-card .err{color:var(--bad);font-size:13px;min-height:18px;margin-bottom:6px}
+  .logout{background:rgba(255,255,255,.15);border:0;color:#fff;border-radius:8px;padding:7px 12px;font-size:12px;cursor:pointer;font-weight:600}
+  .logout:hover{background:rgba(255,255,255,.28)}
+</style>
+</head>
+<body>
+<header>
+  <span class="brand">
+    <svg class="zico" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-label="Zecat"><rect width="100" height="100" rx="24" fill="#E1251B"/><text x="50" y="68" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="58" fill="#fff">z</text></svg>
+    ZECAT
+  </span>
+  <div class="ttl">
+    <h1>Evaluaciones de Desempeño</h1>
+    <div class="sub">Artículos Promocionales SA</div>
+  </div>
+  <div class="spacer"></div>
+  <div class="who">
+    <span>Evaluador:</span>
+    <input id="evaluador" placeholder="Tu nombre" style="width:160px" />
+    <button class="logout" id="btnLogout" title="Cerrar sesión">Salir</button>
+  </div>
+</header>
+<div class="login-bg" id="loginBg" style="display:none">
+  <div class="login-card">
+    <div class="brand brand-lg">
+      <svg class="zico" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-label="Zecat"><rect width="100" height="100" rx="24" fill="#E1251B"/><text x="50" y="68" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="58" fill="#fff">z</text></svg>
+      ZECAT
+    </div>
+    <p>Evaluaciones · Artículos Promocionales SA</p>
+    <div class="err" id="loginErr"></div>
+    <input id="loginPass" type="password" placeholder="Contraseña" autocomplete="current-password" />
+    <button class="btn" id="loginBtn" style="width:100%">Ingresar</button>
+  </div>
+</div>
+<nav>
+  <button data-tab="dashboard" class="active">📊 Dashboard</button>
+  <button data-tab="evaluar">📝 Evaluar</button>
+  <button data-tab="empleados">👥 Empleados</button>
+  <button data-tab="historial">📋 Historial</button>
+</nav>
+<main>
+  <section id="tab-dashboard"></section>
+  <section id="tab-evaluar" hidden></section>
+  <section id="tab-empleados" hidden></section>
+  <section id="tab-historial" hidden></section>
+</main>
+<div class="modal-bg" id="modalBg"><div class="modal" id="modal"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const API = "/evaluaciones/api";
+let META = null;
+let EDIT_ID = null;
+
+// ---------- helpers ----------
+const $ = (s,el=document)=>el.querySelector(s);
+const $$ = (s,el=document)=>[...el.querySelectorAll(s)];
+const fmt = n => (n==null||isNaN(n))?"–":Number(n).toFixed(2);
+const esc = s => (s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function toast(msg,err=false){const t=$("#toast");t.textContent=msg;t.className="toast show"+(err?" err":"");setTimeout(()=>t.className="toast",2600);}
+function authFail(){showLogin();throw new Error("Sesión expirada");}
+async function jget(u){const r=await fetch(API+u);if(r.status===401)authFail();if(!r.ok)throw new Error((await r.json()).error||r.status);return r.json();}
+async function jsend(u,m,b){const r=await fetch(API+u,{method:m,headers:{"content-type":"application/json"},body:JSON.stringify(b)});if(r.status===401)authFail();const d=await r.json();if(!r.ok)throw new Error(d.error||r.status);return d;}
+function color(p){if(p==null)return"var(--muted)";if(p<2.5)return"var(--bad)";if(p<3.5)return"var(--warn)";return"var(--ok)";}
+function badge(p){if(p==null)return'<span class="pill badge-none">Pendiente</span>';const c=p<2.5?"badge-bad":p<3.5?"badge-warn":"badge-ok";return`<span class="pill ${c}">${fmt(p)}</span>`;}
+function nombre(e){return esc(e.apellido)+", "+esc(e.nombre);}
+function sectorLinea(e){return esc(e.area||e.tecnica||"–");}
+
+// ---------- tabs ----------
+$$("nav button").forEach(b=>b.onclick=()=>{
+  $$("nav button").forEach(x=>x.classList.remove("active"));b.classList.add("active");
+  $$("main section").forEach(s=>s.hidden=true);
+  const t=b.dataset.tab; $("#tab-"+t).hidden=false;
+  if(t==="dashboard")loadDashboard();
+  if(t==="evaluar")loadEvaluar();
+  if(t==="empleados")loadEmpleados();
+  if(t==="historial")loadHistorial();
+});
+
+// evaluador persistente
+const evIn=$("#evaluador");
+evIn.value=localStorage.getItem("evaluador")||"";
+evIn.oninput=()=>localStorage.setItem("evaluador",evIn.value);
+
+// ---------- DASHBOARD ----------
+async function loadDashboard(){
+  const sec=$("#tab-dashboard");
+  sec.innerHTML='<div class="empty">Cargando…</div>';
+  const m=await meta();
+  const periodos=m.periodos.length?m.periodos:[""];
+  const selP=`<select id="dPeriodo"><option value="">Todos los períodos</option>${m.periodos.map(p=>`<option>${esc(p)}</option>`).join("")}</select>`;
+  const selS=`<select id="dSector"><option value="">Todos los sectores</option>${m.sectores.map(s=>`<option>${esc(s)}</option>`).join("")}</select>`;
+  sec.innerHTML=`
+    <div class="toolbar">
+      <div><label>Período</label>${selP}</div>
+      <div><label>Sector</label>${selS}</div>
+      <div style="flex:0"><label>&nbsp;</label><button class="btn sec" id="dExport">⬇ Exportar CSV</button></div>
+    </div>
+    <div id="dBody"></div>`;
+  $("#dPeriodo").onchange=renderDash; $("#dSector").onchange=renderDash;
+  $("#dExport").onclick=exportCSV;
+  renderDash();
+}
+async function renderDash(){
+  const p=$("#dPeriodo").value, s=$("#dSector").value;
+  const qs=new URLSearchParams(); if(p)qs.set("periodo",p); if(s)qs.set("sector",s);
+  const d=await jget("/dashboard?"+qs);
+  const r=d.resumen||{};
+  const body=$("#dBody");
+  if(!r.n_evaluaciones){body.innerHTML='<div class="card empty">Todavía no hay evaluaciones cargadas para este filtro.<br><br><button class="btn" onclick="goEvaluar()">📝 Cargar la primera</button></div>';return;}
+  body.innerHTML=`
+    <div class="grid kpis" style="margin-bottom:16px">
+      <div class="card kpi"><div class="v">${r.n_evaluados}/${d.totalEmpleados}</div><div class="l">Empleados evaluados</div></div>
+      <div class="card kpi"><div class="v" style="color:${color(r.prom_global)}">${fmt(r.prom_global)}</div><div class="l">Promedio global (1–5)</div></div>
+      <div class="card kpi"><div class="v">${r.n_evaluaciones}</div><div class="l">Evaluaciones cargadas</div></div>
+      <div class="card kpi"><div class="v">${fmt(r.min_prom)} / ${fmt(r.max_prom)}</div><div class="l">Mín / Máx</div></div>
+    </div>
+    <div class="row">
+      <div class="col card"><h2>Promedio por objetivo</h2>${barChart(d.porObjetivo,5)}</div>
+      <div class="col card"><h2>Promedio por sector</h2>${barChart(d.porSector,5)}
+        <h2 style="margin-top:18px">Por turno</h2>${barChart(d.porTurno,5)}</div>
+    </div>
+    <div class="row" style="margin-top:16px">
+      <div class="col card"><h2>Por área / línea</h2>${barChart(d.porArea,5)}</div>
+      <div class="col card"><div class="flexbetween"><h2>Ranking de empleados</h2><span class="small muted">${d.ranking.length} evaluados</span></div>
+        ${rankTable(d.ranking)}</div>
+    </div>`;
+}
+function barChart(rows,max){
+  if(!rows||!rows.length)return'<div class="muted small">Sin datos</div>';
+  return rows.map(r=>{
+    const v=r.prom==null?0:r.prom; const w=Math.max(2,(v/max)*100);
+    return `<div class="barrow"><div title="${esc(r.k)}" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(r.k||"–")}</div>
+      <div class="barwrap"><div class="bar" style="width:${w}%;background:${color(v)}"></div></div>
+      <div class="right scoreval" style="color:${color(v)}">${fmt(v)}</div></div>`;
+  }).join("");
+}
+function rankTable(rows){
+  if(!rows.length)return'<div class="muted small">Sin datos</div>';
+  return `<table><thead><tr><th>#</th><th>Empleado</th><th>Sector</th><th class="right">Prom.</th></tr></thead><tbody>
+    ${rows.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.apellido)}, ${esc(r.nombre)}</td><td class="small muted">${esc(r.area||r.sector||"")}</td><td class="right">${badge(r.prom)}</td></tr>`).join("")}
+  </tbody></table>`;
+}
+function goEvaluar(){$$('nav button').find(b=>b.dataset.tab==="evaluar").click();}
+
+// ---------- EVALUAR ----------
+let evalEmpleados=[];
+async function loadEvaluar(prefillId){
+  const sec=$("#tab-evaluar");
+  const m=await meta();
+  evalEmpleados=await jget("/empleados");
+  const opts=evalEmpleados.map(e=>`<option value="${e.id}">${nombre(e)} — ${esc(e.sector)}${e.area?" / "+esc(e.area):e.tecnica?" / "+esc(e.tecnica):""}</option>`).join("");
+  const hoy=new Date().toISOString().slice(0,10);
+  sec.innerHTML=`
+    <div class="card" style="max-width:820px;margin:0 auto">
+      <div class="flexbetween"><h2 id="evalTitle">Nueva evaluación</h2><span id="evalAvg" class="pill badge-none">Promedio: –</span></div>
+      <div class="row">
+        <div class="col"><label>Empleado a evaluar *</label><select id="fEmpleado"><option value="">Seleccionar…</option>${opts}</select></div>
+      </div>
+      <div id="empInfo" class="small muted" style="margin:8px 0 4px"></div>
+      <div class="row">
+        <div class="col"><label>Período *</label><input id="fPeriodo" list="periodos" placeholder="Ej: 2025-S1" /><datalist id="periodos">${m.periodos.map(p=>`<option>${esc(p)}</option>`).join("")}</datalist></div>
+        <div class="col"><label>Fecha *</label><input id="fFecha" type="date" value="${hoy}" /></div>
+      </div>
+      <div class="row">
+        <div class="col"><label>Posición desempeñada</label><input id="fPosDesemp" /></div>
+        <div class="col"><label>Posición del evaluador</label><input id="fPosEval" /></div>
+      </div>
+      <h2 style="margin:20px 0 4px">Objetivos <span class="small muted" style="font-weight:400">— puntuá de 1 a 5</span></h2>
+      <div class="legend">
+        <span><b style="background:var(--bad)"></b>1 No Cumple</span>
+        <span><b style="background:var(--bad)"></b>2 Cumple Parcialmente</span>
+        <span><b style="background:var(--warn)"></b>3 Cumple</span>
+        <span><b style="background:var(--ok)"></b>4 Supera</span>
+        <span><b style="background:var(--ok)"></b>5 Excede</span>
+      </div>
+      <div id="objetivos"></div>
+      <div class="row" style="margin-top:14px">
+        <div class="col"><label>Aspectos a mejorar</label><textarea id="fMejorar"></textarea></div>
+      </div>
+      <div class="row">
+        <div class="col"><label>Comentarios del evaluador</label><textarea id="fComEval"></textarea></div>
+        <div class="col"><label>Comentarios del evaluado</label><textarea id="fComEvaluado"></textarea></div>
+      </div>
+      <div class="flexbetween" style="margin-top:16px">
+        <button class="btn sec" id="btnCancel" hidden>Cancelar edición</button>
+        <div class="spacer"></div>
+        <button class="btn" id="btnSave">💾 Guardar evaluación</button>
+      </div>
+    </div>`;
+  const cont=$("#objetivos");
+  cont.innerHTML=m.objetivos.map(o=>`
+    <div class="obj-row" data-obj="${o.id}">
+      <div class="name"><span>${o.orden}. ${esc(o.nombre)}</span><span class="scoreval muted" data-lbl>—</span></div>
+      <div class="score-group">${[1,2,3,4,5].map(v=>`<button type="button" data-v="${v}">${v}</button>`).join("")}</div>
+    </div>`).join("");
+  $$(".score-group button",cont).forEach(b=>b.onclick=()=>{
+    const grp=b.parentElement; const row=grp.closest(".obj-row");
+    $$("button",grp).forEach(x=>{x.classList.remove("sel");x.style.background="";});
+    b.classList.add("sel"); const v=+b.dataset.v; b.style.background=color(v<2.5?1:v<3.5?3:4);
+    const lbl=$("[data-lbl]",row); const txt=m.escala.find(e=>e.v===v).label;
+    lbl.textContent=v+" · "+txt; lbl.style.color=color(v<2.5?1:v<3.5?3:5);
+    updateAvg();
+  });
+  $("#fEmpleado").onchange=()=>{
+    const e=evalEmpleados.find(x=>x.id==$("#fEmpleado").value);
+    $("#empInfo").innerHTML=e?`Sector: <b>${esc(e.sector)}</b> · Área/Línea: <b>${sectorLinea(e)}</b> · Turno: <b>${esc(e.turno)}</b> · ${esc(e.categoria||"")}${e.n_eval?` · <span style="color:var(--warn)">Ya tiene ${e.n_eval} evaluación(es)</span>`:""}`:"";
+    if(e&&!$("#fPosDesemp").value)$("#fPosDesemp").value=e.tecnica||e.area||"";
+  };
+  $("#btnSave").onclick=saveEval;
+  $("#btnCancel").onclick=()=>loadEvaluar();
+  if(prefillId){$("#fEmpleado").value=prefillId;$("#fEmpleado").onchange();}
+}
+function updateAvg(){
+  const vals=$$(".score-group button.sel").map(b=>+b.dataset.v);
+  const el=$("#evalAvg");
+  if(!vals.length){el.className="pill badge-none";el.textContent="Promedio: –";return;}
+  const a=vals.reduce((x,y)=>x+y,0)/vals.length;
+  el.className="pill "+(a<2.5?"badge-bad":a<3.5?"badge-warn":"badge-ok");
+  el.textContent=`Promedio: ${a.toFixed(2)} (${vals.length}/12)`;
+}
+function gatherPuntajes(){
+  const out=[];
+  $$("#objetivos .obj-row").forEach(row=>{
+    const sel=$(".score-group button.sel",row);
+    if(sel)out.push({objetivo_id:+row.dataset.obj,puntaje:+sel.dataset.v});
+  });
+  return out;
+}
+async function saveEval(){
+  const ev=$("#evaluador").value.trim();
+  if(!ev){toast("Cargá tu nombre de evaluador arriba a la derecha",true);$("#evaluador").focus();return;}
+  const empleado_id=+$("#fEmpleado").value;
+  if(!empleado_id){toast("Elegí un empleado",true);return;}
+  const puntajes=gatherPuntajes();
+  if(puntajes.length<12){toast(`Faltan objetivos por puntuar (${puntajes.length}/12)`,true);return;}
+  const fecha=$("#fFecha").value, periodo=$("#fPeriodo").value.trim();
+  if(!fecha){toast("Falta la fecha",true);return;}
+  if(!periodo){toast("Falta el período",true);$("#fPeriodo").focus();return;}
+  const body={empleado_id,fecha,periodo,evaluador:ev,
+    posicion_desempenada:$("#fPosDesemp").value,posicion_evaluador:$("#fPosEval").value,
+    aspectos_mejorar:$("#fMejorar").value,comentarios_evaluador:$("#fComEval").value,comentarios_evaluado:$("#fComEvaluado").value,
+    puntajes};
+  try{
+    $("#btnSave").disabled=true;
+    if(EDIT_ID){await jsend("/evaluaciones/"+EDIT_ID,"PUT",body);toast("Evaluación actualizada ✔");EDIT_ID=null;}
+    else{await jsend("/evaluaciones","POST",body);toast("Evaluación guardada ✔");}
+    loadEvaluar();
+  }catch(e){toast(e.message,true);}
+  finally{$("#btnSave").disabled=false;}
+}
+
+// ---------- EMPLEADOS ----------
+async function loadEmpleados(){
+  const sec=$("#tab-empleados");
+  const m=await meta();
+  sec.innerHTML=`
+    <div class="toolbar">
+      <div><label>Buscar</label><input id="eQ" placeholder="Nombre, área…" /></div>
+      <div><label>Sector</label><select id="eSector"><option value="">Todos</option>${m.sectores.map(s=>`<option>${esc(s)}</option>`).join("")}</select></div>
+      <div><label>Área</label><select id="eArea"><option value="">Todas</option>${m.areas.map(s=>`<option>${esc(s)}</option>`).join("")}</select></div>
+      <div><label>Línea/Técnica</label><select id="eTec"><option value="">Todas</option>${m.tecnicas.map(s=>`<option>${esc(s)}</option>`).join("")}</select></div>
+      <div><label>Turno</label><select id="eTurno"><option value="">Todos</option>${m.turnos.map(s=>`<option>${esc(s)}</option>`).join("")}</select></div>
+    </div>
+    <div class="card" style="padding:0"><div id="empTable"></div></div>`;
+  ["eQ","eSector","eArea","eTec","eTurno"].forEach(id=>{$("#"+id).oninput=$("#"+id).onchange=renderEmpleados;});
+  renderEmpleados();
+}
+async function renderEmpleados(){
+  const qs=new URLSearchParams();
+  const q=$("#eQ").value, s=$("#eSector").value, a=$("#eArea").value, t=$("#eTec").value, tu=$("#eTurno").value;
+  if(q)qs.set("q",q); if(s)qs.set("sector",s); if(a)qs.set("area",a); if(t)qs.set("tecnica",t); if(tu)qs.set("turno",tu);
+  const rows=await jget("/empleados?"+qs);
+  const el=$("#empTable");
+  if(!rows.length){el.innerHTML='<div class="empty">Sin resultados</div>';return;}
+  el.innerHTML=`<table><thead><tr><th>Empleado</th><th>Sector</th><th>Área / Línea</th><th>Turno</th><th class="right">Evaluaciones</th><th class="right">Último prom.</th><th></th></tr></thead><tbody>
+    ${rows.map(e=>`<tr>
+      <td><b>${nombre(e)}</b><div class="small muted">${esc(e.categoria||"")}</div></td>
+      <td>${esc(e.sector)}</td><td>${sectorLinea(e)}</td><td>${esc(e.turno)}</td>
+      <td class="right">${e.n_eval||0}</td>
+      <td class="right">${badge(e.ult_promedio)}${e.ult_periodo?`<div class="small muted">${esc(e.ult_periodo)}</div>`:""}</td>
+      <td class="right"><button class="btn ghost" onclick="evaluarA(${e.id})">📝 Evaluar</button> <button class="btn ghost" onclick="verEmpleado(${e.id})">👁 Ver</button></td>
+    </tr>`).join("")}
+  </tbody></table>`;
+}
+function evaluarA(id){$$('nav button').find(b=>b.dataset.tab==="evaluar").click();setTimeout(()=>loadEvaluar(id),50);}
+
+async function verEmpleado(id){
+  const e=await jget("/empleados/"+id);
+  openModal(`
+    <div class="flexbetween"><h2>${nombre(e)}</h2><button class="btn ghost" onclick="closeModal()">✕</button></div>
+    <div class="small muted" style="margin-bottom:14px">${esc(e.sector)} · ${sectorLinea(e)} · Turno ${esc(e.turno)} · ${esc(e.categoria||"")}</div>
+    ${e.evaluaciones.length?`<table><thead><tr><th>Período</th><th>Fecha</th><th>Evaluador</th><th class="right">Prom.</th><th></th></tr></thead><tbody>
+      ${e.evaluaciones.map(v=>`<tr><td>${esc(v.periodo)}</td><td>${esc(v.fecha)}</td><td>${esc(v.evaluador)}</td><td class="right">${badge(v.promedio)}</td>
+        <td class="right"><button class="btn ghost" onclick="verEval(${v.id})">Ver</button></td></tr>`).join("")}
+    </tbody></table>`:'<div class="empty">Sin evaluaciones aún. <button class="btn" onclick="closeModal();evaluarA('+id+')">Evaluar ahora</button></div>'}`);
+}
+
+// ---------- HISTORIAL ----------
+async function loadHistorial(){
+  const sec=$("#tab-historial");
+  const rows=await jget("/export");
+  if(!rows.length){sec.innerHTML='<div class="card empty">No hay evaluaciones cargadas todavía.</div>';return;}
+  sec.innerHTML=`<div class="flexbetween" style="margin-bottom:12px"><h2>Todas las evaluaciones (${rows.length})</h2><button class="btn sec" onclick="exportCSV()">⬇ Exportar CSV</button></div>
+    <div class="card" style="padding:0"><table><thead><tr><th>Empleado</th><th>Sector</th><th>Período</th><th>Fecha</th><th>Evaluador</th><th class="right">Prom.</th><th></th></tr></thead><tbody>
+    ${rows.map(r=>`<tr><td><b>${esc(r.apellido)}, ${esc(r.nombre)}</b></td><td>${esc(r.sector)}</td><td>${esc(r.periodo)}</td><td>${esc(r.fecha)}</td><td>${esc(r.evaluador)}</td>
+      <td class="right">${badge(r.promedio)}</td>
+      <td class="right"><button class="btn ghost" onclick="verEval(${r.id})">Ver</button> <button class="btn ghost" onclick="editEval(${r.id})">✏</button> <button class="btn ghost" style="color:var(--bad)" onclick="delEval(${r.id})">🗑</button></td></tr>`).join("")}
+    </tbody></table></div>`;
+}
+async function verEval(id){
+  const ev=await jget("/evaluaciones/"+id);
+  openModal(`
+    <div class="flexbetween"><h2>${esc(ev.apellido)}, ${esc(ev.nombre)} — ${esc(ev.periodo)}</h2><button class="btn ghost" onclick="closeModal()">✕</button></div>
+    <div class="small muted" style="margin-bottom:6px">${esc(ev.sector)} · ${esc(ev.area||ev.tecnica||"")} · Evaluador: ${esc(ev.evaluador)} · ${esc(ev.fecha)}</div>
+    <div class="flexbetween" style="margin-bottom:12px"><span class="pill ${ev.promedio<2.5?'badge-bad':ev.promedio<3.5?'badge-warn':'badge-ok'}" style="font-size:14px">Promedio ${fmt(ev.promedio)}</span></div>
+    ${barChart(ev.puntajes.map(p=>({k:p.nombre,prom:p.puntaje})),5)}
+    ${ev.aspectos_mejorar?`<p><b>Aspectos a mejorar:</b> ${esc(ev.aspectos_mejorar)}</p>`:""}
+    ${ev.comentarios_evaluador?`<p><b>Comentarios del evaluador:</b> ${esc(ev.comentarios_evaluador)}</p>`:""}
+    ${ev.comentarios_evaluado?`<p><b>Comentarios del evaluado:</b> ${esc(ev.comentarios_evaluado)}</p>`:""}
+    <div class="right"><button class="btn sec" onclick="closeModal();editEval(${id})">✏ Editar</button></div>`);
+}
+async function editEval(id){
+  const ev=await jget("/evaluaciones/"+id);
+  $$('nav button').find(b=>b.dataset.tab==="evaluar").click();
+  await loadEvaluar();
+  closeModal();
+  EDIT_ID=id;
+  $("#evalTitle").textContent="Editar evaluación #"+id;
+  $("#btnCancel").hidden=false;
+  $("#fEmpleado").value=ev.empleado_id; $("#fEmpleado").onchange();
+  $("#fPeriodo").value=ev.periodo; $("#fFecha").value=ev.fecha;
+  $("#fPosDesemp").value=ev.posicion_desempenada||""; $("#fPosEval").value=ev.posicion_evaluador||"";
+  $("#fMejorar").value=ev.aspectos_mejorar||""; $("#fComEval").value=ev.comentarios_evaluador||""; $("#fComEvaluado").value=ev.comentarios_evaluado||"";
+  ev.puntajes.forEach(p=>{
+    const row=$(`#objetivos .obj-row[data-obj="${p.objetivo_id}"]`);
+    if(row){const btn=$(`.score-group button[data-v="${p.puntaje}"]`,row);if(btn)btn.click();}
+  });
+}
+async function delEval(id){
+  if(!confirm("¿Eliminar esta evaluación? No se puede deshacer."))return;
+  try{await jsend("/evaluaciones/"+id,"DELETE",{});toast("Evaluación eliminada");loadHistorial();}
+  catch(e){toast(e.message,true);}
+}
+
+// ---------- export ----------
+async function exportCSV(){
+  const rows=await jget("/export");
+  if(!rows.length){toast("Nada para exportar",true);return;}
+  const cols=Object.keys(rows[0]);
+  const csv=[cols.join(";")].concat(rows.map(r=>cols.map(c=>`"${String(r[c]??"").replace(/"/g,'""')}"`).join(";"))).join("\n");
+  const blob=new Blob(["﻿"+csv],{type:"text/csv;charset=utf-8"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="evaluaciones.csv";a.click();
+}
+
+// ---------- modal ----------
+function openModal(html){$("#modal").innerHTML=html;$("#modalBg").classList.add("show");}
+function closeModal(){$("#modalBg").classList.remove("show");}
+$("#modalBg").onclick=e=>{if(e.target.id==="modalBg")closeModal();};
+
+// ---------- meta cache ----------
+async function meta(force){if(META&&!force)return META;META=await jget("/meta");return META;}
+
+// ---------- auth ----------
+function showLogin(){$("#loginBg").style.display="flex";setTimeout(()=>$("#loginPass").focus(),50);}
+function hideLogin(){$("#loginBg").style.display="none";$("#loginPass").value="";$("#loginErr").textContent="";}
+async function doLogin(){
+  const pass=$("#loginPass").value;
+  if(!pass){$("#loginErr").textContent="Ingresá la contraseña";return;}
+  $("#loginBtn").disabled=true;
+  try{
+    const r=await fetch(API+"/login",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({password:pass})});
+    if(!r.ok){$("#loginErr").textContent="Contraseña incorrecta";$("#loginPass").select();return;}
+    hideLogin(); META=null;
+    $$('nav button').find(b=>b.classList.contains("active")).click();
+  }catch(e){$("#loginErr").textContent="Error de conexión";}
+  finally{$("#loginBtn").disabled=false;}
+}
+$("#loginBtn").onclick=doLogin;
+$("#loginPass").addEventListener("keydown",e=>{if(e.key==="Enter")doLogin();});
+$("#btnLogout").onclick=async()=>{try{await fetch(API+"/logout",{method:"POST"});}catch(e){}META=null;showLogin();};
+
+// ---------- bootstrap ----------
+async function init(){
+  try{ await jget("/meta"); hideLogin(); loadDashboard(); }
+  catch(e){ /* 401 ya mostró login */ }
+}
+init();
+</script>
+</body>
+</html>

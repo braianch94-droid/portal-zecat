@@ -40,29 +40,41 @@ jobs:
       deployments: write
     steps:
       - uses: actions/checkout@v4
-      - name: Set Cloudflare production branch to master
+      - name: Configurar rama de produccion y binding D1 (evaluaciones)
         env:
           CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           python3 << 'EOF'
-          import subprocess, os, json
+          import os, json, urllib.request
           token = os.environ['CF_TOKEN'].lstrip('﻿').strip()
           account_id = os.environ['CF_ACCOUNT_ID'].lstrip('﻿').strip()
-          r = subprocess.run([
-            'curl', '-s', '-X', 'PATCH',
-            f'https://api.cloudflare.com/client/v4/accounts/{account_id}/pages/projects/portal-zecat',
-            '-H', f'Authorization: Bearer {token}',
-            '-H', 'Content-Type: application/json',
-            '-d', '{"production_branch":"master"}'
-          ], capture_output=True, text=True)
+          base = f'https://api.cloudflare.com/client/v4/accounts/{account_id}/pages/projects/portal-zecat'
+          DB_ID = '976f9621-96f2-4f74-b604-9e2ba594ff22'
+          def call(method, body=None):
+            data = json.dumps(body).encode() if body is not None else None
+            req = urllib.request.Request(base, data=data, method=method,
+              headers={'Authorization': f'Bearer {token}', 'Content-Type': 'application/json'})
+            with urllib.request.urlopen(req) as r:
+              return json.loads(r.read())
+          # 1) rama de produccion (igual que antes, no debe frenar el deploy)
           try:
-            d = json.loads(r.stdout)
-            print('success:', d.get('success'))
-            if not d.get('success'):
-              print('errors:', d.get('errors'))
+            out = call('PATCH', {'production_branch': 'master'})
+            print('production_branch:', out.get('success'), out.get('errors'))
           except Exception as e:
-            print('parse error:', e, '| raw:', r.stdout[:200])
+            print('WARN production_branch:', repr(e))
+          # 2) binding D1 para la app de evaluaciones (Pages Function en /evaluaciones/api)
+          try:
+            cur = call('GET')['result']
+            dc = cur.get('deployment_configs') or {}
+            prod = dc.get('production') or {}
+            prod['d1_databases'] = {**(prod.get('d1_databases') or {}), 'DB': {'id': DB_ID}}
+            if not prod.get('compatibility_date'):
+              prod['compatibility_date'] = '2025-06-01'
+            out = call('PATCH', {'deployment_configs': {'production': prod}})
+            print('binding D1:', out.get('success'), out.get('errors'))
+          except Exception as e:
+            print('WARN binding D1 (no frena el deploy):', repr(e))
           EOF
       - name: Deploy to Cloudflare Pages
         uses: cloudflare/pages-action@v1
