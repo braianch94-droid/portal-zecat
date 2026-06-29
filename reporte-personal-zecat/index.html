@@ -235,7 +235,6 @@ function switchTab(tab) {
     if (activeBtn) { activeBtn.classList.add('active'); }
     else if (typeof event !== 'undefined' && event && event.target) { event.target.classList.add('active'); }
     currentTab = tab;
-    try { localStorage.setItem('zecat-personal-tab', tab); } catch(e) {}
 }
 var currentTab = 'resumen';
 var allExpanded = false;
@@ -248,7 +247,6 @@ function filterGroup(group, btn) {
     document.querySelectorAll('tr[data-group]').forEach(function(r){
         r.style.display = (group === 'all' || r.dataset.group === group) ? '' : 'none';
     });
-    try { localStorage.setItem('zecat-personal-group', group); } catch(e) {}
 }
 function exportarResumen() {
     var rows = document.querySelectorAll('.resumen-table tbody tr.rsm-row');
@@ -288,20 +286,6 @@ function toggleAll() {
         }
     });
 }
-// Restaurar tab y grupo activos del localStorage
-(function(){
-    try {
-        var t = localStorage.getItem('zecat-personal-tab');
-        if (t && t !== 'resumen') switchTab(t);
-        var g = localStorage.getItem('zecat-personal-group');
-        if (g && g !== 'all') {
-            var btn = Array.from(document.querySelectorAll('.group-btn')).find(function(b){
-                return b.getAttribute('onclick') && b.getAttribute('onclick').indexOf("'"+g+"'") !== -1;
-            });
-            if (btn) filterGroup(g, btn);
-        }
-    } catch(e) {}
-})();
 </script>
 </body>
 </html>
