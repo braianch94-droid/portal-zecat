@@ -60,8 +60,12 @@ jobs:
             print('WARN:', repr(e))
           EOF
       # Deploy con wrangler (lee wrangler.toml y ata el binding D1 a la Function)
+      # El secret CLOUDFLARE_API_TOKEN trae un BOM (U+FEFF) que wrangler rechaza: lo limpiamos.
       - name: Deploy to Cloudflare Pages
         env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: npx wrangler pages deploy . --project-name=portal-zecat --branch=master --commit-dirty=true
+          RAW_CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          RAW_CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          export CLOUDFLARE_API_TOKEN="$(printf '%s' "$RAW_CF_TOKEN" | tr -d '\357\273\277\r\n ')"
+          export CLOUDFLARE_ACCOUNT_ID="$(printf '%s' "$RAW_CF_ACCOUNT" | tr -d '\357\273\277\r\n ')"
+          npx wrangler pages deploy . --project-name=portal-zecat --branch=master --commit-dirty=true
