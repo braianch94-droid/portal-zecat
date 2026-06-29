@@ -1,4 +1,4 @@
-name = "portal-zecat"
+name = "portal-zecat-op"
 pages_build_output_dir = "."
 compatibility_date = "2025-06-01"
 

@@ -49,7 +49,7 @@ jobs:
           import os, json, urllib.request
           token = os.environ['CF_TOKEN'].lstrip('﻿').strip()
           account_id = os.environ['CF_ACCOUNT_ID'].lstrip('﻿').strip()
-          base = f'https://api.cloudflare.com/client/v4/accounts/{account_id}/pages/projects/portal-zecat'
+          base = f'https://api.cloudflare.com/client/v4/accounts/{account_id}/pages/projects/portal-zecat-op'
           try:
             req = urllib.request.Request(base, data=json.dumps({'production_branch': 'master'}).encode(),
               method='PATCH', headers={'Authorization': f'Bearer {token}', 'Content-Type': 'application/json'})
@@ -68,5 +68,5 @@ jobs:
         run: |
           export CLOUDFLARE_API_TOKEN="$(printf '%s' "$RAW_CF_TOKEN" | tr -d '\357\273\277\r\n ')"
           export CLOUDFLARE_ACCOUNT_ID="$(printf '%s' "$RAW_CF_ACCOUNT" | tr -d '\357\273\277\r\n ')"
-          npx wrangler pages project create portal-zecat --production-branch=master || echo "proyecto ya existe (ok)"
-          npx wrangler pages deploy . --project-name=portal-zecat --branch=master --commit-dirty=true
+          npx wrangler pages project create portal-zecat-op --production-branch=master || echo "proyecto ya existe (ok)"
+          npx wrangler pages deploy . --project-name=portal-zecat-op --branch=master --commit-dirty=true
