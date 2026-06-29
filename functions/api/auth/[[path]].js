@@ -53,6 +53,10 @@ function safeJSON(v, fallback) {
   try { return JSON.parse(v); } catch { return fallback; }
 }
 
+async function safeJson(request) {
+  try { return await request.json(); } catch { return {}; }
+}
+
 export async function onRequest(context) {
   const { request, env, params } = context;
   if (request.method === 'OPTIONS') return makeResp(null, 204);
@@ -65,7 +69,7 @@ export async function onRequest(context) {
   if (seg[0] === 'init' && method === 'POST') {
     const cnt = await DB.prepare('SELECT COUNT(*) as n FROM users').first();
     if (cnt && cnt.n > 0) return makeResp({ error: 'Already initialized' }, 400);
-    const { email, password, nombre = '' } = await request.json();
+    const { email, password, nombre = '' } = await safeJson(request);
     if (!email || !password) return makeResp({ error: 'Email y contraseña requeridos' }, 400);
     const hash = await hashPassword(password);
     const now = new Date().toISOString();
@@ -75,7 +79,7 @@ export async function onRequest(context) {
 
   // LOGIN
   if (seg[0] === 'login' && method === 'POST') {
-    const { email, password } = await request.json();
+    const { email, password } = await safeJson(request);
     if (!email || !password) return makeResp({ error: 'Credenciales requeridas' }, 400);
     const user = await DB.prepare('SELECT * FROM users WHERE email=? COLLATE NOCASE').bind(email.toLowerCase()).first();
     if (!user || !user.activo) return makeResp({ error: 'Credenciales inválidas' }, 401);
@@ -103,7 +107,7 @@ export async function onRequest(context) {
 
   // REGISTER — auto-registro queda inactivo hasta que superadmin active
   if (seg[0] === 'register' && method === 'POST') {
-    const { email, password, nombre = '' } = await request.json();
+    const { email, password, nombre = '' } = await safeJson(request);
     if (!email || !password) return makeResp({ error: 'Email y contraseña requeridos' }, 400);
     if (password.length < 8) return makeResp({ error: 'La contraseña debe tener al menos 8 caracteres' }, 400);
     const hash = await hashPassword(password);
@@ -128,7 +132,7 @@ export async function onRequest(context) {
     }
 
     if (method === 'POST') {
-      const { email, password, nombre = '', role = 'viewer', modulos = [] } = await request.json();
+      const { email, password, nombre = '', role = 'viewer', modulos = [] } = await safeJson(request);
       if (!email || !password) return makeResp({ error: 'Email y contraseña requeridos' }, 400);
       try {
         const hash = await hashPassword(password);
@@ -142,7 +146,7 @@ export async function onRequest(context) {
       const id = parseInt(seg[1]);
       const target = await DB.prepare('SELECT role FROM users WHERE id=?').bind(id).first();
       if (target?.role === 'superadmin' && sess.userId !== id) return makeResp({ error: 'No podés modificar otro superadmin' }, 403);
-      const body = await request.json();
+      const body = await safeJson(request);
       const upd = [], binds = [];
       if (body.nombre !== undefined) { upd.push('nombre=?'); binds.push(body.nombre); }
       if (body.role !== undefined) { upd.push('role=?'); binds.push(body.role); }
@@ -161,7 +165,7 @@ export async function onRequest(context) {
   if (seg[0] === 'password' && method === 'PUT') {
     const sess = await getSession(DB, request);
     if (!sess) return makeResp({ error: 'No autenticado' }, 401);
-    const { current_password, new_password } = await request.json();
+    const { current_password, new_password } = await safeJson(request);
     if (!new_password || new_password.length < 8) return makeResp({ error: 'La nueva contraseña debe tener al menos 8 caracteres' }, 400);
     const user = await DB.prepare('SELECT password_hash FROM users WHERE id=?').bind(sess.userId).first();
     if (!await verifyPassword(current_password, user.password_hash)) return makeResp({ error: 'Contraseña actual incorrecta' }, 401);
@@ -171,7 +175,7 @@ export async function onRequest(context) {
 
   // FORGOT PASSWORD
   if (seg[0] === 'forgot' && method === 'POST') {
-    const { email } = await request.json();
+    const { email } = await safeJson(request);
     if (!email) return makeResp({ error: 'Email requerido' }, 400);
     const user = await DB.prepare("SELECT id, nombre FROM users WHERE email=? COLLATE NOCASE AND activo=1").bind(email.toLowerCase()).first();
     if (!user) return makeResp({ ok: true }); // no revelar si existe o no
@@ -202,7 +206,7 @@ export async function onRequest(context) {
 
   // RESET PASSWORD
   if (seg[0] === 'reset' && method === 'POST') {
-    const { token, password } = await request.json();
+    const { token, password } = await safeJson(request);
     if (!token || !password) return makeResp({ error: 'Datos incompletos' }, 400);
     if (password.length < 8) return makeResp({ error: 'La contraseña debe tener al menos 8 caracteres' }, 400);
     const reset = await DB.prepare("SELECT * FROM password_resets WHERE token=? AND expires_at > datetime('now') AND used=0").bind(token).first();

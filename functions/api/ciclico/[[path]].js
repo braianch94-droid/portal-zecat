@@ -15,6 +15,7 @@ function json(data, status = 200) {
 }
 
 export async function onRequest(context) {
+  try {
   const {request, env, params} = context;
   const DB = env.CICLICO_DB;
 
@@ -46,7 +47,8 @@ export async function onRequest(context) {
     }
 
     if (method === 'POST') {
-      const d = await request.json();
+      const d = await request.json().catch(() => ({}));
+      if (!d.articulo) return json({error: 'Campo articulo requerido'}, 400);
       const r = await DB.prepare(
         `INSERT INTO ${tbl} (articulo,sku_wms,familia,sistema,fisico,ms,total,dif_cont,diferencia,ajustado,motivo,observacion,mes,dia,ddp,stock_ddp,dif_ddp,fecha_ingreso) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
       ).bind(d.articulo,d.sku_wms,d.familia,d.sistema,d.fisico,d.ms??0,d.total,d.dif_cont,d.diferencia,d.ajustado??'NO',d.motivo,d.observacion,d.mes,d.dia,d.ddp??0,d.stock_ddp,d.dif_ddp,d.fecha_ingreso).run();
@@ -136,4 +138,7 @@ export async function onRequest(context) {
   }
 
   return json({error: 'Not found'}, 404);
+  } catch(e) {
+    return json({error: 'Internal error'}, 500);
+  }
 }
