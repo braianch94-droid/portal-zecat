@@ -104,7 +104,7 @@
   <div class="spacer"></div>
   <div class="who">
     <span>Evaluador:</span>
-    <input id="evaluador" placeholder="Tu nombre" style="width:160px" />
+    <input id="evaluador" list="dlEvaluadores" placeholder="Tu nombre" style="width:160px" autocomplete="off" /><datalist id="dlEvaluadores"></datalist>
   </div>
 </header>
 <nav>
@@ -162,7 +162,7 @@ async function loadDashboard(){
   sec.innerHTML='<div class="empty">Cargando…</div>';
   const m=await meta();
   const periodos=m.periodos.length?m.periodos:[""];
-  const selP=`<select id="dPeriodo"><option value="">Todos los períodos</option>${m.periodos.map(p=>`<option>${esc(p)}</option>`).join("")}</select>`;
+  const selP=`<select id="dPeriodo"><option value="">Todos los períodos</option>${m.periodos.map((p,i)=>`<option${i===0?' selected':''}>${esc(p)}</option>`).join("")}</select>`;
   const selS=`<select id="dSector"><option value="">Todos los sectores</option>${m.sectores.map(s=>`<option>${esc(s)}</option>`).join("")}</select>`;
   sec.innerHTML=`
     <div class="toolbar">
@@ -492,7 +492,9 @@ function closeModal(){$("#modalBg").classList.remove("show");}
 $("#modalBg").onclick=e=>{if(e.target.id==="modalBg")closeModal();};
 
 // ---------- meta cache ----------
-async function meta(force){if(META&&!force)return META;META=await jget("/meta");return META;}
+async function meta(force){if(META&&!force)return META;META=await jget("/meta");
+  const dl=$("#dlEvaluadores"); if(dl)dl.innerHTML=(META.evaluadores||[]).map(e=>`<option>${esc(e)}</option>`).join("");
+  return META;}
 
 // ---------- bootstrap ----------
 async function boot(){

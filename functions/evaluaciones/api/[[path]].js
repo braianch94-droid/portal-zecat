@@ -33,9 +33,11 @@ async function api(request, env, url) {
     const areas = [...new Set(dims.map(d => d.area).filter(Boolean))].sort();
     const tecnicas = [...new Set(dims.map(d => d.tecnica).filter(Boolean))].sort();
     const turnos = [...new Set(dims.map(d => d.turno).filter(Boolean))].sort();
-    const periodos = (await db.prepare("SELECT DISTINCT periodo FROM evaluaciones ORDER BY periodo DESC").all()).results.map(r => r.periodo);
+    // Períodos ordenados por uso más reciente (no alfabético) → el primero es la campaña vigente
+    const periodos = (await db.prepare("SELECT periodo, MAX(fecha) mf, MAX(created_at) mc FROM evaluaciones GROUP BY periodo ORDER BY mf DESC, mc DESC").all()).results.map(r => r.periodo);
+    const evaluadores = (await db.prepare("SELECT evaluador, MAX(created_at) mc FROM evaluaciones WHERE evaluador IS NOT NULL AND evaluador<>'' GROUP BY evaluador ORDER BY mc DESC").all()).results.map(r => r.evaluador);
     return json({
-      objetivos, sectores, areas, tecnicas, turnos, periodos,
+      objetivos, sectores, areas, tecnicas, turnos, periodos, evaluadores,
       escala: [
         { v: 1, label: "No Cumple" },
         { v: 2, label: "Cumple Parcialmente" },
