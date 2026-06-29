@@ -986,7 +986,18 @@ const MODULOS_LIST = [
 let authUser = null;
 let nuModulos = new Set();
 
+let _resetToken = null;
+
 async function checkAuth() {
+  // Si hay ?reset=TOKEN en la URL, mostrar overlay en modo reset
+  const params = new URLSearchParams(window.location.search);
+  const rt = params.get('reset');
+  if (rt) {
+    _resetToken = rt;
+    document.getElementById('auth-overlay').style.display = 'flex';
+    showAuthTab('reset');
+    return;
+  }
   const token = localStorage.getItem('zecat-token');
   if (!token) return;
   try {
@@ -1034,10 +1045,78 @@ function applyModuleVisibility() {
 }
 
 function showAuthTab(tab) {
-  document.getElementById('auth-login-panel').style.display=tab==='login'?'':'none';
-  document.getElementById('auth-register-panel').style.display=tab==='register'?'':'none';
-  document.getElementById('tab-login').classList.toggle('active',tab==='login');
-  document.getElementById('tab-register').classList.toggle('active',tab==='register');
+  ['login','register','forgot','reset'].forEach(t => {
+    const el = document.getElementById('auth-'+t+'-panel');
+    if (el) el.style.display = t===tab ? '' : 'none';
+  });
+  document.getElementById('tab-login').classList.toggle('active', tab==='login');
+  document.getElementById('tab-register').classList.toggle('active', tab==='register');
+  const tabs = document.querySelector('.auth-tabs');
+  if (tabs) tabs.style.display = (tab==='forgot'||tab==='reset') ? 'none' : '';
+}
+
+async function doForgotPassword() {
+  const email = document.getElementById('fgt-email').value.trim();
+  const msgEl = document.getElementById('fgt-msg');
+  const errEl = document.getElementById('fgt-err');
+  const linkEl = document.getElementById('fgt-link');
+  msgEl.textContent=''; errEl.textContent=''; linkEl.style.display='none';
+  if (!email) { errEl.textContent='Ingresá tu email'; return; }
+  const btn = document.getElementById('btn-forgot');
+  btn.disabled=true; btn.textContent='Enviando…';
+  try {
+    const r = await fetch(AUTH_API+'/forgot', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email})});
+    const data = await r.json();
+    if (!r.ok) { errEl.textContent=data.error||'Error'; return; }
+    if (data.sent) {
+      msgEl.textContent='✓ Te enviamos un email con el link de recuperación.';
+    } else if (data.reset_url) {
+      msgEl.textContent='✓ Link generado (email no configurado):';
+      document.getElementById('fgt-link-url').textContent=data.reset_url;
+      window._resetUrl=data.reset_url;
+      linkEl.style.display='';
+    } else {
+      msgEl.textContent='✓ Si el email existe, recibirás las instrucciones.';
+    }
+  } catch(e) { errEl.textContent='Error de conexión'; }
+  finally { btn.disabled=false; btn.textContent='Enviar link'; }
+}
+
+function copyResetLink() {
+  if (!window._resetUrl) return;
+  navigator.clipboard.writeText(window._resetUrl).then(() => {
+    const btn = document.querySelector('#fgt-link button');
+    if (btn) { const orig=btn.textContent; btn.textContent='✓ Copiado!'; setTimeout(()=>btn.textContent=orig, 2000); }
+  }).catch(() => {
+    const el = document.getElementById('fgt-link-url');
+    const r = document.createRange(); r.selectNodeContents(el);
+    const s = window.getSelection(); s.removeAllRanges(); s.addRange(r);
+  });
+}
+
+async function doResetPassword() {
+  const p1 = document.getElementById('rst-password').value;
+  const p2 = document.getElementById('rst-password2').value;
+  const msgEl = document.getElementById('rst-msg');
+  const errEl = document.getElementById('rst-err');
+  msgEl.textContent=''; errEl.textContent='';
+  if (!p1||!p2) { errEl.textContent='Completá ambos campos'; return; }
+  if (p1!==p2) { errEl.textContent='Las contraseñas no coinciden'; return; }
+  if (p1.length<8) { errEl.textContent='Mínimo 8 caracteres'; return; }
+  const btn = document.getElementById('btn-reset');
+  btn.disabled=true; btn.textContent='Guardando…';
+  try {
+    const r = await fetch(AUTH_API+'/reset', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({token:_resetToken, password:p1})});
+    const data = await r.json();
+    if (!r.ok) { errEl.textContent=data.error||'Error al cambiar contraseña'; return; }
+    msgEl.textContent='✓ Contraseña actualizada. Redirigiendo al login…';
+    setTimeout(() => {
+      history.replaceState({}, '', window.location.pathname);
+      _resetToken=null;
+      showAuthTab('login');
+    }, 2000);
+  } catch(e) { errEl.textContent='Error de conexión'; }
+  finally { btn.disabled=false; btn.textContent='Cambiar contraseña'; }
 }
 
 async function doLogin() {
@@ -1197,6 +1276,7 @@ checkAuth();
       <input id="auth-password" class="auth-inp" type="password" placeholder="Contraseña" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()" />
       <button class="auth-btn" id="btn-login" onclick="doLogin()">Ingresar</button>
       <div id="auth-err" class="auth-err"></div>
+      <div style="text-align:center;margin-top:8px"><button style="background:none;border:none;color:var(--sb-text-dim,#64748b);font-size:12px;cursor:pointer;text-decoration:underline" onclick="showAuthTab('forgot')">¿Olvidaste tu contraseña?</button></div>
     </div>
     <div id="auth-register-panel" style="display:none">
       <input id="reg-nombre" class="auth-inp" type="text" placeholder="Tu nombre" autocomplete="name" />
@@ -1205,6 +1285,27 @@ checkAuth();
       <button class="auth-btn" id="btn-register" onclick="doRegister()">Solicitar acceso</button>
       <div id="reg-msg" class="auth-ok"></div>
       <div id="reg-err" class="auth-err"></div>
+    </div>
+    <div id="auth-forgot-panel" style="display:none">
+      <p style="font-size:13px;color:var(--sb-text-dim,#94a3b8);margin:0 0 12px">Ingresá tu email y te enviamos un link para recuperar tu contraseña.</p>
+      <input id="fgt-email" class="auth-inp" type="email" placeholder="Email" autocomplete="email" onkeydown="if(event.key==='Enter')doForgotPassword()" />
+      <button class="auth-btn" id="btn-forgot" onclick="doForgotPassword()">Enviar link</button>
+      <div id="fgt-msg" class="auth-ok"></div>
+      <div id="fgt-err" class="auth-err"></div>
+      <div id="fgt-link" style="display:none;margin-top:12px;padding:12px;background:rgba(0,0,0,.2);border-radius:8px;word-break:break-all">
+        <div style="font-size:11px;color:var(--sb-text-dim,#94a3b8);margin-bottom:6px">Email no configurado. Copiá este link y ábrilo en otra pestaña:</div>
+        <div id="fgt-link-url" style="font-size:12px;color:var(--sb-accent,#F97171)"></div>
+        <button style="margin-top:8px;padding:4px 10px;background:transparent;border:1px solid rgba(255,255,255,.15);border-radius:6px;color:var(--sb-text,#e2e8f0);font-size:12px;cursor:pointer" onclick="copyResetLink()">Copiar link</button>
+      </div>
+      <div style="text-align:center;margin-top:12px"><button style="background:none;border:none;color:var(--sb-text-dim,#64748b);font-size:12px;cursor:pointer;text-decoration:underline" onclick="showAuthTab('login')">← Volver al login</button></div>
+    </div>
+    <div id="auth-reset-panel" style="display:none">
+      <p style="font-size:13px;color:var(--sb-text-dim,#94a3b8);margin:0 0 12px">Ingresá tu nueva contraseña.</p>
+      <input id="rst-password" class="auth-inp" type="password" placeholder="Nueva contraseña (mín. 8 caracteres)" />
+      <input id="rst-password2" class="auth-inp" type="password" placeholder="Repetir contraseña" onkeydown="if(event.key==='Enter')doResetPassword()" />
+      <button class="auth-btn" id="btn-reset" onclick="doResetPassword()">Cambiar contraseña</button>
+      <div id="rst-msg" class="auth-ok"></div>
+      <div id="rst-err" class="auth-err"></div>
     </div>
   </div>
 </div>

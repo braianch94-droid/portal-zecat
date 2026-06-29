@@ -169,5 +169,49 @@ export async function onRequest(context) {
     return makeResp({ ok: true });
   }
 
+  // FORGOT PASSWORD
+  if (seg[0] === 'forgot' && method === 'POST') {
+    const { email } = await request.json();
+    if (!email) return makeResp({ error: 'Email requerido' }, 400);
+    const user = await DB.prepare("SELECT id, nombre FROM users WHERE email=? COLLATE NOCASE AND activo=1").bind(email.toLowerCase()).first();
+    if (!user) return makeResp({ ok: true }); // no revelar si existe o no
+    await DB.prepare("DELETE FROM password_resets WHERE user_id=? OR expires_at < datetime('now')").bind(user.id).run();
+    const token = crypto.randomUUID() + '-' + crypto.randomUUID();
+    const expires = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+    await DB.prepare('INSERT INTO password_resets (token,user_id,expires_at,used) VALUES (?,?,?,0)').bind(token, user.id, expires).run();
+    const origin = new URL(request.url).origin;
+    const resetUrl = origin + '/?reset=' + token;
+    const resendKey = env.RESEND_API_KEY;
+    if (resendKey) {
+      try {
+        await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + resendKey },
+          body: JSON.stringify({
+            from: 'Zecat Portal <noreply@zecat.com>',
+            to: [email],
+            subject: 'Recuperar contraseña — Zecat Portal',
+            html: `<p>Hola ${user.nombre||''},</p><p>Hacé click acá para recuperar tu contraseña (válido 1 hora):</p><p><a href="${resetUrl}">${resetUrl}</a></p><p>Si no solicitaste esto, ignorá este email.</p>`
+          })
+        });
+        return makeResp({ ok: true, sent: true });
+      } catch(e) {}
+    }
+    return makeResp({ ok: true, sent: false, reset_url: resetUrl });
+  }
+
+  // RESET PASSWORD
+  if (seg[0] === 'reset' && method === 'POST') {
+    const { token, password } = await request.json();
+    if (!token || !password) return makeResp({ error: 'Datos incompletos' }, 400);
+    if (password.length < 8) return makeResp({ error: 'La contraseña debe tener al menos 8 caracteres' }, 400);
+    const reset = await DB.prepare("SELECT * FROM password_resets WHERE token=? AND expires_at > datetime('now') AND used=0").bind(token).first();
+    if (!reset) return makeResp({ error: 'Link inválido o expirado' }, 400);
+    await DB.prepare('UPDATE users SET password_hash=? WHERE id=?').bind(await hashPassword(password), reset.user_id).run();
+    await DB.prepare('UPDATE password_resets SET used=1 WHERE token=?').bind(token).run();
+    await DB.prepare('DELETE FROM sessions WHERE user_id=?').bind(reset.user_id).run();
+    return makeResp({ ok: true });
+  }
+
   return makeResp({ error: 'Not found' }, 404);
 }
