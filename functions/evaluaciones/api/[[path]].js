@@ -53,6 +53,7 @@ async function api(request, env, url) {
     const turno = url.searchParams.get("turno");
     const tecnica = url.searchParams.get("tecnica");
     const periodo = url.searchParams.get("periodo");
+    const estado = url.searchParams.get("estado") || "activos"; // activos | inactivos | todos
     const q = (url.searchParams.get("q") || "").trim().toLowerCase();
 
     let sql = `
@@ -61,7 +62,9 @@ async function api(request, env, url) {
         (SELECT ev.promedio FROM evaluaciones ev WHERE ev.empleado_id = e.id ${periodo ? "AND ev.periodo = ?p" : ""} ORDER BY ev.fecha DESC, ev.id DESC LIMIT 1) AS ult_promedio,
         (SELECT ev.periodo FROM evaluaciones ev WHERE ev.empleado_id = e.id ORDER BY ev.fecha DESC, ev.id DESC LIMIT 1) AS ult_periodo,
         (SELECT ev.fecha FROM evaluaciones ev WHERE ev.empleado_id = e.id ORDER BY ev.fecha DESC, ev.id DESC LIMIT 1) AS ult_fecha
-      FROM empleados e WHERE e.activo=1`;
+      FROM empleados e WHERE 1=1`;
+    if (estado === "inactivos") sql += " AND e.activo=0";
+    else if (estado !== "todos") sql += " AND e.activo=1";
     const binds = [];
     sql = sql.replaceAll("?p", "?");
     if (periodo) { binds.push(periodo, periodo); }
@@ -90,6 +93,37 @@ async function api(request, env, url) {
       "SELECT id, fecha, periodo, evaluador, promedio FROM evaluaciones WHERE empleado_id=? ORDER BY fecha DESC, id DESC"
     ).bind(id).all()).results;
     return json({ ...emp, evaluaciones: evals });
+  }
+
+  // POST /api/empleados (alta de colaborador)
+  if (path === "/api/empleados" && method === "POST") {
+    const b = await request.json().catch(() => ({}));
+    if (!b.nombre || !String(b.nombre).trim()) return bad("Falta el nombre");
+    if (!b.apellido || !String(b.apellido).trim()) return bad("Falta el apellido");
+    const res = await db.prepare(`
+      INSERT INTO empleados (nombre, apellido, tecnica, area, sector, turno, ef_ev, categoria, activo)
+      VALUES (?,?,?,?,?,?,?,?,1)`).bind(
+        String(b.nombre).trim(), String(b.apellido).trim(),
+        b.tecnica || "", b.area || "", b.sector || "", b.turno || "", b.ef_ev || "", b.categoria || ""
+      ).run();
+    return json({ id: res.meta.last_row_id }, 201);
+  }
+
+  // PATCH /api/empleados/:id (editar campos y/o activar-desactivar)
+  if (seg[1] === "empleados" && seg[2] && method === "PATCH") {
+    const id = Number(seg[2]);
+    const b = await request.json().catch(() => ({}));
+    const sets = [];
+    const binds = [];
+    for (const f of ["nombre", "apellido", "tecnica", "area", "sector", "turno", "ef_ev", "categoria"]) {
+      if (b[f] !== undefined) { sets.push(`${f}=?`); binds.push(String(b[f])); }
+    }
+    if (b.activo !== undefined) { sets.push("activo=?"); binds.push(b.activo ? 1 : 0); }
+    if (!sets.length) return bad("Nada para actualizar");
+    binds.push(id);
+    const r = await db.prepare(`UPDATE empleados SET ${sets.join(", ")} WHERE id=?`).bind(...binds).run();
+    if (r.meta.changes === 0) return bad("Empleado no encontrado", 404);
+    return json({ ok: true });
   }
 
   // GET /api/evaluaciones/:id

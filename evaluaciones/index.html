@@ -329,35 +329,92 @@ async function loadEmpleados(){
   const sec=$("#tab-empleados");
   const m=await meta();
   sec.innerHTML=`
+    <div class="flexbetween" style="margin-bottom:12px">
+      <h2 style="margin:0">Colaboradores</h2>
+      <button class="btn" id="btnNuevoColab">➕ Agregar colaborador</button>
+    </div>
     <div class="toolbar">
       <div><label>Buscar</label><input id="eQ" placeholder="Nombre, área…" /></div>
       <div><label>Sector</label><select id="eSector"><option value="">Todos</option>${m.sectores.map(s=>`<option>${esc(s)}</option>`).join("")}</select></div>
       <div><label>Área</label><select id="eArea"><option value="">Todas</option>${m.areas.map(s=>`<option>${esc(s)}</option>`).join("")}</select></div>
       <div><label>Línea/Técnica</label><select id="eTec"><option value="">Todas</option>${m.tecnicas.map(s=>`<option>${esc(s)}</option>`).join("")}</select></div>
       <div><label>Turno</label><select id="eTurno"><option value="">Todos</option>${m.turnos.map(s=>`<option>${esc(s)}</option>`).join("")}</select></div>
+      <div><label>Estado</label><select id="eEstado"><option value="activos">Activos</option><option value="inactivos">Inactivos</option><option value="todos">Todos</option></select></div>
     </div>
     <div class="card" style="padding:0"><div id="empTable"></div></div>`;
-  ["eQ","eSector","eArea","eTec","eTurno"].forEach(id=>{$("#"+id).oninput=$("#"+id).onchange=renderEmpleados;});
+  ["eQ","eSector","eArea","eTec","eTurno","eEstado"].forEach(id=>{$("#"+id).oninput=$("#"+id).onchange=renderEmpleados;});
+  $("#btnNuevoColab").onclick=()=>colabModal(null);
   renderEmpleados();
 }
 async function renderEmpleados(){
   const qs=new URLSearchParams();
-  const q=$("#eQ").value, s=$("#eSector").value, a=$("#eArea").value, t=$("#eTec").value, tu=$("#eTurno").value;
-  if(q)qs.set("q",q); if(s)qs.set("sector",s); if(a)qs.set("area",a); if(t)qs.set("tecnica",t); if(tu)qs.set("turno",tu);
+  const q=$("#eQ").value, s=$("#eSector").value, a=$("#eArea").value, t=$("#eTec").value, tu=$("#eTurno").value, est=$("#eEstado").value;
+  if(q)qs.set("q",q); if(s)qs.set("sector",s); if(a)qs.set("area",a); if(t)qs.set("tecnica",t); if(tu)qs.set("turno",tu); if(est)qs.set("estado",est);
   const rows=await jget("/empleados?"+qs);
   const el=$("#empTable");
   if(!rows.length){el.innerHTML='<div class="empty">Sin resultados</div>';return;}
-  el.innerHTML=`<table><thead><tr><th>Empleado</th><th>Sector</th><th>Área / Línea</th><th>Turno</th><th class="right">Evaluaciones</th><th class="right">Último prom.</th><th></th></tr></thead><tbody>
-    ${rows.map(e=>`<tr>
+  el.innerHTML=`<table><thead><tr><th>Empleado</th><th>Sector</th><th>Área / Línea</th><th>Turno</th><th>Estado</th><th class="right">Eval.</th><th class="right">Últ. prom.</th><th></th></tr></thead><tbody>
+    ${rows.map(e=>`<tr style="${e.activo?'':'opacity:.55'}">
       <td><b>${nombre(e)}</b><div class="small muted">${esc(e.categoria||"")}</div></td>
       <td>${esc(e.sector)}</td><td>${sectorLinea(e)}</td><td>${esc(e.turno)}</td>
+      <td>${e.activo?'<span class="pill badge-ok">Activo</span>':'<span class="pill badge-none">Inactivo</span>'}</td>
       <td class="right">${e.n_eval||0}</td>
       <td class="right">${badge(e.ult_promedio)}${e.ult_periodo?`<div class="small muted">${esc(e.ult_periodo)}</div>`:""}</td>
-      <td class="right"><button class="btn ghost" onclick="evaluarA(${e.id})">📝 Evaluar</button> <button class="btn ghost" onclick="verEmpleado(${e.id})">👁 Ver</button></td>
+      <td class="right">
+        ${e.activo?`<button class="btn ghost" onclick="evaluarA(${e.id})">📝 Evaluar</button> <button class="btn ghost" onclick="verEmpleado(${e.id})">👁 Ver</button>`:""}
+        <button class="btn ghost" onclick="editColab(${e.id})">✏</button>
+        ${e.activo
+          ?`<button class="btn ghost" style="color:var(--warn)" onclick="toggleActivo(${e.id},0)">Desactivar</button>`
+          :`<button class="btn ghost" style="color:var(--ok)" onclick="toggleActivo(${e.id},1)">Activar</button>`}
+      </td>
     </tr>`).join("")}
   </tbody></table>`;
 }
 function evaluarA(id){$$('nav button').find(b=>b.dataset.tab==="evaluar").click();setTimeout(()=>loadEvaluar(id),50);}
+
+// ---------- alta / edición / activar-desactivar colaborador ----------
+function colabModal(emp){
+  const m=META||{sectores:[],areas:[],tecnicas:[],turnos:[]};
+  const dl=(id,arr)=>`<datalist id="${id}">${(arr||[]).map(x=>`<option>${esc(x)}</option>`).join("")}</datalist>`;
+  const v=f=>emp?esc(emp[f]||""):"";
+  openModal(`
+    <div class="flexbetween"><h2>${emp?'Editar colaborador':'Nuevo colaborador'}</h2><button class="btn ghost" onclick="closeModal()">✕</button></div>
+    <div class="row">
+      <div class="col"><label>Nombre *</label><input id="cNombre" value="${v('nombre')}" /></div>
+      <div class="col"><label>Apellido *</label><input id="cApellido" value="${v('apellido')}" /></div>
+    </div>
+    <div class="row">
+      <div class="col"><label>Sector</label><input id="cSector" list="dlSector" value="${v('sector')}" />${dl('dlSector',m.sectores)}</div>
+      <div class="col"><label>Área</label><input id="cArea" list="dlArea" value="${v('area')}" />${dl('dlArea',m.areas)}</div>
+    </div>
+    <div class="row">
+      <div class="col"><label>Línea / Técnica</label><input id="cTecnica" list="dlTec" value="${v('tecnica')}" />${dl('dlTec',m.tecnicas)}</div>
+      <div class="col"><label>Turno</label><input id="cTurno" list="dlTurno" value="${v('turno')}" />${dl('dlTurno',m.turnos)}</div>
+    </div>
+    <div class="row">
+      <div class="col"><label>EF / EV</label><input id="cEfev" value="${v('ef_ev')}" /></div>
+      <div class="col"><label>Categoría</label><input id="cCategoria" value="${v('categoria')}" /></div>
+    </div>
+    <div class="right" style="margin-top:14px"><button class="btn" id="cSave">💾 Guardar</button></div>`);
+  $("#cSave").onclick=async()=>{
+    const body={nombre:$("#cNombre").value.trim(),apellido:$("#cApellido").value.trim(),
+      sector:$("#cSector").value.trim(),area:$("#cArea").value.trim(),tecnica:$("#cTecnica").value.trim(),
+      turno:$("#cTurno").value.trim(),ef_ev:$("#cEfev").value.trim(),categoria:$("#cCategoria").value.trim()};
+    if(!body.nombre||!body.apellido){toast("Nombre y apellido son obligatorios",true);return;}
+    try{
+      $("#cSave").disabled=true;
+      if(emp){await jsend("/empleados/"+emp.id,"PATCH",body);toast("Colaborador actualizado ✔");}
+      else{await jsend("/empleados","POST",body);toast("Colaborador agregado ✔");}
+      closeModal(); META=null; await meta(true); renderEmpleados();
+    }catch(e){toast(e.message,true);$("#cSave").disabled=false;}
+  };
+}
+async function editColab(id){const e=await jget("/empleados/"+id);colabModal(e);}
+async function toggleActivo(id,activo){
+  if(!activo && !confirm("¿Desactivar este colaborador? No aparecerá para evaluar (no se borran sus datos)."))return;
+  try{await jsend("/empleados/"+id,"PATCH",{activo});toast(activo?"Colaborador activado ✔":"Colaborador desactivado");renderEmpleados();}
+  catch(e){toast(e.message,true);}
+}
 
 async function verEmpleado(id){
   const e=await jget("/empleados/"+id);
