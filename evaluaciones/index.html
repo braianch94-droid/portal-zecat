@@ -233,7 +233,7 @@ async function loadEvaluar(prefillId){
       </div>
       <div id="empInfo" class="small muted" style="margin:8px 0 4px"></div>
       <div class="row">
-        <div class="col"><label>Período *</label><input id="fPeriodo" list="periodos" placeholder="Ej: 2025-S1" /><datalist id="periodos">${m.periodos.map(p=>`<option>${esc(p)}</option>`).join("")}</datalist></div>
+        <div class="col"><label>Período *</label><input id="fPeriodo" list="periodos" placeholder="Ej: 1er semestre 2026" value="${esc(localStorage.getItem('ultimo_periodo')||'')}" /><datalist id="periodos">${m.periodos.map(p=>`<option>${esc(p)}</option>`).join("")}</datalist></div>
         <div class="col"><label>Fecha *</label><input id="fFecha" type="date" value="${hoy}" /></div>
       </div>
       <div class="row">
@@ -284,6 +284,7 @@ async function loadEvaluar(prefillId){
   $("#btnSave").onclick=saveEval;
   $("#btnCancel").onclick=()=>loadEvaluar();
   if(prefillId){$("#fEmpleado").value=prefillId;$("#fEmpleado").onchange();}
+  else setTimeout(()=>$("#fEmpleado").focus(),60);
 }
 function updateAvg(){
   const vals=$$(".score-group button.sel").map(b=>+b.dataset.v);
@@ -318,7 +319,8 @@ async function saveEval(){
   try{
     $("#btnSave").disabled=true;
     if(EDIT_ID){await jsend("/evaluaciones/"+EDIT_ID,"PUT",body);toast("Evaluación actualizada ✔");EDIT_ID=null;}
-    else{await jsend("/evaluaciones","POST",body);toast("Evaluación guardada ✔");}
+    else{await jsend("/evaluaciones","POST",body);toast("Evaluación guardada ✔ — listo para el siguiente");}
+    localStorage.setItem("ultimo_periodo",periodo);
     loadEvaluar();
   }catch(e){toast(e.message,true);}
   finally{$("#btnSave").disabled=false;}
