@@ -891,7 +891,7 @@ function switchTab(name){
   document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
   document.getElementById('sec-'+name).classList.add('active');
   document.getElementById('btn-'+name).classList.add('active');
-  document.getElementById('opFilterWrap').style.display=(name==='picking'||name==='reclamos'||name==='control'||name==='maquinistas')?'':'none';
+  document.getElementById('opFilterWrap').style.display=(name==='picking'||name==='reclamos'||name==='maquinistas')?'':'none';
   if(name==='control') buildControl();
   if(name==='maquinistas') buildMaquinistas();
   if(name==='resumen') buildResumen();
@@ -1544,10 +1544,12 @@ try{window.parent.postMessage({type:'zecat-theme-ready'},'*');}catch(e){}
 try {
   switchTab('picking');
   var _initAnio='2026';var _initMes='6';
-  try{var _sf=JSON.parse(localStorage.getItem('zecat-filter'));if(_sf&&_sf.ano&&_sf.mes){_initAnio=_sf.ano;_initMes=_sf.mes;}}catch(e){}
+  var _restoredOld=false;
+  try{var _sf=JSON.parse(localStorage.getItem('zecat-filter'));if(_sf&&_sf.ano&&_sf.mes){if(_sf.ano!==_initAnio||_sf.mes!==_initMes)_restoredOld=true;_initAnio=_sf.ano;_initMes=_sf.mes;}}catch(e){}
   document.getElementById('selAnio').value=_initAnio;
   document.getElementById('selMes').value=_initMes;
   applyFilter();
+  if(_restoredOld){var _fb=document.getElementById('filterBadge');_fb.innerHTML=_fb.textContent+' <span onclick="resetFilter()" style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d;border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;margin-left:6px;font-weight:700;">⚠ Restaurado &mdash; Ver mes actual</span>';}
   // Poblar tabla 7 dias (datos estaticos, filtrable por grupo)
   _build7dTable();
   // Si ya hay dark mode guardado, aplicar colores a los charts recién creados
