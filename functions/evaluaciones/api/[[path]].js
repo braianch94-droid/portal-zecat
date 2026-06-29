@@ -17,67 +17,13 @@ export async function onRequest(context) {
   }
 }
 
-// ---------- Autenticación (contraseña compartida) ----------
-const AUTH_SALT = "evaluaciones-auth-v1";
-const COOKIE = "ev_sess";
-
-function resolvePassword(env) {
-  return (env.APP_PASSWORD && String(env.APP_PASSWORD)) ||
-         (env.APP_PASSWORD_DEFAULT && String(env.APP_PASSWORD_DEFAULT)) ||
-         "zecat2025";
-}
-async function token(pw) {
-  const enc = new TextEncoder();
-  const key = await crypto.subtle.importKey("raw", enc.encode(pw), { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
-  const sig = await crypto.subtle.sign("HMAC", key, enc.encode(AUTH_SALT));
-  return [...new Uint8Array(sig)].map(b => b.toString(16).padStart(2, "0")).join("");
-}
-function timingSafeEqual(a, b) {
-  if (typeof a !== "string" || typeof b !== "string" || a.length !== b.length) return false;
-  let r = 0;
-  for (let i = 0; i < a.length; i++) r |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return r === 0;
-}
-function getCookie(request, name) {
-  const c = request.headers.get("cookie") || "";
-  const m = c.match(new RegExp("(?:^|;\\s*)" + name + "=([^;]+)"));
-  return m ? m[1] : null;
-}
-function sessionCookie(value, url, maxAge) {
-  const secure = url.protocol === "https:" ? " Secure;" : "";
-  return `${COOKIE}=${value}; HttpOnly; Path=/evaluaciones; SameSite=Lax;${secure} Max-Age=${maxAge}`;
-}
-
 async function api(request, env, url) {
   const db = env.DB;
   const path = url.pathname;
   const method = request.method;
   const seg = path.split("/").filter(Boolean); // ["api", ...]
 
-  const expected = await token(resolvePassword(env));
-
-  // POST /api/login  { password }
-  if (path === "/api/login" && method === "POST") {
-    const b = await request.json().catch(() => ({}));
-    const ok = timingSafeEqual(await token(String(b.password || "")), expected);
-    if (!ok) return bad("Contraseña incorrecta", 401);
-    return new Response(JSON.stringify({ ok: true }), {
-      status: 200,
-      headers: { ...JSON_HEADERS, "set-cookie": sessionCookie(expected, url, 2592000) },
-    });
-  }
-  // POST /api/logout
-  if (path === "/api/logout" && method === "POST") {
-    return new Response(JSON.stringify({ ok: true }), {
-      status: 200,
-      headers: { ...JSON_HEADERS, "set-cookie": sessionCookie("", url, 0) },
-    });
-  }
-
-  // A partir de acá, todo requiere sesión válida
-  if (!timingSafeEqual(getCookie(request, COOKIE) || "", expected)) {
-    return bad("No autenticado", 401);
-  }
+  // Acceso libre: el control de acceso lo maneja el portal (sin login propio).
 
   // GET /api/meta
   if (path === "/api/meta" && method === "GET") {

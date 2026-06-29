@@ -105,21 +105,8 @@
   <div class="who">
     <span>Evaluador:</span>
     <input id="evaluador" placeholder="Tu nombre" style="width:160px" />
-    <button class="logout" id="btnLogout" title="Cerrar sesión">Salir</button>
   </div>
 </header>
-<div class="login-bg" id="loginBg" style="display:none">
-  <div class="login-card">
-    <div class="brand brand-lg">
-      <svg class="zico" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" aria-label="Zecat"><rect width="100" height="100" rx="24" fill="#E1251B"/><text x="50" y="68" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="700" font-size="58" fill="#fff">z</text></svg>
-      ZECAT
-    </div>
-    <p>Evaluaciones · Artículos Promocionales SA</p>
-    <div class="err" id="loginErr"></div>
-    <input id="loginPass" type="password" placeholder="Contraseña" autocomplete="current-password" />
-    <button class="btn" id="loginBtn" style="width:100%">Ingresar</button>
-  </div>
-</div>
 <nav>
   <button data-tab="dashboard" class="active">📊 Dashboard</button>
   <button data-tab="evaluar">📝 Evaluar</button>
@@ -146,9 +133,8 @@ const $$ = (s,el=document)=>[...el.querySelectorAll(s)];
 const fmt = n => (n==null||isNaN(n))?"–":Number(n).toFixed(2);
 const esc = s => (s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 function toast(msg,err=false){const t=$("#toast");t.textContent=msg;t.className="toast show"+(err?" err":"");setTimeout(()=>t.className="toast",2600);}
-function authFail(){showLogin();throw new Error("Sesión expirada");}
-async function jget(u){const r=await fetch(API+u);if(r.status===401)authFail();if(!r.ok)throw new Error((await r.json()).error||r.status);return r.json();}
-async function jsend(u,m,b){const r=await fetch(API+u,{method:m,headers:{"content-type":"application/json"},body:JSON.stringify(b)});if(r.status===401)authFail();const d=await r.json();if(!r.ok)throw new Error(d.error||r.status);return d;}
+async function jget(u){const r=await fetch(API+u);if(!r.ok)throw new Error((await r.json()).error||r.status);return r.json();}
+async function jsend(u,m,b){const r=await fetch(API+u,{method:m,headers:{"content-type":"application/json"},body:JSON.stringify(b)});const d=await r.json();if(!r.ok)throw new Error(d.error||r.status);return d;}
 function color(p){if(p==null)return"var(--muted)";if(p<2.5)return"var(--bad)";if(p<3.5)return"var(--warn)";return"var(--ok)";}
 function badge(p){if(p==null)return'<span class="pill badge-none">Pendiente</span>';const c=p<2.5?"badge-bad":p<3.5?"badge-warn":"badge-ok";return`<span class="pill ${c}">${fmt(p)}</span>`;}
 function nombre(e){return esc(e.apellido)+", "+esc(e.nombre);}
@@ -449,31 +435,16 @@ $("#modalBg").onclick=e=>{if(e.target.id==="modalBg")closeModal();};
 // ---------- meta cache ----------
 async function meta(force){if(META&&!force)return META;META=await jget("/meta");return META;}
 
-// ---------- auth ----------
-function showLogin(){$("#loginBg").style.display="flex";setTimeout(()=>$("#loginPass").focus(),50);}
-function hideLogin(){$("#loginBg").style.display="none";$("#loginPass").value="";$("#loginErr").textContent="";}
-async function doLogin(){
-  const pass=$("#loginPass").value;
-  if(!pass){$("#loginErr").textContent="Ingresá la contraseña";return;}
-  $("#loginBtn").disabled=true;
-  try{
-    const r=await fetch(API+"/login",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({password:pass})});
-    if(!r.ok){$("#loginErr").textContent="Contraseña incorrecta";$("#loginPass").select();return;}
-    hideLogin(); META=null;
-    $$('nav button').find(b=>b.classList.contains("active")).click();
-  }catch(e){$("#loginErr").textContent="Error de conexión";}
-  finally{$("#loginBtn").disabled=false;}
-}
-$("#loginBtn").onclick=doLogin;
-$("#loginPass").addEventListener("keydown",e=>{if(e.key==="Enter")doLogin();});
-$("#btnLogout").onclick=async()=>{try{await fetch(API+"/logout",{method:"POST"});}catch(e){}META=null;showLogin();};
-
 // ---------- bootstrap ----------
-async function init(){
-  try{ await jget("/meta"); hideLogin(); loadDashboard(); }
-  catch(e){ /* 401 ya mostró login */ }
+async function boot(){
+  try{ await meta(true); loadDashboard(); }
+  catch(e){
+    $("#tab-dashboard").innerHTML='<div class="card empty">⚠️ La base de datos todavía no está conectada.<br><br>'+
+      '<span class="small">Falta habilitar el permiso <b>D1</b> del token en Cloudflare. '+
+      'Apenas esté, la app carga los empleados y las evaluaciones automáticamente.</span></div>';
+  }
 }
-init();
+boot();
 </script>
 </body>
 </html>

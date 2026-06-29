@@ -4,8 +4,10 @@ name = "portal-zecat"
 pages_build_output_dir = "."
 compatibility_date = "2025-06-01"
 
-[[d1_databases]]
-binding = "DB"
-database_name = "evaluaciones-desempeno"
-database_id = "976f9621-96f2-4f74-b604-9e2ba594ff22"
-preview_database_id = "976f9621-96f2-4f74-b604-9e2ba594ff22"
+# Binding D1 desactivado hasta que el token tenga permiso D1 y la base
+# exista en la cuenta del portal. Se reactiva con el database_id real.
+# [[d1_databases]]
+# binding = "DB"
+# database_name = "evaluaciones-desempeno"
+# database_id = "PONER_ID_REAL"
+# preview_database_id = "PONER_ID_REAL"
