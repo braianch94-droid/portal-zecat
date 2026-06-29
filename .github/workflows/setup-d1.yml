@@ -1,0 +1,32 @@
+name: Setup D1 evaluaciones (one-shot)
+
+on:
+  workflow_dispatch:
+    inputs:
+      seed_sql:
+        description: "SQL de esquema + datos (se ejecuta contra D1 remota)"
+        required: true
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Crear y sembrar D1 en la cuenta del portal
+        env:
+          RAW_CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          RAW_CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          SEED_SQL: ${{ github.event.inputs.seed_sql }}
+        run: |
+          export CLOUDFLARE_API_TOKEN="$(printf '%s' "$RAW_CF_TOKEN" | tr -d '\357\273\277\r\n ')"
+          export CLOUDFLARE_ACCOUNT_ID="$(printf '%s' "$RAW_CF_ACCOUNT" | tr -d '\357\273\277\r\n ')"
+          echo "=== D1 existentes (antes) ==="
+          npx wrangler d1 list --json || true
+          echo "=== crear (ok si ya existe) ==="
+          npx wrangler d1 create evaluaciones-desempeno || true
+          echo "=== D1 con IDs (DESPUES) ==="
+          npx wrangler d1 list --json || true
+          printf '%s' "$SEED_SQL" > /tmp/seed.sql
+          echo "=== sembrando (idempotente) ==="
+          npx wrangler d1 execute evaluaciones-desempeno --remote --file=/tmp/seed.sql -y
+          echo "=== verificacion ==="
+          npx wrangler d1 execute evaluaciones-desempeno --remote --json --command "SELECT (SELECT COUNT(*) FROM empleados) AS empleados, (SELECT COUNT(*) FROM objetivos) AS objetivos" || true
