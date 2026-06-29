@@ -693,7 +693,12 @@ th.center, td.center { text-align: center; }
         </div>
         <div class="form-group" style="grid-column: span 2;">
           <label>Motivo</label>
-          <input type="text" id="f-motivo" placeholder="Motivo de la diferencia">
+          <input type="text" id="f-motivo" placeholder="Motivo de la diferencia" list="motivo-list" autocomplete="off">
+          <datalist id="motivo-list">
+            <option value="Error Operativo">
+            <option value="Error Administrativo">
+            <option value="Sin Identificar">
+          </datalist>
         </div>
         <div class="form-group" style="grid-column: span 2;">
           <label>Observación</label>
@@ -971,7 +976,7 @@ const SNAPSHOT_DATA = {
 
 /* -- Business logic -- */
 const MESES_ES_ARR = ['','enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-const FERIADOS_SET = new Set(['2025-01-01','2025-03-03','2025-03-04','2025-03-24','2025-04-02','2025-04-18','2025-05-01','2025-05-25','2025-06-16','2025-06-20','2025-07-09','2025-08-18','2025-10-13','2025-11-24','2025-12-08','2025-12-25','2026-01-01','2026-02-16','2026-02-17','2026-03-24','2026-04-02','2026-04-03','2026-05-01','2026-05-25','2026-06-15','2026-06-20','2026-07-09','2026-08-17','2026-10-12','2026-11-23','2026-12-08','2026-12-25']);
+const FERIADOS_SET = new Set(['2025-01-01','2025-03-03','2025-03-04','2025-03-24','2025-04-02','2025-04-18','2025-05-01','2025-05-25','2025-06-16','2025-06-20','2025-07-09','2025-08-18','2025-10-13','2025-11-24','2025-12-08','2025-12-25','2026-01-01','2026-02-16','2026-02-17','2026-03-24','2026-04-02','2026-04-03','2026-05-01','2026-05-25','2026-06-15','2026-06-20','2026-07-09','2026-08-17','2026-10-12','2026-11-23','2026-12-08','2026-12-25','2027-01-01','2027-03-08','2027-03-09','2027-03-24','2027-04-02','2027-04-23','2027-05-01','2027-05-25','2027-06-17','2027-06-20','2027-07-09','2027-08-16','2027-10-11','2027-11-22','2027-12-08','2027-12-25']);
 function familiaLimpia(f) { return (f||'').replace(/^[A-Z]-\d+ - /,''); }
 function fmtFecha(iso) { if (!iso) return '—'; var p = iso.split('-'); return p[2]+'/'+p[1]+'/'+p[0]; }
 function calcularCampos(sistema,fisico,ms,ddp) {
