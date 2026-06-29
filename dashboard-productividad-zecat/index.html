@@ -464,20 +464,23 @@ function buildControl(){
   var sel=months.filter(function(ym){var p=ym.split('-');if(anio!=='all'&&p[0]!==anio)return false;if(mes!=='all'&&parseInt(p[1])!==parseInt(mes))return false;return true;});
   if(!sel.length)sel=[months[months.length-1]];
   var cc=chartColors();
-  var opsMap={};sel.forEach(function(ym){(ctrlExcelData[ym]||[]).forEach(function(op){if(!opsMap[op.nm])opsMap[op.nm]={nm:op.nm,und:0,ord:0,dias:0};opsMap[op.nm].und+=op.und;opsMap[op.nm].ord+=op.ord;opsMap[op.nm].dias+=op.dias;});});
+  var opsMap={};
+  sel.forEach(function(ym){(ctrlExcelData[ym]||[]).forEach(function(op){if(!opsMap[op.nm])opsMap[op.nm]={nm:op.nm,und:0,ord:0,dias:0};opsMap[op.nm].und+=op.und;opsMap[op.nm].ord+=op.ord;opsMap[op.nm].dias+=op.dias;});});
   var ops=Object.values(opsMap).sort(function(a,b){return b.und-a.und;});
   var totUnd=ops.reduce(function(s,o){return s+o.und;},0),totOrd=ops.reduce(function(s,o){return s+o.ord;},0),totDias=ops.reduce(function(s,o){return s+o.dias;},0);
   var avgUpd=totDias?Math.round(totUnd/totDias):0;
+  var avgUO=totOrd?Math.round(totUnd/totOrd):0;
   document.getElementById('ctrlKpiUnd').textContent=totUnd.toLocaleString('es-AR');
-  document.getElementById('ctrlKpiUndSub').textContent=avgUpd+' und/dia prom';
+  document.getElementById('ctrlKpiUndSub').textContent='~'+Math.round(totUnd/Math.max(sel.length,1)).toLocaleString('es-AR')+'/mes';
   document.getElementById('ctrlKpiOrd').textContent=totOrd.toLocaleString('es-AR');
-  document.getElementById('ctrlKpiOrdSub').textContent=totOrd.toLocaleString('es-AR')+' ordenes';
+  document.getElementById('ctrlKpiOrdSub').textContent='~'+avgUO.toLocaleString('es-AR')+' UND/ORD';
   document.getElementById('ctrlKpiUdpd').textContent=avgUpd.toLocaleString('es-AR');
-  document.getElementById('ctrlKpiUdpdSub').textContent=sel.length+' mes'+(sel.length>1?'es':'');
+  document.getElementById('ctrlKpiUdpdSub').textContent=totDias+' d\xedas trabajados';
   document.getElementById('ctrlKpiOps').textContent=ops.length;
-  document.getElementById('ctrlKpiOpsSub').textContent='operarios';
+  document.getElementById('ctrlKpiOpsSub').textContent=sel.length+' mes'+(sel.length>1?'es':'');
   var CLRS=['#2563eb','#16a34a','#d97706','#7c3aed','#0891b2'];
   var MON_S=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  var MON_F=['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
   var monLbl=months.map(function(ym){var p=ym.split('-');return MON_S[parseInt(p[1])]+' '+p[0].slice(2);});
   var allNms=[];months.forEach(function(ym){(ctrlExcelData[ym]||[]).forEach(function(op){if(allNms.indexOf(op.nm)<0)allNms.push(op.nm);});});
   var evolDs=allNms.map(function(nm,i){return{label:nm.split(' ')[0],data:months.map(function(ym){var op=(ctrlExcelData[ym]||[]).find(function(o){return o.nm===nm;});return(op&&op.dias)?Math.round(op.und/op.dias):null;}),borderColor:CLRS[i%CLRS.length],backgroundColor:CLRS[i%CLRS.length]+'33',tension:0.35,spanGaps:true,pointRadius:4,fill:false};});
@@ -492,11 +495,37 @@ function buildControl(){
   var rkOpts={responsive:true,maintainAspectRatio:true,indexAxis:'y',plugins:{legend:{display:false},tooltip:{...tooltipBase,callbacks:{label:function(ctx){return ' '+ctx.parsed.x.toLocaleString('es-AR')+' und';}}}},scales:{x:{grid:{color:cc.grid,lineWidth:0.5},ticks:{color:cc.tick,font:{size:10},callback:function(v){return v>=1000?(v/1000).toFixed(0)+'k':v;}},border:{dash:[4,4]}},y:{grid:{display:false},ticks:{color:cc.tick,font:{size:11,weight:'600'}}}}};
   if(_chartCtrlRank){_chartCtrlRank.data.labels=ops.map(function(o){return o.nm.split(' ')[0];});_chartCtrlRank.data.datasets=rkDs;_chartCtrlRank.update();}
   else if(rk){_chartCtrlRank=new Chart(rk,{type:'bar',data:{labels:ops.map(function(o){return o.nm.split(' ')[0];}),datasets:rkDs},options:rkOpts});}
-  var isDark=document.body.classList.contains('dark'),thBg=isDark?'#1e293b':'#f5f5f5';
-  var MON=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-  var h='<table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr style="background:'+thBg+'"><th style="padding:8px 12px;text-align:left;border-bottom:2px solid #e0e0e0">Mes</th><th style="padding:8px 12px;text-align:left;border-bottom:2px solid #e0e0e0">Operario</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #e0e0e0">Dias</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #e0e0e0">UND</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #e0e0e0">UND/dia</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #e0e0e0">ORD</th></tr></thead><tbody>';
-  var alt=false;months.forEach(function(ym){(ctrlExcelData[ym]||[]).forEach(function(op){var upd=op.dias?Math.round(op.und/op.dias):0,clr=upd>=150?'#16a34a':upd>=80?'#2563eb':upd>=40?'#d97706':'#dc2626',bg=alt?(isDark?'#1e293b':'#f9f9f9'):(isDark?'#0f172a':'#fff'),p=ym.split('-');alt=!alt;h+='<tr style="background:'+bg+'"><td style="padding:7px 12px;color:#888">'+MON[parseInt(p[1])]+' '+p[0]+'</td><td style="padding:7px 12px;font-weight:600">'+op.nm+'</td><td style="padding:7px 12px;text-align:right;color:#888">'+op.dias+'</td><td style="padding:7px 12px;text-align:right;font-weight:700">'+op.und.toLocaleString('es-AR')+'</td><td style="padding:7px 12px;text-align:right;color:'+clr+';font-weight:700">'+upd+'</td><td style="padding:7px 12px;text-align:right;color:#888">'+op.ord+'</td></tr>';});});
-  h+='</tbody></table>';document.getElementById('ctrlTable').innerHTML=h;
+  var isDark=document.body.classList.contains('dark');
+  var thBg=isDark?'#1e293b':'#f0f4ff';
+  var monHdBg=isDark?'#172554':'#dbeafe';
+  var monHdClr=isDark?'#93c5fd':'#1d4ed8';
+  var rowBdr=isDark?'#1e293b':'#f0f0f0';
+  var h='<table style="width:100%;border-collapse:collapse;font-size:12.5px">';
+  h+='<thead><tr style="background:'+thBg+'"><th style="padding:8px 12px 8px 20px;text-align:left;border-bottom:2px solid #3b82f6">Operario</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #3b82f6">D\xedas</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #3b82f6">UND</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #3b82f6">UND/d\xeda</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #3b82f6">ORD</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #3b82f6">UND/ORD</th></tr></thead><tbody>';
+  sel.forEach(function(ym){
+    var ops_m=ctrlExcelData[ym]||[];if(!ops_m.length)return;
+    var p=ym.split('-');
+    var mU=ops_m.reduce(function(s,o){return s+o.und;},0);
+    var mO=ops_m.reduce(function(s,o){return s+o.ord;},0);
+    var mD=ops_m.reduce(function(s,o){return s+o.dias;},0);
+    var mUpd=mD?Math.round(mU/mD):0;
+    h+='<tr style="background:'+monHdBg+'"><td colspan="6" style="padding:8px 14px;font-weight:700;color:'+monHdClr+'">'+MON_F[parseInt(p[1])]+' '+p[0]+'<span style="font-weight:400;font-size:11px;margin-left:10px;opacity:0.85">'+mU.toLocaleString('es-AR')+' UND &nbsp;\xb7&nbsp; '+mO.toLocaleString('es-AR')+' ORD &nbsp;\xb7&nbsp; '+mUpd+' UND/d\xeda &nbsp;\xb7&nbsp; '+ops_m.length+' operarios</span></td></tr>';
+    ops_m.forEach(function(op){
+      var upd=op.dias?Math.round(op.und/op.dias):0;
+      var uord=op.ord?Math.round(op.und/op.ord):0;
+      var clr=upd>=200?'#16a34a':upd>=100?'#2563eb':upd>=50?'#d97706':'#dc2626';
+      h+='<tr style="border-bottom:1px solid '+rowBdr+'">';
+      h+='<td style="padding:7px 12px 7px 22px;font-weight:600">'+op.nm+'</td>';
+      h+='<td style="padding:7px 12px;text-align:right;color:'+(isDark?'#94a3b8':'#888')+'">'+op.dias+'</td>';
+      h+='<td style="padding:7px 12px;text-align:right;font-weight:700">'+op.und.toLocaleString('es-AR')+'</td>';
+      h+='<td style="padding:7px 12px;text-align:right;font-weight:700;color:'+clr+'">'+upd+'</td>';
+      h+='<td style="padding:7px 12px;text-align:right;color:'+(isDark?'#94a3b8':'#888')+'">'+op.ord+'</td>';
+      h+='<td style="padding:7px 12px;text-align:right;font-weight:600;color:'+(isDark?'#a78bfa':'#7c3aed')+'">'+uord+'</td>';
+      h+='</tr>';
+    });
+  });
+  h+='</tbody></table>';
+  document.getElementById('ctrlTable').innerHTML=h;
 }
 function buildMaquinistas(){
   if(!maqDetailData||!Object.keys(maqDetailData).length)return;
@@ -506,13 +535,17 @@ function buildMaquinistas(){
   var sel=months.filter(function(ym){var p=ym.split('-');if(anio!=='all'&&p[0]!==anio)return false;if(mes!=='all'&&parseInt(p[1])!==parseInt(mes))return false;return true;});
   if(!sel.length)sel=[months[months.length-1]];
   var cc=chartColors();
-  var opsMap={};sel.forEach(function(ym){(maqDetailData[ym]||{ops:[]}).ops.forEach(function(op){if(!opsMap[op.nm])opsMap[op.nm]={nm:op.nm,mov:0,und:0,dias:0};opsMap[op.nm].mov+=op.mov;opsMap[op.nm].und+=op.und;opsMap[op.nm].dias+=op.dias;});});
+  var opsMap={};
+  sel.forEach(function(ym){(maqDetailData[ym]||{ops:[]}).ops.forEach(function(op){if(!opsMap[op.nm])opsMap[op.nm]={nm:op.nm,mov:0,und:0,dias:0};opsMap[op.nm].mov+=op.mov;opsMap[op.nm].und+=op.und;opsMap[op.nm].dias+=op.dias;});});
   var ops=Object.values(opsMap).sort(function(a,b){return b.mov-a.mov;});
   var totMov=ops.reduce(function(s,o){return s+o.mov;},0),totUnd=ops.reduce(function(s,o){return s+o.und;},0),totDias=ops.reduce(function(s,o){return s+o.dias;},0);
   var avgMpd=totDias?Math.round(totMov/totDias):0;
+  var fmtBig=function(n){return n>=1000000?(n/1000000).toFixed(1)+'M':n>=1000?(n/1000).toFixed(0)+'k':n.toLocaleString('es-AR');};
+  var upMov=totMov?Math.round(totUnd/totMov):0;
   document.getElementById('maqKpiMov').textContent=totMov.toLocaleString('es-AR');
-  document.getElementById('maqKpiMovSub').textContent=avgMpd+' mov/dia prom';
-  document.getElementById('maqKpiUnd').textContent=totUnd>0?totUnd.toLocaleString('es-AR'):'N/D';
+  document.getElementById('maqKpiMovSub').textContent=avgMpd+' mov/d\xeda prom';
+  document.getElementById('maqKpiUnd').textContent=fmtBig(totUnd);
+  document.getElementById('maqKpiUndSub').textContent=upMov.toLocaleString('es-AR')+' UND/mov';
   document.getElementById('maqKpiMpd').textContent=avgMpd.toLocaleString('es-AR');
   document.getElementById('maqKpiMpdSub').textContent=totMov.toLocaleString('es-AR')+' mov totales';
   document.getElementById('maqKpiOps').textContent=ops.length;
@@ -536,10 +569,37 @@ function buildMaquinistas(){
   var breakOpts={responsive:true,maintainAspectRatio:true,plugins:{legend:{labels:{color:cc.leg,font:{size:11},usePointStyle:true,pointStyleWidth:8,boxHeight:8}},tooltip:{...ttBase,callbacks:{label:function(ctx){return ' '+ctx.dataset.label+': '+ctx.parsed.y.toLocaleString('es-AR')+' mov';}}}},scales:{x:{grid:{display:false},ticks:{color:cc.tick,font:{size:11}}},y:{grid:{color:cc.grid,lineWidth:0.5},ticks:{color:cc.tick,font:{size:10},callback:function(v){return v>=1000?(v/1000).toFixed(0)+'k':v;}}}}};
   if(_chartMaqBreak){_chartMaqBreak.data.datasets=breakDs;_chartMaqBreak.update();}
   else if(maqBrkEl){_chartMaqBreak=new Chart(maqBrkEl,{type:'bar',data:{labels:TASK_LABELS,datasets:breakDs},options:breakOpts});}
-  var isDark=document.body.classList.contains('dark'),thBg=isDark?'#1e293b':'#f5f5f5';
-  var h='<table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr style="background:'+thBg+'"><th style="padding:8px 12px;text-align:left;border-bottom:2px solid #e0e0e0">Mes</th><th style="padding:8px 12px;text-align:left;border-bottom:2px solid #e0e0e0">Operario</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #e0e0e0">Dias</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #e0e0e0">MOV</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #e0e0e0">MOV/dia</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #e0e0e0">PA02</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #e0e0e0">Recep.</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #e0e0e0">RL01</th></tr></thead><tbody>';
-  var alt=false;months.forEach(function(ym){var md=maqDetailData[ym]||{lbl:ym,ops:[]};md.ops.forEach(function(op){var mpd=op.dias?Math.round(op.mov/op.dias):0,clr=mpd>=60?'#16a34a':mpd>=30?'#2563eb':mpd>=10?'#d97706':'#dc2626',bg=alt?(isDark?'#1e293b':'#f9f9f9'):(isDark?'#0f172a':'#fff');alt=!alt;h+='<tr style="background:'+bg+'"><td style="padding:7px 12px;color:#888">'+md.lbl+'</td><td style="padding:7px 12px;font-weight:600">'+op.nm+'</td><td style="padding:7px 12px;text-align:right;color:#888">'+op.dias+'</td><td style="padding:7px 12px;text-align:right;font-weight:700">'+op.mov.toLocaleString('es-AR')+'</td><td style="padding:7px 12px;text-align:right;color:'+clr+';font-weight:700">'+mpd+'</td><td style="padding:7px 12px;text-align:right;color:#888">'+op.pa02+'</td><td style="padding:7px 12px;text-align:right;color:#888">'+op.rec+'</td><td style="padding:7px 12px;text-align:right;color:#888">'+op.rl01+'</td></tr>';});});
-  h+='</tbody></table>';document.getElementById('maqDetailTable').innerHTML=h;
+  var isDark=document.body.classList.contains('dark');
+  var thBg=isDark?'#1e293b':'#f0fff4';
+  var monHdBg=isDark?'#14532d':'#dcfce7';
+  var monHdClr=isDark?'#86efac':'#15803d';
+  var rowBdr=isDark?'#1e293b':'#f0f0f0';
+  var h='<table style="width:100%;border-collapse:collapse;font-size:12.5px">';
+  h+='<thead><tr style="background:'+thBg+'"><th style="padding:8px 12px 8px 20px;text-align:left;border-bottom:2px solid #22c55e">Operario</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #22c55e">D\xedas</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #22c55e">MOV</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #22c55e">MOV/d\xeda</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #22c55e">UND</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #22c55e">PA02</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #22c55e">Recep.</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #22c55e">RL01</th></tr></thead><tbody>';
+  months.forEach(function(ym){
+    var md=maqDetailData[ym]||{lbl:ym,ops:[]};if(!md.ops.length)return;
+    var mMov=md.ops.reduce(function(s,o){return s+o.mov;},0);
+    var mUnd=md.ops.reduce(function(s,o){return s+o.und;},0);
+    var mDias=md.ops.reduce(function(s,o){return s+o.dias;},0);
+    var mMpd=mDias?Math.round(mMov/mDias):0;
+    h+='<tr style="background:'+monHdBg+'"><td colspan="8" style="padding:8px 14px;font-weight:700;color:'+monHdClr+'">'+md.lbl+'<span style="font-weight:400;font-size:11px;margin-left:10px;opacity:0.85">'+mMov.toLocaleString('es-AR')+' MOV &nbsp;\xb7&nbsp; '+fmtBig(mUnd)+' UND &nbsp;\xb7&nbsp; '+mMpd+' MOV/d\xeda &nbsp;\xb7&nbsp; '+md.ops.length+' operarios</span></td></tr>';
+    md.ops.forEach(function(op){
+      var mpd=op.dias?Math.round(op.mov/op.dias):0;
+      var clr=mpd>=80?'#16a34a':mpd>=50?'#2563eb':mpd>=30?'#d97706':'#dc2626';
+      h+='<tr style="border-bottom:1px solid '+rowBdr+'">';
+      h+='<td style="padding:7px 12px 7px 22px;font-weight:600">'+op.nm+'</td>';
+      h+='<td style="padding:7px 12px;text-align:right;color:'+(isDark?'#94a3b8':'#888')+'">'+op.dias+'</td>';
+      h+='<td style="padding:7px 12px;text-align:right;font-weight:700">'+op.mov.toLocaleString('es-AR')+'</td>';
+      h+='<td style="padding:7px 12px;text-align:right;font-weight:700;color:'+clr+'">'+mpd+'</td>';
+      h+='<td style="padding:7px 12px;text-align:right;color:'+(isDark?'#94a3b8':'#888')+'">'+fmtBig(op.und)+'</td>';
+      h+='<td style="padding:7px 12px;text-align:right;color:'+(isDark?'#94a3b8':'#888')+'">'+op.pa02+'</td>';
+      h+='<td style="padding:7px 12px;text-align:right;color:'+(isDark?'#94a3b8':'#888')+'">'+op.rec+'</td>';
+      h+='<td style="padding:7px 12px;text-align:right;color:'+(isDark?'#94a3b8':'#888')+'">'+op.rl01+'</td>';
+      h+='</tr>';
+    });
+  });
+  h+='</tbody></table>';
+  document.getElementById('maqDetailTable').innerHTML=h;
 }
 
 // Helper: filtrar meses ctrl/maq segun selectores activos
