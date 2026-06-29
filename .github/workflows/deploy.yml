@@ -43,7 +43,7 @@ jobs:
       - name: Set Cloudflare production branch to master
         env:
           CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CF_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CF_ACCOUNT_ID: "a82c7c254fd10a364f6190856b8696c2"
         run: |
           python3 << 'EOF'
           import os, json, urllib.request
@@ -64,7 +64,7 @@ jobs:
       - name: Deploy to Cloudflare Pages
         env:
           RAW_CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          RAW_CF_ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          RAW_CF_ACCOUNT: "a82c7c254fd10a364f6190856b8696c2"
         run: |
           export CLOUDFLARE_API_TOKEN="$(printf '%s' "$RAW_CF_TOKEN" | tr -d '\357\273\277\r\n ')"
           export CLOUDFLARE_ACCOUNT_ID="$(printf '%s' "$RAW_CF_ACCOUNT" | tr -d '\357\273\277\r\n ')"
