@@ -120,11 +120,11 @@ export async function onRequest(context) {
     }
   }
 
-  // USERS (solo superadmin)
+  // USERS (superadmin y admin; el admin no puede crear/promover superadmins)
   if (seg[0] === 'users') {
     const sess = await getSession(DB, request);
     if (!sess) return makeResp({ error: 'No autenticado' }, 401);
-    if (sess.role !== 'superadmin') return makeResp({ error: 'Sin permiso' }, 403);
+    if (sess.role !== 'superadmin' && sess.role !== 'admin') return makeResp({ error: 'Sin permiso' }, 403);
 
     if (method === 'GET') {
       const { results } = await DB.prepare('SELECT id,email,nombre,role,modulos,activo,created_at,last_login FROM users ORDER BY id').all();
@@ -134,6 +134,7 @@ export async function onRequest(context) {
     if (method === 'POST') {
       const { email, password, nombre = '', role = 'viewer', modulos = [] } = await safeJson(request);
       if (!email || !password) return makeResp({ error: 'Email y contraseña requeridos' }, 400);
+      if (sess.role !== 'superadmin' && role === 'superadmin') return makeResp({ error: 'Solo un superadmin puede crear superadmins' }, 403);
       try {
         const hash = await hashPassword(password);
         const now = new Date().toISOString();
@@ -147,6 +148,7 @@ export async function onRequest(context) {
       const target = await DB.prepare('SELECT role FROM users WHERE id=?').bind(id).first();
       if (target?.role === 'superadmin' && sess.userId !== id) return makeResp({ error: 'No podés modificar otro superadmin' }, 403);
       const body = await safeJson(request);
+      if (sess.role !== 'superadmin' && body.role === 'superadmin') return makeResp({ error: 'Solo un superadmin puede asignar el rol superadmin' }, 403);
       const upd = [], binds = [];
       if (body.nombre !== undefined) { upd.push('nombre=?'); binds.push(body.nombre); }
       if (body.role !== undefined) { upd.push('role=?'); binds.push(body.role); }

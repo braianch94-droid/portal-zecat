@@ -1022,7 +1022,7 @@ function onAuthSuccess() {
   document.getElementById('u-name').textContent = authUser.nombre||authUser.email;
   const rl = {superadmin:'Super Admin',admin:'Admin',editor:'Editor',viewer:'Viewer'};
   document.getElementById('u-role').textContent = rl[authUser.role]||authUser.role;
-  if (authUser.role==='superadmin') { document.getElementById('admin-nav').style.display=''; refreshUserBadge(); if(!window._umBadgePoll) window._umBadgePoll=setInterval(refreshUserBadge,60000); }
+  if (authUser.role==='superadmin'||authUser.role==='admin') { document.getElementById('admin-nav').style.display=''; refreshUserBadge(); if(!window._umBadgePoll) window._umBadgePoll=setInterval(refreshUserBadge,60000); }
   applyModuleVisibility();
 }
 
@@ -1183,7 +1183,7 @@ function setUserBadge(n) {
   else { b.style.display='none'; }
 }
 async function refreshUserBadge() {
-  if(!authUser || authUser.role!=='superadmin') return;
+  if(!authUser || (authUser.role!=='superadmin' && authUser.role!=='admin')) return;
   try {
     const r=await fetch(AUTH_API+'/users',{headers:{'Authorization':'Bearer '+localStorage.getItem('zecat-token')}});
     const users=await r.json();
@@ -1214,18 +1214,40 @@ async function loadUsers() {
 
 function renderUsers(users) {
   const rl={superadmin:'Super Admin',admin:'Admin',editor:'Editor',viewer:'Viewer'};
-  const rows=users.map(u=>`<tr>
-    <td>${u.nombre||'—'}</td>
-    <td style="color:var(--sb-text-dim,#94a3b8);font-size:12px">${u.email}</td>
-    <td><span class="um-badge ${u.activo?u.role:'inactivo'}">${u.activo?(rl[u.role]||u.role):'Inactivo'}</span></td>
-    <td style="font-size:11px;color:var(--sb-text-dim,#64748b)">${(u.modulos||[]).length>0?u.modulos.join(', '):(u.role==='admin'||u.role==='superadmin')?'Todos':'—'}</td>
-    <td>${u.role!=='superadmin'?`<div class="um-actions">
-      <button class="um-btn" onclick='editUser(${u.id},"${u.role}",${JSON.stringify(u.modulos||[])},"${u.nombre||''}")'>Editar</button>
-      <button class="um-btn ${u.activo?'danger':''}" onclick="toggleUserActive(${u.id},${u.activo})">${u.activo?'Desactivar':'Activar'}</button>
-    </div>`:'<span style="font-size:11px;opacity:.4">—</span>'}</td>
-  </tr>`).join('');
-  document.getElementById('um-list').innerHTML=`<table class="um-table"><thead><tr><th>Nombre</th><th>Email</th><th>Rol</th><th>Módulos</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
-  setUserBadge(users.filter(u=>!u.activo && !u.last_login).length);
+  const isPend=u=>!u.activo && !u.last_login;
+  const pend=users.filter(isPend);
+  const banner = pend.length
+    ? `<div style="background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.35);border-radius:10px;padding:10px 14px;margin-bottom:14px;color:#fbbf24;font-size:13px;font-weight:600">⏳ ${pend.length} usuario${pend.length>1?'s':''} pendiente${pend.length>1?'s':''} de aprobar — ${pend.length>1?'resaltados':'resaltado'} abajo. Tocá <b>✓ Aprobar</b>.</div>`
+    : '';
+  const rows=users.map(u=>{
+    const pendiente=isPend(u);
+    const estado = u.activo
+      ? `<span class="um-badge ${u.role}">${rl[u.role]||u.role}</span>`
+      : pendiente
+        ? `<span class="um-badge" style="background:rgba(251,191,36,.2);color:#fbbf24">Pendiente</span>`
+        : `<span class="um-badge inactivo">Inactivo</span>`;
+    const editBtn=`<button class="um-btn" onclick='editUser(${u.id},"${u.role}",${JSON.stringify(u.modulos||[])},"${(u.nombre||'').replace(/"/g,"")}")'>Editar</button>`;
+    let accion;
+    if(u.role==='superadmin') accion='<span style="font-size:11px;opacity:.4">—</span>';
+    else if(pendiente) accion=`<div class="um-actions"><button class="um-btn" style="border-color:rgba(74,222,128,.45);color:#4ade80;font-weight:700" onclick="approveUser(${u.id})">✓ Aprobar</button>${editBtn}</div>`;
+    else accion=`<div class="um-actions">${editBtn}<button class="um-btn ${u.activo?'danger':''}" onclick="toggleUserActive(${u.id},${u.activo})">${u.activo?'Desactivar':'Activar'}</button></div>`;
+    return `<tr style="${pendiente?'background:rgba(251,191,36,.07)':''}">
+      <td>${u.nombre||'—'}</td>
+      <td style="color:var(--sb-text-dim,#94a3b8);font-size:12px">${u.email}</td>
+      <td>${estado}</td>
+      <td style="font-size:11px;color:var(--sb-text-dim,#64748b)">${(u.modulos||[]).length>0?u.modulos.join(', '):(u.role==='admin'||u.role==='superadmin')?'Todos':'—'}</td>
+      <td>${accion}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('um-list').innerHTML=banner+`<table class="um-table"><thead><tr><th>Nombre</th><th>Email</th><th>Estado / Rol</th><th>Módulos</th><th></th></tr></thead><tbody>${rows}</tbody></table>`;
+  setUserBadge(pend.length);
+}
+async function approveUser(id) {
+  const token=localStorage.getItem('zecat-token');
+  try {
+    await fetch(AUTH_API+'/users/'+id,{method:'PUT',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({activo:true})});
+    loadUsers();
+  } catch(e) {}
 }
 
 async function createUser() {
