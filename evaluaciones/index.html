@@ -233,7 +233,7 @@ async function loadEvaluar(prefillId){
       </div>
       <div id="empInfo" class="small muted" style="margin:8px 0 4px"></div>
       <div class="row">
-        <div class="col"><label>Período *</label><input id="fPeriodo" list="periodos" placeholder="Ej: 1er semestre 2026" value="${esc(localStorage.getItem('ultimo_periodo')||'')}" /><datalist id="periodos">${m.periodos.map(p=>`<option>${esc(p)}</option>`).join("")}</datalist></div>
+        <div class="col"><label>Período *</label><select id="fPeriodo">${[...new Set(["1er semestre 2026","2do semestre 2026","1er semestre 2027","2do semestre 2027",...m.periodos])].map(p=>`<option${p===(localStorage.getItem('ultimo_periodo')||'1er semestre 2026')?' selected':''}>${esc(p)}</option>`).join("")}</select></div>
         <div class="col"><label>Fecha *</label><input id="fFecha" type="date" value="${hoy}" /></div>
       </div>
       <div class="row">
