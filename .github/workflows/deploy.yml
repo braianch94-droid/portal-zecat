@@ -70,3 +70,5 @@ jobs:
           export CLOUDFLARE_ACCOUNT_ID="$(printf '%s' "$RAW_CF_ACCOUNT" | tr -d '\357\273\277\r\n ')"
           npx wrangler pages project create portal-zecat-op --production-branch=master || echo "proyecto ya existe (ok)"
           npx wrangler pages deploy . --project-name=portal-zecat-op --branch=master --commit-dirty=true
+          npx wrangler pages project create portal-zecat --production-branch=master || echo "proyecto ya existe (ok)"
+          npx wrangler pages deploy . --project-name=portal-zecat --branch=master --commit-dirty=true
