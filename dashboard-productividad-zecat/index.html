@@ -124,7 +124,7 @@ body.dark .grp-btn.active{background:#2563eb;border-color:#2563eb;color:white}
       <h1>Dashboard de Productividad</h1>
     </div>
   </div>
-  <div class="badge">Actualizado: 26/06/2026 11:46<br>Target picking: 84 lin/d&iacute;a</div>
+  <div class="badge">Actualizado: 30/06/2026 10:03<br>Target picking: 84 lin/d&iacute;a</div>
   <button id="themeToggle" onclick="toggleTheme()" title="Cambiar tema claro / oscuro" aria-label="Cambiar tema"><span id="themeIcon">&#9790;</span></button>
 </header>
 
@@ -401,7 +401,6 @@ body.dark .grp-btn.active{background:#2563eb;border-color:#2563eb;color:white}
 <!-- ===== SECCION: BONOS ===== -->
 <div id="sec-eficiencia" class="sec">
 <div class="grp-btns" style="margin-bottom:16px">
-  <button class="grp-btn" id="bonBtn-gen" onclick="bonSetSub('gen')">&#127775; General</button>
   <button class="grp-btn active" id="bonBtn-pick" onclick="bonSetSub('pick')">Pickeadores</button>
   <button class="grp-btn" id="bonBtn-maq" onclick="bonSetSub('maq')">Maquinistas</button>
   <button class="grp-btn" id="bonBtn-ctrl" onclick="bonSetSub('ctrl')">Control</button>
@@ -410,15 +409,9 @@ body.dark .grp-btn.active{background:#2563eb;border-color:#2563eb;color:white}
 <div id="bonGrupalWrap" style="margin-bottom:12px"></div>
 <div id="bonContent"></div>
 </div><!-- /sec-eficiencia -->
-<div id="bonRecModalOverlay" onclick="if(event.target===this)this.style.display='none'" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.55);z-index:9999;align-items:center;justify-content:center">
-  <div id="bonRecModalBox" style="background:#fff;border-radius:14px;padding:28px 28px 24px;max-width:480px;width:92%;max-height:80vh;overflow-y:auto;position:relative;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
-    <button onclick="document.getElementById('bonRecModalOverlay').style.display='none'" style="position:absolute;top:14px;right:16px;border:none;background:none;font-size:22px;cursor:pointer;color:#888;line-height:1">&#10005;</button>
-    <div id="bonRecModalContent"></div>
-  </div>
-</div>
 
 </div><!-- /container -->
-<footer>Dashboard v5 &mdash; Zecat Art&iacute;culos Promocionales SA &nbsp;|&nbsp; 26/06/2026 11:46</footer>
+<footer>Dashboard v5 &mdash; Zecat Art&iacute;culos Promocionales SA &nbsp;|&nbsp; 30/06/2026 10:03</footer>
 
 <script>
 Chart.defaults.font.family='Arial,sans-serif';
@@ -428,63 +421,54 @@ const TARGET=84;
 const TARGET_WARN=70;
 const allMonKeys=['2026-01','2026-02','2026-03','2026-04','2026-05','2026-06'];
 const monLabels=['Enero 2026','Febrero 2026','Marzo 2026','Abril 2026','Mayo 2026','Junio 2026'];
-const teamLD=[61.6,62.9,67.7,80.4,99.3,78.2];
-const teamColors=['#dc2626','#dc2626','#dc2626','#d97706','#16a34a','#d97706'];
-const staffNec=[2.2,3.3,4.1,3.8,4.9,3.7];
-const staffAct=[3,4,4,4,4,4.8];
-const merma1=[28.4,21.3,29.4,25.4,23.1,22.1];
+const teamLD=[61.7,65,86,80.6,99.7,55.1];
+const teamColors=['#dc2626','#dc2626','#16a34a','#d97706','#16a34a','#dc2626'];
+const staffNec=[2.2,3.3,4.1,3.8,4.9,3.3];
+const staffAct=[3,4,4,4,4,4.7];
+const merma1=[28.4,21.3,29.4,25.4,23.1,19.8];
 const merma2=[22.2,38,13.8,16.6,16,15.3];
 const pie1=[null,null,null,null,null,null];
 const pie2=[null,null,null,null,null,null];
-const monthlyData={'2026-01':{totOps:7,pickeadores:3,avgLD:61.6,cumAv:73.3,totL:3880,totU:314550,totRC:12,rateG:3.09,totOlas:284,staffNec:2.2,staffAct:3,pickers:[{resp:'BRUN TOMAS',dias:22,olas:102,lineas:1409,ld:64,cumpl:76.2,unidades:108737,recCnt:5,trend:'▼ -17.9'},{resp:'ARMOA TAMARA',dias:12,olas:30,lineas:727,ld:60.6,cumpl:72.1,unidades:38925,recCnt:3,trend:'▼ -3.6'},{resp:'ROMERO MELANIE',dias:14,olas:71,lineas:803,ld:57.4,cumpl:68.3,unidades:72382,recCnt:2,trend:'-'},{resp:'LAURATO MARTINEZ',dias:21,olas:76,lineas:927,ld:44.1,cumpl:52.5,unidades:81727,recCnt:2,trend:'▼ -24.8'},{resp:'ARCE ELIAS',dias:1,olas:1,lineas:8,ld:8,cumpl:9.5,unidades:742,recCnt:0,trend:'-'},{resp:'DEMARCHIS EMILIANO',dias:1,olas:1,lineas:3,ld:3,cumpl:3.6,unidades:12000,recCnt:0,trend:'-'},{resp:'OCAMPO BRIAN',dias:2,olas:3,lineas:3,ld:1.5,cumpl:1.8,unidades:37,recCnt:0,trend:'-'}]},'2026-02':{totOps:7,pickeadores:4,avgLD:62.9,cumAv:74.9,totL:4526,totU:411711,totRC:19,rateG:4.2,totOlas:240,staffNec:3.3,staffAct:4,pickers:[{resp:'BRUN TOMAS',dias:14,olas:59,lineas:1236,ld:88.3,cumpl:105.1,unidades:172902,recCnt:4,trend:'▼ -17.9'},{resp:'ARMOA TAMARA',dias:12,olas:39,lineas:926,ld:77.2,cumpl:91.9,unidades:54745,recCnt:5,trend:'▼ -3.6'},{resp:'LAURATO MARTINEZ',dias:20,olas:85,lineas:1241,ld:62,cumpl:73.8,unidades:106847,recCnt:5,trend:'▼ -24.8'},{resp:'ROMERO MELANIE',dias:15,olas:43,lineas:877,ld:58.5,cumpl:69.6,unidades:67135,recCnt:4,trend:'-'},{resp:'OCAMPO BRIAN',dias:9,olas:10,lineas:219,ld:24.3,cumpl:28.9,unidades:5211,recCnt:0,trend:'-'},{resp:'ARCE ELIAS',dias:1,olas:1,lineas:9,ld:9,cumpl:10.7,unidades:431,recCnt:1,trend:'-'},{resp:'CAÑETE FAVIO',dias:2,olas:3,lineas:18,ld:9,cumpl:10.7,unidades:4440,recCnt:0,trend:'-'}]},'2026-03':{totOps:8,pickeadores:4,avgLD:67.7,cumAv:80.6,totL:5690,totU:552993,totRC:18,rateG:3.16,totOlas:360,staffNec:4.1,staffAct:4,pickers:[{resp:'BRUN TOMAS',dias:21,olas:118,lineas:1903,ld:90.6,cumpl:107.9,unidades:217052,recCnt:9,trend:'▼ -17.9'},{resp:'ARMOA TAMARA',dias:19,olas:65,lineas:1591,ld:83.7,cumpl:99.6,unidades:87492,recCnt:4,trend:'▼ -3.6'},{resp:'LAURATO MARTINEZ',dias:21,olas:93,lineas:1330,ld:63.3,cumpl:75.4,unidades:155836,recCnt:2,trend:'▼ -24.8'},{resp:'ROMERO DAMIAN',dias:12,olas:43,lineas:535,ld:44.6,cumpl:53.1,unidades:60282,recCnt:0,trend:'-'},{resp:'MARIN LAUTARO',dias:2,olas:6,lineas:63,ld:31.5,cumpl:37.5,unidades:6622,recCnt:0,trend:'-'},{resp:'ROMERO MELANIE',dias:4,olas:8,lineas:86,ld:21.5,cumpl:25.6,unidades:8626,recCnt:2,trend:'-'},{resp:'OCAMPO BRIAN',dias:12,olas:26,lineas:181,ld:15.1,cumpl:18,unidades:15073,recCnt:1,trend:'-'},{resp:'DEMARCHIS EMILIANO',dias:1,olas:1,lineas:1,ld:1,cumpl:1.2,unidades:2010,recCnt:0,trend:'-'}]},'2026-04':{totOps:9,pickeadores:4,avgLD:80.4,cumAv:95.7,totL:6432,totU:483306,totRC:22,rateG:3.42,totOlas:462,staffNec:3.8,staffAct:4,pickers:[{resp:'ARMOA TAMARA',dias:20,olas:117,lineas:1996,ld:99.8,cumpl:118.8,unidades:99906,recCnt:12,trend:'▼ -3.6'},{resp:'BRUN TOMAS',dias:20,olas:119,lineas:1852,ld:92.6,cumpl:110.2,unidades:130264,recCnt:8,trend:'▼ -17.9'},{resp:'LAURATO MARTINEZ',dias:20,olas:123,lineas:1518,ld:75.9,cumpl:90.4,unidades:140312,recCnt:2,trend:'▼ -24.8'},{resp:'SANDOVAL TOMAS',dias:1,olas:2,lineas:50,ld:50,cumpl:59.5,unidades:972,recCnt:0,trend:'-'},{resp:'CACERES EDISON',dias:6,olas:19,lineas:202,ld:33.7,cumpl:40.1,unidades:25186,recCnt:0,trend:'▼ -11'},{resp:'ROMERO MELANIE',dias:6,olas:15,lineas:184,ld:30.7,cumpl:36.5,unidades:1873,recCnt:0,trend:'-'},{resp:'CHOQUE LEANDRO',dias:9,olas:30,lineas:255,ld:28.3,cumpl:33.7,unidades:54875,recCnt:0,trend:'-'},{resp:'DEMARCHIS EMILIANO',dias:2,olas:2,lineas:50,ld:25,cumpl:29.8,unidades:395,recCnt:0,trend:'-'},{resp:'OCAMPO BRIAN',dias:20,olas:35,lineas:325,ld:16.2,cumpl:19.3,unidades:29523,recCnt:0,trend:'-'}]},'2026-05':{totOps:9,pickeadores:4,avgLD:99.3,cumAv:118.2,totL:7548,totU:370270,totRC:35,rateG:4.64,totOlas:434,staffNec:4.9,staffAct:4,pickers:[{resp:'BRUN TOMAS',dias:18,olas:105,lineas:2108,ld:117.1,cumpl:139.4,unidades:90214,recCnt:11,trend:'▼ -17.9'},{resp:'ARMOA TAMARA',dias:18,olas:87,lineas:2015,ld:111.9,cumpl:133.2,unidades:62131,recCnt:11,trend:'▼ -3.6'},{resp:'LAURATO MARTINEZ',dias:18,olas:109,lineas:1798,ld:99.9,cumpl:118.9,unidades:89392,recCnt:10,trend:'▼ -24.8'},{resp:'CACERES EDISON',dias:19,olas:78,lineas:896,ld:47.2,cumpl:56.2,unidades:75175,recCnt:2,trend:'▼ -11'},{resp:'OCAMPO BRIAN',dias:11,olas:40,lineas:506,ld:46,cumpl:54.8,unidades:45520,recCnt:0,trend:'-'},{resp:'ROMERO MELANIE',dias:4,olas:9,lineas:143,ld:35.8,cumpl:42.6,unidades:5028,recCnt:1,trend:'-'},{resp:'DEMARCHIS EMILIANO',dias:1,olas:2,lineas:24,ld:24,cumpl:28.6,unidades:454,recCnt:0,trend:'-'},{resp:'SANDOVAL TOMAS',dias:3,olas:3,lineas:57,ld:19,cumpl:22.6,unidades:2351,recCnt:0,trend:'-'},{resp:'ADRIAN ROMERO',dias:1,olas:1,lineas:1,ld:1,cumpl:1.2,unidades:5,recCnt:0,trend:'-'}]},'2026-06':{totOps:4,pickeadores:4,avgLD:78.2,cumAv:93.1,totL:3753,totU:294001,totRC:15,rateG:4,totOlas:249,staffNec:3.7,staffAct:4,pickers:[{resp:'ARMOA TAMARA',dias:12,olas:84,lineas:1300,ld:108.3,cumpl:128.9,unidades:82980,recCnt:8,trend:'▼ -3.6'},{resp:'BRUN TOMAS',dias:12,olas:74,lineas:1190,ld:99.2,cumpl:118.1,unidades:83132,recCnt:4,trend:'▼ -17.9'},{resp:'LAURATO MARTINEZ',dias:12,olas:71,lineas:901,ld:75.1,cumpl:89.4,unidades:96513,recCnt:3,trend:'▼ -24.8'},{resp:'CACERES EDISON',dias:10,olas:20,lineas:362,ld:36.2,cumpl:43.1,unidades:31376,recCnt:0,trend:'▼ -11'}]}};
-const lezMonthly={'2026-01':null,'2026-02':{ld:581.5,lineas:2326,dias:4,olas:25,unidades:2327,recCnt:0,vsTeam:534.6},'2026-03':{ld:6007,lineas:6007,dias:1,olas:28,unidades:6020,recCnt:0,vsTeam:5963.1},'2026-04':{ld:766.5,lineas:1533,dias:2,olas:9,unidades:1535,recCnt:0,vsTeam:716.3},'2026-05':{ld:274.5,lineas:1647,dias:6,olas:12,unidades:1647,recCnt:0,vsTeam:218.7},'2026-06':{ld:892,lineas:892,dias:1,olas:6,unidades:893,recCnt:0,vsTeam:812.3}};
-const merma1L=[454,256,617,431,392,177];
+const monthlyData={'2026-01':{totOps:7,pickeadores:3,avgLD:61.7,cumAv:73.5,totL:3886,totU:314664,totRC:12,rateG:3.09,totOlas:289,staffNec:2.2,staffAct:3,pickers:[{resp:'BRUN TOMAS',dias:22,olas:107,lineas:1415,ld:64.3,cumpl:76.5,unidades:108851,recCnt:5,trend:'▼ -21.4'},{resp:'ARMOA TAMARA',dias:12,olas:30,lineas:727,ld:60.6,cumpl:72.1,unidades:38925,recCnt:3,trend:'▼ -17.1'},{resp:'ROMERO MELANIE',dias:14,olas:71,lineas:803,ld:57.4,cumpl:68.3,unidades:72382,recCnt:2,trend:'-'},{resp:'LAURATO MARTINEZ',dias:21,olas:76,lineas:927,ld:44.1,cumpl:52.5,unidades:81727,recCnt:2,trend:'▼ -28.5'},{resp:'ARCE ELIAS',dias:1,olas:1,lineas:8,ld:8,cumpl:9.5,unidades:742,recCnt:0,trend:'-'},{resp:'DEMARCHIS EMILIANO',dias:1,olas:1,lineas:3,ld:3,cumpl:3.6,unidades:12000,recCnt:0,trend:'-'},{resp:'OCAMPO BRIAN',dias:2,olas:3,lineas:3,ld:1.5,cumpl:1.8,unidades:37,recCnt:0,trend:'-'}]},'2026-02':{totOps:7,pickeadores:4,avgLD:65,cumAv:77.4,totL:4682,totU:416578,totRC:19,rateG:4.06,totOlas:257,staffNec:3.3,staffAct:4,pickers:[{resp:'ARMOA TAMARA',dias:12,olas:39,lineas:926,ld:77.2,cumpl:91.9,unidades:54745,recCnt:5,trend:'▼ -17.1'},{resp:'BRUN TOMAS',dias:18,olas:75,lineas:1390,ld:77.2,cumpl:91.9,unidades:177766,recCnt:4,trend:'▼ -21.4'},{resp:'LAURATO MARTINEZ',dias:20,olas:86,lineas:1243,ld:62.2,cumpl:74,unidades:106850,recCnt:5,trend:'▼ -28.5'},{resp:'ROMERO MELANIE',dias:15,olas:43,lineas:877,ld:58.5,cumpl:69.6,unidades:67135,recCnt:4,trend:'-'},{resp:'OCAMPO BRIAN',dias:9,olas:10,lineas:219,ld:24.3,cumpl:28.9,unidades:5211,recCnt:0,trend:'-'},{resp:'ARCE ELIAS',dias:1,olas:1,lineas:9,ld:9,cumpl:10.7,unidades:431,recCnt:1,trend:'-'},{resp:'CAÑETE FAVIO',dias:2,olas:3,lineas:18,ld:9,cumpl:10.7,unidades:4440,recCnt:0,trend:'-'}]},'2026-03':{totOps:8,pickeadores:4,avgLD:86,cumAv:102.4,totL:7223,totU:1330994,totRC:18,rateG:2.49,totOlas:395,staffNec:4.1,staffAct:4,pickers:[{resp:'BRUN TOMAS',dias:21,olas:139,lineas:2957,ld:140.8,cumpl:167.6,unidades:876501,recCnt:9,trend:'▼ -21.4'},{resp:'ARMOA TAMARA',dias:20,olas:77,lineas:2061,ld:103,cumpl:122.6,unidades:205971,recCnt:4,trend:'▼ -17.1'},{resp:'LAURATO MARTINEZ',dias:21,olas:95,lineas:1339,ld:63.8,cumpl:76,unidades:155909,recCnt:2,trend:'▼ -28.5'},{resp:'ROMERO DAMIAN',dias:12,olas:43,lineas:535,ld:44.6,cumpl:53.1,unidades:60282,recCnt:0,trend:'-'},{resp:'MARIN LAUTARO',dias:2,olas:6,lineas:63,ld:31.5,cumpl:37.5,unidades:6622,recCnt:0,trend:'-'},{resp:'ROMERO MELANIE',dias:4,olas:8,lineas:86,ld:21.5,cumpl:25.6,unidades:8626,recCnt:2,trend:'-'},{resp:'OCAMPO BRIAN',dias:12,olas:26,lineas:181,ld:15.1,cumpl:18,unidades:15073,recCnt:1,trend:'-'},{resp:'DEMARCHIS EMILIANO',dias:1,olas:1,lineas:1,ld:1,cumpl:1.2,unidades:2010,recCnt:0,trend:'-'}]},'2026-04':{totOps:9,pickeadores:4,avgLD:80.6,cumAv:96,totL:6450,totU:488493,totRC:22,rateG:3.41,totOlas:469,staffNec:3.8,staffAct:4,pickers:[{resp:'ARMOA TAMARA',dias:20,olas:118,lineas:1997,ld:99.8,cumpl:118.8,unidades:99908,recCnt:12,trend:'▼ -17.1'},{resp:'BRUN TOMAS',dias:20,olas:125,lineas:1869,ld:93.4,cumpl:111.2,unidades:135449,recCnt:8,trend:'▼ -21.4'},{resp:'LAURATO MARTINEZ',dias:20,olas:123,lineas:1518,ld:75.9,cumpl:90.4,unidades:140312,recCnt:2,trend:'▼ -28.5'},{resp:'SANDOVAL TOMAS',dias:1,olas:2,lineas:50,ld:50,cumpl:59.5,unidades:972,recCnt:0,trend:'-'},{resp:'CACERES EDISON',dias:6,olas:19,lineas:202,ld:33.7,cumpl:40.1,unidades:25186,recCnt:0,trend:'▼ -12.9'},{resp:'ROMERO MELANIE',dias:6,olas:15,lineas:184,ld:30.7,cumpl:36.5,unidades:1873,recCnt:0,trend:'-'},{resp:'CHOQUE LEANDRO',dias:9,olas:30,lineas:255,ld:28.3,cumpl:33.7,unidades:54875,recCnt:0,trend:'-'},{resp:'DEMARCHIS EMILIANO',dias:2,olas:2,lineas:50,ld:25,cumpl:29.8,unidades:395,recCnt:0,trend:'-'},{resp:'OCAMPO BRIAN',dias:20,olas:35,lineas:325,ld:16.2,cumpl:19.3,unidades:29523,recCnt:0,trend:'-'}]},'2026-05':{totOps:9,pickeadores:4,avgLD:99.7,cumAv:118.7,totL:7576,totU:371611,totRC:35,rateG:4.62,totOlas:439,staffNec:4.9,staffAct:4,pickers:[{resp:'ARMOA TAMARA',dias:18,olas:90,lineas:2040,ld:113.3,cumpl:134.9,unidades:63462,recCnt:11,trend:'▼ -17.1'},{resp:'BRUN TOMAS',dias:19,olas:107,lineas:2111,ld:111.1,cumpl:132.3,unidades:90224,recCnt:11,trend:'▼ -21.4'},{resp:'LAURATO MARTINEZ',dias:18,olas:109,lineas:1798,ld:99.9,cumpl:118.9,unidades:89392,recCnt:10,trend:'▼ -28.5'},{resp:'CACERES EDISON',dias:19,olas:78,lineas:896,ld:47.2,cumpl:56.2,unidades:75175,recCnt:2,trend:'▼ -12.9'},{resp:'OCAMPO BRIAN',dias:11,olas:40,lineas:506,ld:46,cumpl:54.8,unidades:45520,recCnt:0,trend:'-'},{resp:'ROMERO MELANIE',dias:4,olas:9,lineas:143,ld:35.8,cumpl:42.6,unidades:5028,recCnt:1,trend:'-'},{resp:'DEMARCHIS EMILIANO',dias:1,olas:2,lineas:24,ld:24,cumpl:28.6,unidades:454,recCnt:0,trend:'-'},{resp:'SANDOVAL TOMAS',dias:3,olas:3,lineas:57,ld:19,cumpl:22.6,unidades:2351,recCnt:0,trend:'-'},{resp:'ADRIAN ROMERO',dias:1,olas:1,lineas:1,ld:1,cumpl:1.2,unidades:5,recCnt:0,trend:'-'}]},'2026-06':{totOps:5,pickeadores:5,avgLD:55.1,cumAv:65.6,totL:5234,totU:403122,totRC:15,rateG:2.87,totOlas:372,staffNec:3.3,staffAct:5,pickers:[{resp:'ARMOA TAMARA',dias:18,olas:118,lineas:1733,ld:96.3,cumpl:114.6,unidades:107134,recCnt:8,trend:'▼ -17.1'},{resp:'BRUN TOMAS',dias:18,olas:110,lineas:1614,ld:89.7,cumpl:106.8,unidades:114050,recCnt:4,trend:'▼ -21.4'},{resp:'LAURATO MARTINEZ',dias:18,olas:99,lineas:1285,ld:71.4,cumpl:85,unidades:127304,recCnt:3,trend:'▼ -28.5'},{resp:'CACERES EDISON',dias:17,olas:41,lineas:582,ld:34.2,cumpl:40.7,unidades:52299,recCnt:0,trend:'▼ -12.9'},{resp:'BRIAN OCAMPO',dias:2,olas:4,lineas:20,ld:10,cumpl:11.9,unidades:2335,recCnt:0,trend:'-'}]}};
+const lezMonthly={'2026-01':null,'2026-02':{ld:581.5,lineas:2326,dias:4,olas:25,unidades:2327,recCnt:0,vsTeam:536.2},'2026-03':{ld:6007,lineas:6007,dias:1,olas:28,unidades:6020,recCnt:0,vsTeam:5954.3},'2026-04':{ld:766.5,lineas:1533,dias:2,olas:9,unidades:1535,recCnt:0,vsTeam:716.2},'2026-05':{ld:274.5,lineas:1647,dias:6,olas:12,unidades:1647,recCnt:0,vsTeam:219.2},'2026-06':{ld:204.3,lineas:1226,dias:6,olas:19,unidades:1326,recCnt:0,vsTeam:144}};
+const merma1L=[454,256,617,431,392,178];
 const merma2L=[133,342,83,133,112,46];
 const recMonthly={'2026-01':{cnt:13,byOp:{'AIRALA CESAR':1,'ARMOA TAMARA':3,'BRUN TOMAS':5,'LAURATO MARTINEZ':2,'ROMERO MELANIE':2},byCat:{'El packaging presenta fallas o hay faltantes de estos.':2,'Hay un producto/s defectuoso/s o con fallas.':9,'Recibí una cantidad distinta a la comprada.':2},byOpCat:{'AIRALA CESAR':{'El packaging presenta fallas o hay faltantes de estos.':1},'ARMOA TAMARA':{'Hay un producto/s defectuoso/s o con fallas.':3},'BRUN TOMAS':{'El packaging presenta fallas o hay faltantes de estos.':1,'Hay un producto/s defectuoso/s o con fallas.':3,'Recibí una cantidad distinta a la comprada.':1},'LAURATO MARTINEZ':{'Hay un producto/s defectuoso/s o con fallas.':1,'Recibí una cantidad distinta a la comprada.':1},'ROMERO MELANIE':{'Hay un producto/s defectuoso/s o con fallas.':2}}},'2026-02':{cnt:20,byOp:{'AIRALA CESAR':1,'ARCE ELIAS':1,'ARMOA TAMARA':5,'BRUN TOMAS':4,'LAURATO MARTINEZ':5,'ROMERO MELANIE':4},byCat:{'El packaging presenta fallas o hay faltantes de estos.':1,'Hay un producto/s defectuoso/s o con fallas.':13,'Recibi otro producto.':2,'Recibí una cantidad distinta a la comprada.':4},byOpCat:{'AIRALA CESAR':{'Hay un producto/s defectuoso/s o con fallas.':1},'ARCE ELIAS':{'Hay un producto/s defectuoso/s o con fallas.':1},'ARMOA TAMARA':{'Hay un producto/s defectuoso/s o con fallas.':2,'Recibí una cantidad distinta a la comprada.':3},'BRUN TOMAS':{'Hay un producto/s defectuoso/s o con fallas.':2,'Recibi otro producto.':1,'Recibí una cantidad distinta a la comprada.':1},'LAURATO MARTINEZ':{'El packaging presenta fallas o hay faltantes de estos.':1,'Hay un producto/s defectuoso/s o con fallas.':4},'ROMERO MELANIE':{'Hay un producto/s defectuoso/s o con fallas.':3,'Recibi otro producto.':1}}},'2026-03':{cnt:18,byOp:{'ARMOA TAMARA':4,'BRUN TOMAS':9,'LAURATO MARTINEZ':2,'OCAMPO BRIAN':1,'ROMERO MELANIE':2},byCat:{'Consultas/comunicaciones administrativas.':1,'Hay un producto/s defectuoso/s o con fallas.':10,'Recibi otro producto.':3,'Recibí una cantidad distinta a la comprada.':4},byOpCat:{'ARMOA TAMARA':{'Hay un producto/s defectuoso/s o con fallas.':1,'Recibi otro producto.':1,'Recibí una cantidad distinta a la comprada.':2},'BRUN TOMAS':{'Consultas/comunicaciones administrativas.':1,'Hay un producto/s defectuoso/s o con fallas.':5,'Recibi otro producto.':2,'Recibí una cantidad distinta a la comprada.':1},'LAURATO MARTINEZ':{'Hay un producto/s defectuoso/s o con fallas.':2},'OCAMPO BRIAN':{'Recibí una cantidad distinta a la comprada.':1},'ROMERO MELANIE':{'Hay un producto/s defectuoso/s o con fallas.':2}}},'2026-04':{cnt:22,byOp:{'ARMOA TAMARA':12,'BRUN TOMAS':8,'LAURATO MARTINEZ':2},byCat:{'El packaging presenta fallas o hay faltantes de estos.':1,'Hay un producto/s defectuoso/s o con fallas.':8,'Recibi otro producto.':6,'Recibí una cantidad distinta a la comprada.':6,'Reclamo por plazo de entrega.':1},byOpCat:{'ARMOA TAMARA':{'El packaging presenta fallas o hay faltantes de estos.':1,'Hay un producto/s defectuoso/s o con fallas.':5,'Recibi otro producto.':2,'Recibí una cantidad distinta a la comprada.':4},'BRUN TOMAS':{'Hay un producto/s defectuoso/s o con fallas.':2,'Recibi otro producto.':4,'Recibí una cantidad distinta a la comprada.':2},'LAURATO MARTINEZ':{'Hay un producto/s defectuoso/s o con fallas.':1,'Reclamo por plazo de entrega.':1}}},'2026-05':{cnt:35,byOp:{'ARMOA TAMARA':11,'BRUN TOMAS':11,'CACERES EDISON':2,'LAURATO MARTINEZ':10,'ROMERO MELANIE':1},byCat:{'Consultas/comunicaciones administrativas.':1,'El packaging presenta fallas o hay faltantes de estos.':4,'Hay un producto/s defectuoso/s o con fallas.':19,'Recibi otro producto.':4,'Recibí una cantidad distinta a la comprada.':7},byOpCat:{'ARMOA TAMARA':{'El packaging presenta fallas o hay faltantes de estos.':2,'Hay un producto/s defectuoso/s o con fallas.':6,'Recibi otro producto.':1,'Recibí una cantidad distinta a la comprada.':2},'BRUN TOMAS':{'Consultas/comunicaciones administrativas.':1,'El packaging presenta fallas o hay faltantes de estos.':1,'Hay un producto/s defectuoso/s o con fallas.':6,'Recibi otro producto.':2,'Recibí una cantidad distinta a la comprada.':1},'CACERES EDISON':{'Hay un producto/s defectuoso/s o con fallas.':1,'Recibí una cantidad distinta a la comprada.':1},'LAURATO MARTINEZ':{'El packaging presenta fallas o hay faltantes de estos.':1,'Hay un producto/s defectuoso/s o con fallas.':6,'Recibi otro producto.':1,'Recibí una cantidad distinta a la comprada.':2},'ROMERO MELANIE':{'Recibí una cantidad distinta a la comprada.':1}}},'2026-06':{cnt:33,byOp:{'ARMOA TAMARA':8,'BRUN TOMAS':4,'Falta definir pickeador':18,'LAURATO MARTINEZ':3},byCat:{'El packaging presenta fallas o hay faltantes de estos.':2,'Hay un producto/s defectuoso/s o con fallas.':15,'Recibi otro producto.':8,'Recibí una cantidad distinta a la comprada.':8},byOpCat:{'ARMOA TAMARA':{'Hay un producto/s defectuoso/s o con fallas.':1,'Recibi otro producto.':5,'Recibí una cantidad distinta a la comprada.':2},'BRUN TOMAS':{'Hay un producto/s defectuoso/s o con fallas.':4},'Falta definir pickeador':{'El packaging presenta fallas o hay faltantes de estos.':2,'Hay un producto/s defectuoso/s o con fallas.':9,'Recibi otro producto.':2,'Recibí una cantidad distinta a la comprada.':5},'LAURATO MARTINEZ':{'Hay un producto/s defectuoso/s o con fallas.':1,'Recibi otro producto.':1,'Recibí una cantidad distinta a la comprada.':1}}}};
 const MES=['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-const day7Rows=[{f:'08/06',d:'Lu',ops:3,lines:311,lpo:103.7,tgt:252,cum:123.4,dlt:null,cl:120,clops:2,sl:191,slops:2},{f:'09/06',d:'Ma',ops:4,lines:369,lpo:92.2,tgt:336,cum:109.8,dlt:58,cl:75,clops:3,sl:294,slops:4},{f:'10/06',d:'Mi',ops:3,lines:214,lpo:71.3,tgt:252,cum:84.9,dlt:-155,cl:27,clops:2,sl:187,slops:3},{f:'11/06',d:'Ju',ops:4,lines:187,lpo:46.8,tgt:336,cum:55.7,dlt:-27,cl:55,clops:3,sl:132,slops:4},{f:'12/06',d:'Vi',ops:4,lines:280,lpo:70,tgt:336,cum:83.3,dlt:93,cl:62,clops:2,sl:218,slops:3},{f:'16/06',d:'Ma',ops:4,lines:315,lpo:78.8,tgt:336,cum:93.8,dlt:35,cl:69,clops:3,sl:246,slops:3},{f:'17/06',d:'Mi',ops:4,lines:198,lpo:49.5,tgt:336,cum:58.9,dlt:-117,cl:39,clops:2,sl:159,slops:4}];
-const evol30Labels=['05/05','06/05','07/05','08/05','11/05','12/05','13/05','14/05','15/05','18/05','19/05','20/05','21/05','22/05','26/05','27/05','28/05','29/05','01/06','02/06','03/06','04/06','05/06','08/06','09/06','10/06','11/06','12/06','16/06','17/06'];
-const evol30Data=[382,406,762,442,572,451,386,296,135,290,373,199,366,264,504,611,500,259,492,343,389,386,269,311,369,214,187,280,315,198];
-const evol30CL=[111,70,63,83,182,142,122,84,49,60,103,90,99,55,76,192,167,65,84,99,233,210,78,120,75,27,55,62,69,39];
-const evol30SL=[271,337,699,359,392,310,264,212,147,276,335,268,267,209,428,419,333,194,408,244,156,176,191,191,294,187,132,218,246,159];
+const day7Rows=[{f:'18/06',d:'Ju',ops:3,lines:55,lpo:18.3,tgt:252,cum:21.8,dlt:null,cl:22,clops:1,sl:33,slops:3},{f:'19/06',d:'Vi',ops:4,lines:402,lpo:100.5,tgt:336,cum:119.6,dlt:347,cl:170,clops:3,sl:232,slops:4},{f:'22/06',d:'Lu',ops:4,lines:284,lpo:71,tgt:336,cum:84.5,dlt:-118,cl:117,clops:4,sl:167,slops:4},{f:'23/06',d:'Ma',ops:4,lines:176,lpo:44,tgt:336,cum:52.4,dlt:-108,cl:62,clops:3,sl:114,slops:4},{f:'24/06',d:'Mi',ops:4,lines:290,lpo:72.5,tgt:336,cum:86.3,dlt:114,cl:82,clops:2,sl:208,slops:4},{f:'25/06',d:'Ju',ops:4,lines:123,lpo:30.8,tgt:336,cum:36.6,dlt:-167,cl:42,clops:3,sl:81,slops:4},{f:'26/06',d:'Vi',ops:4,lines:151,lpo:37.8,tgt:336,cum:44.9,dlt:28,cl:31,clops:2,sl:120,slops:4}];
+const evol30Labels=['14/05','15/05','18/05','19/05','20/05','21/05','22/05','26/05','27/05','28/05','29/05','01/06','02/06','03/06','04/06','05/06','08/06','09/06','10/06','11/06','12/06','16/06','17/06','18/06','19/06','22/06','23/06','24/06','25/06','26/06'];
+const evol30Data=[296,135,313,373,199,366,264,504,611,500,259,492,343,389,386,269,311,369,214,187,280,315,198,55,402,284,176,290,123,151];
+const evol30CL=[84,49,60,103,90,99,55,76,192,167,65,84,99,233,210,78,120,75,27,55,62,69,39,22,170,117,62,82,42,31];
+const evol30SL=[212,147,276,335,268,267,209,428,419,333,194,408,244,156,176,191,191,294,187,132,218,246,159,33,232,167,114,208,81,120];
 const evol30Target=[336,336,336,336,336,336,336,336,336,336,336,336,336,336,336,336,336,336,336,336,336,336,336,336,336,336,336,336,336,336];
 var _grpFilter='all';
 const ctrlExcelData={'2026-01':[{nm:'PENIDA JOSE',und:9823,ord:84,dias:13},{nm:'BRUN TOMAS',und:1047,ord:4,dias:2},{nm:'AIRALA CESAR',und:348,ord:4,dias:4},{nm:'OCAMPO BRIAN',und:3825,ord:17,dias:2},{nm:'BEJERMAN',und:4105,ord:59,dias:14},{nm:'BARRIOS DANA',und:47697,ord:521,dias:21},{nm:'ROMERO MELANIE',und:11028,ord:105,dias:7},{nm:'ARMOA TAMARA',und:2,ord:1,dias:1}],'2026-02':[{nm:'ARMOA TAMARA',und:11969,ord:112,dias:8},{nm:'SISTEMA WMS',und:71,ord:3,dias:3},{nm:'BARRIOS DANA',und:55836,ord:529,dias:16},{nm:'PENIDA JOSE',und:2605,ord:19,dias:3},{nm:'BRUN TOMAS',und:2,ord:1,dias:1},{nm:'ROMERO MELANIE',und:23984,ord:180,dias:15},{nm:'BEJERMAN',und:9453,ord:55,dias:18},{nm:'PRODUCCION',und:12957,ord:94,dias:16},{nm:'AIRALA CESAR',und:5999,ord:47,dias:10}],'2026-03':[{nm:'PITTALA TOMAS',und:31061,ord:178,dias:8},{nm:'BRUN TOMAS',und:3064,ord:21,dias:4},{nm:'BARRIOS DANA',und:38923,ord:72,dias:3},{nm:'ROMERO MELANIE',und:85136,ord:680,dias:21},{nm:'PRODUCCION',und:137084,ord:663,dias:24},{nm:'BEJERMAN',und:10511,ord:84,dias:21},{nm:'ADRIAN ROMERO',und:389,ord:1,dias:1},{nm:'ARMOA TAMARA',und:35956,ord:105,dias:13},{nm:'SISTEMA WMS',und:4631,ord:12,dias:9},{nm:'PENIDA JOSE',und:2998,ord:6,dias:5},{nm:'AIRALA CESAR',und:6580,ord:25,dias:14}],'2026-04':[{nm:'PRODUCCION',und:113450,ord:632,dias:24},{nm:'BEJERMAN',und:23092,ord:139,dias:21},{nm:'ARMOA TAMARA',und:908,ord:8,dias:5},{nm:'BRUN TOMAS',und:7,ord:1,dias:1},{nm:'OCAMPO BRIAN',und:3611,ord:14,dias:2},{nm:'PITTALA TOMAS',und:84217,ord:572,dias:20},{nm:'PENIDA JOSE',und:4920,ord:16,dias:3},{nm:'ROMERO MELANIE',und:79820,ord:613,dias:20},{nm:'AIRALA CESAR',und:1767,ord:10,dias:8}],'2026-05':[{nm:'PRODUCCION',und:70465,ord:448,dias:21},{nm:'BEJERMAN',und:19154,ord:116,dias:17},{nm:'PITTALA TOMAS',und:72001,ord:623,dias:18},{nm:'ROMERO MELANIE',und:64996,ord:497,dias:17},{nm:'BRUN TOMAS',und:265,ord:3,dias:2},{nm:'ARMOA TAMARA',und:17609,ord:82,dias:9},{nm:'AIRALA CESAR',und:1066,ord:7,dias:5}],'2026-06':[{nm:'PRODUCCION',und:29824,ord:277,dias:12},{nm:'ROMERO MELANIE',und:53144,ord:350,dias:12},{nm:'PITTALA TOMAS',und:61428,ord:381,dias:12},{nm:'SISTEMA WMS',und:419,ord:3,dias:1},{nm:'BRUN TOMAS',und:1323,ord:7,dias:2},{nm:'AIRALA CESAR',und:5302,ord:24,dias:4},{nm:'BEJERMAN',und:1945,ord:26,dias:9},{nm:'ARMOA TAMARA',und:4953,ord:30,dias:4}]};
-var _CTRL_EXCL=['PRODUCCION','SISTEMA WMS','BEJERMAN','PIE DE MAQUINA','PIE DE MÁQUINA'];
-Object.keys(ctrlExcelData).forEach(function(ym){ctrlExcelData[ym]=(ctrlExcelData[ym]||[]).filter(function(op){return _CTRL_EXCL.indexOf(op.nm.toUpperCase())<0;});});
 const maqDetailData={'2026-01':{lbl:'Enero 2026',ops:[{nm:'DEMARCHIS EMILIANO',mov:627,und:194981,dias:14,pa02:440,rec:75,rl01:0,pallet:0,flow:112}]},'2026-02':{lbl:'Febrero 2026',ops:[{nm:'DEMARCHIS EMILIANO',mov:261,und:137390,dias:10,pa02:224,rec:37,rl01:0,pallet:0,flow:0}]},'2026-03':{lbl:'Marzo 2026',ops:[{nm:'DEMARCHIS EMILIANO',mov:913,und:643122,dias:18,pa02:690,rec:185,rl01:38,pallet:0,flow:0},{nm:'SANDOVAL TOMAS',mov:206,und:247106,dias:8,pa02:197,rec:7,rl01:2,pallet:0,flow:0}]},'2026-04':{lbl:'Abril 2026',ops:[{nm:'DEMARCHIS EMILIANO',mov:772,und:1127771,dias:14,pa02:594,rec:148,rl01:26,pallet:4,flow:0},{nm:'SANDOVAL TOMAS',mov:806,und:516426,dias:20,pa02:525,rec:239,rl01:24,pallet:18,flow:0}]},'2026-05':{lbl:'Mayo 2026',ops:[{nm:'SANDOVAL TOMAS',mov:606,und:641428,dias:19,pa02:459,rec:145,rl01:2,pallet:0,flow:0},{nm:'DEMARCHIS EMILIANO',mov:1066,und:2312165,dias:19,pa02:846,rec:202,rl01:18,pallet:0,flow:0}]},'2026-06':{lbl:'Junio 2026',ops:[{nm:'DEMARCHIS EMILIANO',mov:857,und:2835504,dias:10,pa02:648,rec:111,rl01:98,pallet:0,flow:0},{nm:'SANDOVAL TOMAS',mov:297,und:306561,dias:10,pa02:171,rec:126,rl01:0,pallet:0,flow:0}]}};
 var _chartCtrlEvol=null,_chartCtrlRank=null,_chartMaqEvol=null,_chartMaqBreak=null;
 
 function chartColors(){var dark=document.body.classList.contains('dark');return{grid:dark?'rgba(255,255,255,0.08)':'rgba(0,0,0,0.08)',tick:dark?'#94a3b8':'#555',leg:dark?'#cbd5e1':'#333'};}
 function buildControl(){
-  if(!ctrlExcelData||!Object.keys(ctrlExcelData).length){
-    var t=document.getElementById('ctrlTable');
-    if(t)t.innerHTML='<p style="padding:24px 8px;color:#64748B;font-size:14px;">Sin datos para el período seleccionado.</p>';
-    return;
-  }
+  if(!ctrlExcelData||!Object.keys(ctrlExcelData).length)return;
   var anio=document.getElementById('selAnio')?document.getElementById('selAnio').value:'all';
   var mes=document.getElementById('selMes')?document.getElementById('selMes').value:'all';
   var months=Object.keys(ctrlExcelData).sort();
   var sel=months.filter(function(ym){var p=ym.split('-');if(anio!=='all'&&p[0]!==anio)return false;if(mes!=='all'&&parseInt(p[1])!==parseInt(mes))return false;return true;});
   if(!sel.length)sel=[months[months.length-1]];
   var cc=chartColors();
-  var opsMap={};
-  sel.forEach(function(ym){(ctrlExcelData[ym]||[]).forEach(function(op){if(!opsMap[op.nm])opsMap[op.nm]={nm:op.nm,und:0,ord:0,dias:0};opsMap[op.nm].und+=op.und;opsMap[op.nm].ord+=op.ord;opsMap[op.nm].dias+=op.dias;});});
+  var opsMap={};sel.forEach(function(ym){(ctrlExcelData[ym]||[]).forEach(function(op){if(!opsMap[op.nm])opsMap[op.nm]={nm:op.nm,und:0,ord:0,dias:0};opsMap[op.nm].und+=op.und;opsMap[op.nm].ord+=op.ord;opsMap[op.nm].dias+=op.dias;});});
   var ops=Object.values(opsMap).sort(function(a,b){return b.und-a.und;});
   var totUnd=ops.reduce(function(s,o){return s+o.und;},0),totOrd=ops.reduce(function(s,o){return s+o.ord;},0),totDias=ops.reduce(function(s,o){return s+o.dias;},0);
   var avgUpd=totDias?Math.round(totUnd/totDias):0;
-  var avgUO=totOrd?Math.round(totUnd/totOrd):0;
   document.getElementById('ctrlKpiUnd').textContent=totUnd.toLocaleString('es-AR');
-  document.getElementById('ctrlKpiUndSub').textContent='~'+Math.round(totUnd/Math.max(sel.length,1)).toLocaleString('es-AR')+'/mes';
+  document.getElementById('ctrlKpiUndSub').textContent=avgUpd+' und/dia prom';
   document.getElementById('ctrlKpiOrd').textContent=totOrd.toLocaleString('es-AR');
-  document.getElementById('ctrlKpiOrdSub').textContent='~'+avgUO.toLocaleString('es-AR')+' UND/ORD';
+  document.getElementById('ctrlKpiOrdSub').textContent=totOrd.toLocaleString('es-AR')+' ordenes';
   document.getElementById('ctrlKpiUdpd').textContent=avgUpd.toLocaleString('es-AR');
-  document.getElementById('ctrlKpiUdpdSub').textContent=totDias+' d\xedas trabajados';
+  document.getElementById('ctrlKpiUdpdSub').textContent=sel.length+' mes'+(sel.length>1?'es':'');
   document.getElementById('ctrlKpiOps').textContent=ops.length;
-  document.getElementById('ctrlKpiOpsSub').textContent=sel.length+' mes'+(sel.length>1?'es':'');
+  document.getElementById('ctrlKpiOpsSub').textContent='operarios';
   var CLRS=['#2563eb','#16a34a','#d97706','#7c3aed','#0891b2'];
   var MON_S=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-  var MON_F=['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
   var monLbl=months.map(function(ym){var p=ym.split('-');return MON_S[parseInt(p[1])]+' '+p[0].slice(2);});
   var allNms=[];months.forEach(function(ym){(ctrlExcelData[ym]||[]).forEach(function(op){if(allNms.indexOf(op.nm)<0)allNms.push(op.nm);});});
   var evolDs=allNms.map(function(nm,i){return{label:nm.split(' ')[0],data:months.map(function(ym){var op=(ctrlExcelData[ym]||[]).find(function(o){return o.nm===nm;});return(op&&op.dias)?Math.round(op.und/op.dias):null;}),borderColor:CLRS[i%CLRS.length],backgroundColor:CLRS[i%CLRS.length]+'33',tension:0.35,spanGaps:true,pointRadius:4,fill:false};});
@@ -499,37 +483,11 @@ function buildControl(){
   var rkOpts={responsive:true,maintainAspectRatio:true,indexAxis:'y',plugins:{legend:{display:false},tooltip:{...tooltipBase,callbacks:{label:function(ctx){return ' '+ctx.parsed.x.toLocaleString('es-AR')+' und';}}}},scales:{x:{grid:{color:cc.grid,lineWidth:0.5},ticks:{color:cc.tick,font:{size:10},callback:function(v){return v>=1000?(v/1000).toFixed(0)+'k':v;}},border:{dash:[4,4]}},y:{grid:{display:false},ticks:{color:cc.tick,font:{size:11,weight:'600'}}}}};
   if(_chartCtrlRank){_chartCtrlRank.data.labels=ops.map(function(o){return o.nm.split(' ')[0];});_chartCtrlRank.data.datasets=rkDs;_chartCtrlRank.update();}
   else if(rk){_chartCtrlRank=new Chart(rk,{type:'bar',data:{labels:ops.map(function(o){return o.nm.split(' ')[0];}),datasets:rkDs},options:rkOpts});}
-  var isDark=document.body.classList.contains('dark');
-  var thBg=isDark?'#1e293b':'#f0f4ff';
-  var monHdBg=isDark?'#172554':'#dbeafe';
-  var monHdClr=isDark?'#93c5fd':'#1d4ed8';
-  var rowBdr=isDark?'#1e293b':'#f0f0f0';
-  var h='<table style="width:100%;border-collapse:collapse;font-size:12.5px">';
-  h+='<thead><tr style="background:'+thBg+'"><th style="padding:8px 12px 8px 20px;text-align:left;border-bottom:2px solid #3b82f6">Operario</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #3b82f6">D\xedas</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #3b82f6">UND</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #3b82f6">UND/d\xeda</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #3b82f6">ORD</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #3b82f6">UND/ORD</th></tr></thead><tbody>';
-  sel.forEach(function(ym){
-    var ops_m=ctrlExcelData[ym]||[];if(!ops_m.length)return;
-    var p=ym.split('-');
-    var mU=ops_m.reduce(function(s,o){return s+o.und;},0);
-    var mO=ops_m.reduce(function(s,o){return s+o.ord;},0);
-    var mD=ops_m.reduce(function(s,o){return s+o.dias;},0);
-    var mUpd=mD?Math.round(mU/mD):0;
-    h+='<tr style="background:'+monHdBg+'"><td colspan="6" style="padding:8px 14px;font-weight:700;color:'+monHdClr+'">'+MON_F[parseInt(p[1])]+' '+p[0]+'<span style="font-weight:400;font-size:11px;margin-left:10px;opacity:0.85">'+mU.toLocaleString('es-AR')+' UND &nbsp;\xb7&nbsp; '+mO.toLocaleString('es-AR')+' ORD &nbsp;\xb7&nbsp; '+mUpd+' UND/d\xeda &nbsp;\xb7&nbsp; '+ops_m.length+' operarios</span></td></tr>';
-    ops_m.forEach(function(op){
-      var upd=op.dias?Math.round(op.und/op.dias):0;
-      var uord=op.ord?Math.round(op.und/op.ord):0;
-      var clr=upd>=200?'#16a34a':upd>=100?'#2563eb':upd>=50?'#d97706':'#dc2626';
-      h+='<tr style="border-bottom:1px solid '+rowBdr+'">';
-      h+='<td style="padding:7px 12px 7px 22px;font-weight:600">'+op.nm+'</td>';
-      h+='<td style="padding:7px 12px;text-align:right;color:'+(isDark?'#94a3b8':'#888')+'">'+op.dias+'</td>';
-      h+='<td style="padding:7px 12px;text-align:right;font-weight:700">'+op.und.toLocaleString('es-AR')+'</td>';
-      h+='<td style="padding:7px 12px;text-align:right;font-weight:700;color:'+clr+'">'+upd+'</td>';
-      h+='<td style="padding:7px 12px;text-align:right;color:'+(isDark?'#94a3b8':'#888')+'">'+op.ord+'</td>';
-      h+='<td style="padding:7px 12px;text-align:right;font-weight:600;color:'+(isDark?'#a78bfa':'#7c3aed')+'">'+uord+'</td>';
-      h+='</tr>';
-    });
-  });
-  h+='</tbody></table>';
-  document.getElementById('ctrlTable').innerHTML=h;
+  var isDark=document.body.classList.contains('dark'),thBg=isDark?'#1e293b':'#f5f5f5';
+  var MON=['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  var h='<table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr style="background:'+thBg+'"><th style="padding:8px 12px;text-align:left;border-bottom:2px solid #e0e0e0">Mes</th><th style="padding:8px 12px;text-align:left;border-bottom:2px solid #e0e0e0">Operario</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #e0e0e0">Dias</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #e0e0e0">UND</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #e0e0e0">UND/dia</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #e0e0e0">ORD</th></tr></thead><tbody>';
+  var alt=false;months.forEach(function(ym){(ctrlExcelData[ym]||[]).forEach(function(op){var upd=op.dias?Math.round(op.und/op.dias):0,clr=upd>=150?'#16a34a':upd>=80?'#2563eb':upd>=40?'#d97706':'#dc2626',bg=alt?(isDark?'#1e293b':'#f9f9f9'):(isDark?'#0f172a':'#fff'),p=ym.split('-');alt=!alt;h+='<tr style="background:'+bg+'"><td style="padding:7px 12px;color:#888">'+MON[parseInt(p[1])]+' '+p[0]+'</td><td style="padding:7px 12px;font-weight:600">'+op.nm+'</td><td style="padding:7px 12px;text-align:right;color:#888">'+op.dias+'</td><td style="padding:7px 12px;text-align:right;font-weight:700">'+op.und.toLocaleString('es-AR')+'</td><td style="padding:7px 12px;text-align:right;color:'+clr+';font-weight:700">'+upd+'</td><td style="padding:7px 12px;text-align:right;color:#888">'+op.ord+'</td></tr>';});});
+  h+='</tbody></table>';document.getElementById('ctrlTable').innerHTML=h;
 }
 function buildMaquinistas(){
   if(!maqDetailData||!Object.keys(maqDetailData).length)return;
@@ -539,17 +497,13 @@ function buildMaquinistas(){
   var sel=months.filter(function(ym){var p=ym.split('-');if(anio!=='all'&&p[0]!==anio)return false;if(mes!=='all'&&parseInt(p[1])!==parseInt(mes))return false;return true;});
   if(!sel.length)sel=[months[months.length-1]];
   var cc=chartColors();
-  var opsMap={};
-  sel.forEach(function(ym){(maqDetailData[ym]||{ops:[]}).ops.forEach(function(op){if(!opsMap[op.nm])opsMap[op.nm]={nm:op.nm,mov:0,und:0,dias:0};opsMap[op.nm].mov+=op.mov;opsMap[op.nm].und+=op.und;opsMap[op.nm].dias+=op.dias;});});
+  var opsMap={};sel.forEach(function(ym){(maqDetailData[ym]||{ops:[]}).ops.forEach(function(op){if(!opsMap[op.nm])opsMap[op.nm]={nm:op.nm,mov:0,und:0,dias:0};opsMap[op.nm].mov+=op.mov;opsMap[op.nm].und+=op.und;opsMap[op.nm].dias+=op.dias;});});
   var ops=Object.values(opsMap).sort(function(a,b){return b.mov-a.mov;});
   var totMov=ops.reduce(function(s,o){return s+o.mov;},0),totUnd=ops.reduce(function(s,o){return s+o.und;},0),totDias=ops.reduce(function(s,o){return s+o.dias;},0);
   var avgMpd=totDias?Math.round(totMov/totDias):0;
-  var fmtBig=function(n){return n>=1000000?(n/1000000).toFixed(1)+'M':n>=1000?(n/1000).toFixed(0)+'k':n.toLocaleString('es-AR');};
-  var upMov=totMov?Math.round(totUnd/totMov):0;
   document.getElementById('maqKpiMov').textContent=totMov.toLocaleString('es-AR');
-  document.getElementById('maqKpiMovSub').textContent=avgMpd+' mov/d\xeda prom';
-  document.getElementById('maqKpiUnd').textContent=fmtBig(totUnd);
-  document.getElementById('maqKpiUndSub').textContent=upMov.toLocaleString('es-AR')+' UND/mov';
+  document.getElementById('maqKpiMovSub').textContent=avgMpd+' mov/dia prom';
+  document.getElementById('maqKpiUnd').textContent=totUnd>0?totUnd.toLocaleString('es-AR'):'N/D';
   document.getElementById('maqKpiMpd').textContent=avgMpd.toLocaleString('es-AR');
   document.getElementById('maqKpiMpdSub').textContent=totMov.toLocaleString('es-AR')+' mov totales';
   document.getElementById('maqKpiOps').textContent=ops.length;
@@ -573,37 +527,10 @@ function buildMaquinistas(){
   var breakOpts={responsive:true,maintainAspectRatio:true,plugins:{legend:{labels:{color:cc.leg,font:{size:11},usePointStyle:true,pointStyleWidth:8,boxHeight:8}},tooltip:{...ttBase,callbacks:{label:function(ctx){return ' '+ctx.dataset.label+': '+ctx.parsed.y.toLocaleString('es-AR')+' mov';}}}},scales:{x:{grid:{display:false},ticks:{color:cc.tick,font:{size:11}}},y:{grid:{color:cc.grid,lineWidth:0.5},ticks:{color:cc.tick,font:{size:10},callback:function(v){return v>=1000?(v/1000).toFixed(0)+'k':v;}}}}};
   if(_chartMaqBreak){_chartMaqBreak.data.datasets=breakDs;_chartMaqBreak.update();}
   else if(maqBrkEl){_chartMaqBreak=new Chart(maqBrkEl,{type:'bar',data:{labels:TASK_LABELS,datasets:breakDs},options:breakOpts});}
-  var isDark=document.body.classList.contains('dark');
-  var thBg=isDark?'#1e293b':'#f0fff4';
-  var monHdBg=isDark?'#14532d':'#dcfce7';
-  var monHdClr=isDark?'#86efac':'#15803d';
-  var rowBdr=isDark?'#1e293b':'#f0f0f0';
-  var h='<table style="width:100%;border-collapse:collapse;font-size:12.5px">';
-  h+='<thead><tr style="background:'+thBg+'"><th style="padding:8px 12px 8px 20px;text-align:left;border-bottom:2px solid #22c55e">Operario</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #22c55e">D\xedas</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #22c55e">MOV</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #22c55e">MOV/d\xeda</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #22c55e">UND</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #22c55e">PA02</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #22c55e">Recep.</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #22c55e">RL01</th></tr></thead><tbody>';
-  months.forEach(function(ym){
-    var md=maqDetailData[ym]||{lbl:ym,ops:[]};if(!md.ops.length)return;
-    var mMov=md.ops.reduce(function(s,o){return s+o.mov;},0);
-    var mUnd=md.ops.reduce(function(s,o){return s+o.und;},0);
-    var mDias=md.ops.reduce(function(s,o){return s+o.dias;},0);
-    var mMpd=mDias?Math.round(mMov/mDias):0;
-    h+='<tr style="background:'+monHdBg+'"><td colspan="8" style="padding:8px 14px;font-weight:700;color:'+monHdClr+'">'+md.lbl+'<span style="font-weight:400;font-size:11px;margin-left:10px;opacity:0.85">'+mMov.toLocaleString('es-AR')+' MOV &nbsp;\xb7&nbsp; '+fmtBig(mUnd)+' UND &nbsp;\xb7&nbsp; '+mMpd+' MOV/d\xeda &nbsp;\xb7&nbsp; '+md.ops.length+' operarios</span></td></tr>';
-    md.ops.forEach(function(op){
-      var mpd=op.dias?Math.round(op.mov/op.dias):0;
-      var clr=mpd>=80?'#16a34a':mpd>=50?'#2563eb':mpd>=30?'#d97706':'#dc2626';
-      h+='<tr style="border-bottom:1px solid '+rowBdr+'">';
-      h+='<td style="padding:7px 12px 7px 22px;font-weight:600">'+op.nm+'</td>';
-      h+='<td style="padding:7px 12px;text-align:right;color:'+(isDark?'#94a3b8':'#888')+'">'+op.dias+'</td>';
-      h+='<td style="padding:7px 12px;text-align:right;font-weight:700">'+op.mov.toLocaleString('es-AR')+'</td>';
-      h+='<td style="padding:7px 12px;text-align:right;font-weight:700;color:'+clr+'">'+mpd+'</td>';
-      h+='<td style="padding:7px 12px;text-align:right;color:'+(isDark?'#94a3b8':'#888')+'">'+fmtBig(op.und)+'</td>';
-      h+='<td style="padding:7px 12px;text-align:right;color:'+(isDark?'#94a3b8':'#888')+'">'+op.pa02+'</td>';
-      h+='<td style="padding:7px 12px;text-align:right;color:'+(isDark?'#94a3b8':'#888')+'">'+op.rec+'</td>';
-      h+='<td style="padding:7px 12px;text-align:right;color:'+(isDark?'#94a3b8':'#888')+'">'+op.rl01+'</td>';
-      h+='</tr>';
-    });
-  });
-  h+='</tbody></table>';
-  document.getElementById('maqDetailTable').innerHTML=h;
+  var isDark=document.body.classList.contains('dark'),thBg=isDark?'#1e293b':'#f5f5f5';
+  var h='<table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr style="background:'+thBg+'"><th style="padding:8px 12px;text-align:left;border-bottom:2px solid #e0e0e0">Mes</th><th style="padding:8px 12px;text-align:left;border-bottom:2px solid #e0e0e0">Operario</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #e0e0e0">Dias</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #e0e0e0">MOV</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #e0e0e0">MOV/dia</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #e0e0e0">PA02</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #e0e0e0">Recep.</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #e0e0e0">RL01</th></tr></thead><tbody>';
+  var alt=false;months.forEach(function(ym){var md=maqDetailData[ym]||{lbl:ym,ops:[]};md.ops.forEach(function(op){var mpd=op.dias?Math.round(op.mov/op.dias):0,clr=mpd>=60?'#16a34a':mpd>=30?'#2563eb':mpd>=10?'#d97706':'#dc2626',bg=alt?(isDark?'#1e293b':'#f9f9f9'):(isDark?'#0f172a':'#fff');alt=!alt;h+='<tr style="background:'+bg+'"><td style="padding:7px 12px;color:#888">'+md.lbl+'</td><td style="padding:7px 12px;font-weight:600">'+op.nm+'</td><td style="padding:7px 12px;text-align:right;color:#888">'+op.dias+'</td><td style="padding:7px 12px;text-align:right;font-weight:700">'+op.mov.toLocaleString('es-AR')+'</td><td style="padding:7px 12px;text-align:right;color:'+clr+';font-weight:700">'+mpd+'</td><td style="padding:7px 12px;text-align:right;color:#888">'+op.pa02+'</td><td style="padding:7px 12px;text-align:right;color:#888">'+op.rec+'</td><td style="padding:7px 12px;text-align:right;color:#888">'+op.rl01+'</td></tr>';});});
+  h+='</tbody></table>';document.getElementById('maqDetailTable').innerHTML=h;
 }
 
 // Helper: filtrar meses ctrl/maq segun selectores activos
@@ -677,18 +604,17 @@ function buildResumen(){
 // BONOS
 // ===========================================================
 var _bonSub='pick';
-var _bonGrupal=false;
+var _bonGrupal=true;
 var _bonPres={};
 var _bonCtrlRec={};
 var _bonPieErr=0;
 try{var _bg=localStorage.getItem('zecat-bon-grupal');if(_bg!==null)_bonGrupal=_bg==='1';}catch(e){}
 try{var _bp=localStorage.getItem('zecat-bon-pres');if(_bp)_bonPres=JSON.parse(_bp);}catch(e){}
 try{var _bc=localStorage.getItem('zecat-bon-ctrl');if(_bc)_bonCtrlRec=JSON.parse(_bc);}catch(e){}
-try{var _bpe=localStorage.getItem('zecat-bon-pie');if(_bpe!==null)_bonPieErr=parseInt(_bpe)||0;}catch(e){}
 
 function bonSetSub(sub){
   _bonSub=sub;
-  ['gen','pick','maq','ctrl','pie'].forEach(function(s){var b=document.getElementById('bonBtn-'+s);if(b)b.classList.toggle('active',s===sub);});
+  ['pick','maq','ctrl','pie'].forEach(function(s){var b=document.getElementById('bonBtn-'+s);if(b)b.classList.toggle('active',s===sub);});
   _bonRenderContent();
 }
 function bonToggleGrupal(){
@@ -702,56 +628,6 @@ function bonTogglePres(key){
   if(el)_bonPres[key]=el.checked;
   try{localStorage.setItem('zecat-bon-pres',JSON.stringify(_bonPres));}catch(e){}
   _bonRenderContent();
-}
-function _bonSaveCtrl(){try{localStorage.setItem('zecat-bon-ctrl',JSON.stringify(_bonCtrlRec));}catch(e){}}
-function _bonSavePie(){try{localStorage.setItem('zecat-bon-pie',_bonPieErr);}catch(e){}}
-function _bonShowReclamos(nm){
-  var idx=getFilteredIndices();
-  var selKeys=idx.map(function(i){return allMonKeys[i];});
-  var catMap={};var monMap={};var total=0;
-  selKeys.forEach(function(k){
-    var d=recMonthly[k];if(!d)return;
-    var cnt=d.byOp[nm]||0;
-    if(cnt){monMap[k]=cnt;total+=cnt;}
-    if(d.byOpCat&&d.byOpCat[nm]){Object.keys(d.byOpCat[nm]).forEach(function(cat){catMap[cat]=(catMap[cat]||0)+d.byOpCat[nm][cat];});}
-  });
-  var isDark=document.body.classList.contains('dark');
-  var thBg=isDark?'#1e293b':'#f8fafc';var brd=isDark?'#334155':'#e5e7eb';
-  var box=document.getElementById('bonRecModalBox');
-  box.style.background=isDark?'#0f172a':'#fff';box.style.color=isDark?'#f1f5f9':'';
-  var html='<div style="font-size:17px;font-weight:700;margin-bottom:3px">&#128683; Reclamos &mdash; '+nm+'</div>';
-  html+='<div style="font-size:12px;color:#888;margin-bottom:18px">Per&iacute;odo seleccionado</div>';
-  var totalC=total===0?'#16a34a':total<=2?'#d97706':'#dc2626';
-  html+='<div style="font-size:32px;font-weight:900;color:'+totalC+';margin-bottom:20px">'+total+'<span style="font-size:14px;font-weight:400;color:#888;margin-left:8px">reclamos totales</span></div>';
-  if(total===0){html+='<div style="text-align:center;padding:24px 0;color:#16a34a;font-size:15px;font-weight:600">&#10003; Sin reclamos en el per&iacute;odo</div>';}
-  else{
-    var cats=Object.entries(catMap).sort(function(a,b){return b[1]-a[1];});
-    if(cats.length){
-      html+='<div style="font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#888;margin-bottom:8px">Por categor&iacute;a</div>';
-      html+='<table style="width:100%;border-collapse:collapse;font-size:13px;margin-bottom:18px">';
-      cats.forEach(function(e,i){
-        var bg=i%2===0?thBg:'transparent';
-        var pct=Math.round(e[1]/total*100);
-        var barW=Math.round(e[1]/cats[0][1]*100);
-        html+='<tr style="background:'+bg+'"><td style="padding:7px 10px">'+e[0]+'</td>';
-        html+='<td style="padding:7px 10px;width:120px"><div style="height:6px;background:'+brd+';border-radius:3px"><div style="height:6px;width:'+barW+'%;background:#dc2626;border-radius:3px"></div></div></td>';
-        html+='<td style="text-align:right;padding:7px 10px;font-weight:700;white-space:nowrap">'+e[1]+' <span style="font-weight:400;color:#888">('+pct+'%)</span></td></tr>';
-      });
-      html+='</table>';
-    }
-    var mons=Object.entries(monMap).sort(function(a,b){return a[0]>b[0]?1:-1;});
-    if(mons.length>1){
-      html+='<div style="font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#888;margin-bottom:8px">Por mes</div>';
-      html+='<table style="width:100%;border-collapse:collapse;font-size:13px">';
-      mons.forEach(function(e,i){
-        var bg=i%2===0?thBg:'transparent';
-        html+='<tr style="background:'+bg+'"><td style="padding:6px 10px">'+e[0]+'</td><td style="text-align:right;padding:6px 10px;font-weight:700">'+e[1]+'</td></tr>';
-      });
-      html+='</table>';
-    }
-  }
-  document.getElementById('bonRecModalContent').innerHTML=html;
-  document.getElementById('bonRecModalOverlay').style.display='flex';
 }
 function _bonCalc(pres,n1,n2,grupal){
   var t=0;if(pres)t+=5;if(n1)t+=2.5;if(n2)t+=4.5;if(grupal)t+=3;return Math.min(t,15);
@@ -780,20 +656,17 @@ function _bonRenderContent(){
     var selKeys=idx.map(function(i){return allMonKeys[i];});
     var opsMap={};
     selKeys.forEach(function(k){var d=monthlyData[k];if(!d)return;d.pickers.forEach(function(pk){if(!opsMap[pk.resp])opsMap[pk.resp]={dias:0,lineas:0};opsMap[pk.resp].dias+=pk.dias;opsMap[pk.resp].lineas+=pk.lineas;});});
-    var recByPick={};
-    selKeys.forEach(function(k){var d=recMonthly[k];if(!d)return;Object.keys(d.byOp).forEach(function(op){recByPick[op]=(recByPick[op]||0)+d.byOp[op];});});
-    var pickers=Object.entries(opsMap).map(function(e){var resp=e[0],p=e[1];var ld=p.dias?Math.round(p.lineas/p.dias*10)/10:0;var cumpl=Math.round(ld/TARGET*1000)/10;var rec=recByPick[resp]||0;return{nm:resp,ld:ld,cumpl:cumpl,rec:rec,n1:cumpl>=100,n2:cumpl>=120};}).sort(function(a,b){return b.ld-a.ld;});
-    html+=tblHdr('<th style="padding:8px 12px;text-align:right;border-bottom:2px solid '+brd+'">Lin/D&iacute;a</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid '+brd+'">Cumpl%</th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Reclamos</th>');
+    var pickers=Object.entries(opsMap).map(function(e){var resp=e[0],p=e[1];var ld=p.dias?Math.round(p.lineas/p.dias*10)/10:0;var cumpl=Math.round(ld/TARGET*1000)/10;return{nm:resp,ld:ld,cumpl:cumpl,n1:cumpl>=100,n2:cumpl>=120};}).sort(function(a,b){return b.ld-a.ld;});
+    html+=tblHdr('<th style="padding:8px 12px;text-align:right;border-bottom:2px solid '+brd+'">Lin/D&iacute;a</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid '+brd+'">Cumpl%</th>');
     var alt=false;
     pickers.forEach(function(p){
       var key='pk'+p.nm.replace(/[^A-Za-z0-9]/g,'_');
       var bg=alt?rowEven:rowOdd;alt=!alt;
       var cumplC=p.cumpl>=100?'#16a34a':p.cumpl>=83?'#d97706':'#dc2626';
-      var recC=p.rec===0?'#16a34a':p.rec<=2?'#d97706':'#dc2626';
       var t=_bonCalc((_bonPres[key]!==undefined?_bonPres[key]:true),p.n1,p.n2,_bonGrupal);
-      html+='<tr style="background:'+bg+'"><td style="padding:8px 12px;font-weight:600">'+p.nm+'</td><td style="text-align:right;padding:8px 12px;font-weight:700;color:'+cumplC+'">'+p.ld+'</td><td style="text-align:right;padding:8px 12px;color:'+cumplC+'">'+p.cumpl+'%</td><td style="text-align:center;padding:8px 12px;font-weight:700;color:'+recC+';cursor:pointer;text-decoration:underline dotted" data-nm="'+p.nm+'" onclick="_bonShowReclamos(this.dataset.nm)" title="Ver detalle de reclamos">'+p.rec+'</td><td style="text-align:center;padding:8px 12px">'+presCheck(key)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(p.n1)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(p.n2)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(_bonGrupal)+'</td><td style="text-align:center;padding:8px 12px">'+_bonBadge(t)+'</td></tr>';
+      html+='<tr style="background:'+bg+'"><td style="padding:8px 12px;font-weight:600">'+p.nm+'</td><td style="text-align:right;padding:8px 12px;font-weight:700;color:'+cumplC+'">'+p.ld+'</td><td style="text-align:right;padding:8px 12px;color:'+cumplC+'">'+p.cumpl+'%</td><td style="text-align:center;padding:8px 12px">'+presCheck(key)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(p.n1)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(p.n2)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(_bonGrupal)+'</td><td style="text-align:center;padding:8px 12px">'+_bonBadge(t)+'</td></tr>';
     });
-    if(!pickers.length)html+='<tr><td colspan="9" style="text-align:center;padding:20px;color:#888">Sin datos para el per&iacute;odo seleccionado</td></tr>';
+    if(!pickers.length)html+='<tr><td colspan="8" style="text-align:center;padding:20px;color:#888">Sin datos para el per&iacute;odo seleccionado</td></tr>';
     html+='</tbody></table>';
   }
   else if(_bonSub==='maq'){
@@ -829,7 +702,7 @@ function _bonRenderContent(){
       var bg=alt?rowEven:rowOdd;alt=!alt;
       var updC=p.upd>3500?'#16a34a':p.upd>3000?'#2563eb':p.upd>1500?'#d97706':'#dc2626';
       var t=_bonCalc((_bonPres[key]!==undefined?_bonPres[key]:true),n1,n2,_bonGrupal);
-      html+='<tr style="background:'+bg+'"><td style="padding:8px 12px;font-weight:600">'+p.nm+'</td><td style="text-align:right;padding:8px 12px;font-weight:700;color:'+updC+'">'+p.upd.toLocaleString('es-AR')+'</td><td style="text-align:center;padding:8px 12px"><input type="number" min="0" max="99" value="'+rec+'" data-key="'+key+'" onchange="_bonCtrlRec[this.dataset.key]=parseInt(this.value)||0;_bonSaveCtrl();_bonRenderContent();" style="width:60px;text-align:center;border:1px solid '+brd+';border-radius:4px;padding:2px 4px;font-size:13px;background:'+rowOdd+'"></td><td style="text-align:center;padding:8px 12px">'+presCheck(key)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(n1)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(n2)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(_bonGrupal)+'</td><td style="text-align:center;padding:8px 12px">'+_bonBadge(t)+'</td></tr>';
+      html+='<tr style="background:'+bg+'"><td style="padding:8px 12px;font-weight:600">'+p.nm+'</td><td style="text-align:right;padding:8px 12px;font-weight:700;color:'+updC+'">'+p.upd.toLocaleString('es-AR')+'</td><td style="text-align:center;padding:8px 12px"><input type="number" min="0" max="99" value="'+rec+'" data-key="'+key+'" onchange="_bonCtrlRec[this.dataset.key]=parseInt(this.value)||0;try{localStorage.setItem('zecat-bon-ctrl',JSON.stringify(_bonCtrlRec));}catch(e){};_bonRenderContent();" style="width:60px;text-align:center;border:1px solid '+brd+';border-radius:4px;padding:2px 4px;font-size:13px;background:'+rowOdd+'"></td><td style="text-align:center;padding:8px 12px">'+presCheck(key)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(n1)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(n2)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(_bonGrupal)+'</td><td style="text-align:center;padding:8px 12px">'+_bonBadge(t)+'</td></tr>';
     });
     if(!ctrlOps.length)html+='<tr><td colspan="8" style="text-align:center;padding:20px;color:#888">Sin datos para el per&iacute;odo seleccionado</td></tr>';
     html+='</tbody></table>';
@@ -839,48 +712,12 @@ function _bonRenderContent(){
     var tPie=_bonCalc(true,n1Pie,n2Pie,_bonGrupal);
     var tC=tPie>=12?'#16a34a':tPie>=7.5?'#2563eb':tPie>=5?'#d97706':'#888';
     html+='<div class="chart-card" style="padding:20px;max-width:520px"><div class="rank-title" style="margin-bottom:16px">&#9881;&#65039; Pie de M&aacute;quina &mdash; Datos Manuales</div>';
-    html+='<div style="margin-bottom:20px"><label style="display:block;font-weight:600;margin-bottom:8px">N&uacute;mero de errores en el per&iacute;odo:</label><input type="number" min="0" max="99" value="'+_bonPieErr+'" onchange="_bonPieErr=parseInt(this.value)||0;_bonSavePie();_bonRenderContent();" style="font-size:20px;padding:8px 16px;border:2px solid '+brd+';border-radius:8px;width:130px;text-align:center"></div>';
+    html+='<div style="margin-bottom:20px"><label style="display:block;font-weight:600;margin-bottom:8px">N&uacute;mero de errores en el per&iacute;odo:</label><input type="number" min="0" max="99" value="'+_bonPieErr+'" onchange="_bonPieErr=parseInt(this.value)||0;_bonRenderContent();" style="font-size:20px;padding:8px 16px;border:2px solid '+brd+';border-radius:8px;width:130px;text-align:center"></div>';
     html+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">';
     html+='<div style="padding:14px;border-radius:8px;border:1px solid '+brd+';text-align:center;border-top:3px solid '+(n2Pie?'#16a34a':'#e5e7eb')+'"><div style="font-size:11px;color:#888;text-transform:uppercase;margin-bottom:6px">N2 &mdash; 0 errores</div><div style="font-size:24px;font-weight:800;color:'+(n2Pie?'#16a34a':'#888')+'">'+(n2Pie?'&#10003;':'&#8212;')+'</div><div style="font-size:11px;color:#888">+4.5%</div></div>';
     html+='<div style="padding:14px;border-radius:8px;border:1px solid '+brd+';text-align:center;border-top:3px solid '+(n1Pie?'#2563eb':'#e5e7eb')+'"><div style="font-size:11px;color:#888;text-transform:uppercase;margin-bottom:6px">N1 &mdash; &le;1 error</div><div style="font-size:24px;font-weight:800;color:'+(n1Pie?'#2563eb':'#888')+'">'+(n1Pie?'&#10003;':'&#8212;')+'</div><div style="font-size:11px;color:#888">+2.5%</div></div>';
     html+='<div style="padding:14px;border-radius:8px;border:1px solid '+brd+';text-align:center;border-top:3px solid '+tC+'"><div style="font-size:11px;color:#888;text-transform:uppercase;margin-bottom:6px">Total Bono</div><div style="font-size:28px;font-weight:900;color:'+tC+'">'+tPie+'%</div><div style="font-size:11px;color:#888">m&aacute;x 15%</div></div>';
     html+='</div><div style="margin-top:14px;font-size:12px;color:#888;padding:10px;background:'+rowEven+';border-radius:6px">Presentismo (5%) incluido. Grupal '+(_bonGrupal?'activado &#10003;':'desactivado &#8212;')+'.</div></div>';
-  }
-  else if(_bonSub==='gen'){
-    var idx=getFilteredIndices();
-    var selKeys=idx.map(function(i){return allMonKeys[i];});
-    // --- Picking ---
-    var opsMapG={};
-    selKeys.forEach(function(k){var d=monthlyData[k];if(!d)return;d.pickers.forEach(function(pk){if(!opsMapG[pk.resp])opsMapG[pk.resp]={dias:0,lineas:0};opsMapG[pk.resp].dias+=pk.dias;opsMapG[pk.resp].lineas+=pk.lineas;});});
-    var recByPickG={};
-    selKeys.forEach(function(k){var d=recMonthly[k];if(!d)return;Object.keys(d.byOp).forEach(function(op){recByPickG[op]=(recByPickG[op]||0)+d.byOp[op];});});
-    var pickersG=Object.entries(opsMapG).map(function(e){var resp=e[0],p=e[1];var ld=p.dias?Math.round(p.lineas/p.dias*10)/10:0;var cumpl=Math.round(ld/TARGET*1000)/10;var rec=recByPickG[resp]||0;var key='pk'+resp.replace(/[^A-Za-z0-9]/g,'_');var t=_bonCalc((_bonPres[key]!==undefined?_bonPres[key]:true),cumpl>=100,cumpl>=120,_bonGrupal);return{grupo:'Picking',nm:resp,metric:ld+'  lin/d',cumpl:cumpl,rec:rec,t:t};}).sort(function(a,b){return b.cumpl-a.cumpl;});
-    // --- Maquinistas ---
-    var maqMsG=_bonFiltMon(Object.keys(maqDetailData).sort());
-    var opsMapMG={};
-    maqMsG.forEach(function(ym){(maqDetailData[ym]||{ops:[]}).ops.forEach(function(op){if(!opsMapMG[op.nm])opsMapMG[op.nm]={mov:0,dias:0};opsMapMG[op.nm].mov+=op.mov;opsMapMG[op.nm].dias+=op.dias;});});
-    var maqG=Object.entries(opsMapMG).map(function(e){var nm=e[0],o=e[1];var mpd=o.dias?Math.round(o.mov/o.dias):0;var cumpl=Math.round(mpd/100*100);var key='mq'+nm.replace(/[^A-Za-z0-9]/g,'_');var t=_bonCalc((_bonPres[key]!==undefined?_bonPres[key]:true),mpd>=100,mpd>=120,_bonGrupal);return{grupo:'Maquinistas',nm:nm,metric:mpd+'  mov/d',cumpl:cumpl,rec:'-',t:t};}).sort(function(a,b){return b.t-a.t;});
-    // --- Control ---
-    var ctrlMsG=_bonFiltMon(Object.keys(ctrlExcelData).sort());
-    var opsMapCG={};
-    ctrlMsG.forEach(function(ym){(ctrlExcelData[ym]||[]).forEach(function(op){if(!opsMapCG[op.nm])opsMapCG[op.nm]={und:0,dias:0};opsMapCG[op.nm].und+=op.und;opsMapCG[op.nm].dias+=op.dias;});});
-    var pickNms=pickersG.map(function(p){return p.nm.toUpperCase();});
-    var ctrlG=Object.entries(opsMapCG).filter(function(e){return pickNms.indexOf(e[0].toUpperCase())<0;}).map(function(e){var nm=e[0],o=e[1];var upd=o.dias?Math.round(o.und/o.dias):0;var key='ct'+nm.replace(/[^A-Za-z0-9]/g,'_');var rec=_bonCtrlRec[key]||0;var t=_bonCalc((_bonPres[key]!==undefined?_bonPres[key]:true),upd>3000&&rec<=1,upd>3500&&rec===0,_bonGrupal);return{grupo:'Control',nm:nm,metric:upd.toLocaleString('es-AR')+' und/d',cumpl:'-',rec:rec,t:t};}).sort(function(a,b){return b.t-a.t;});
-    var allRows=pickersG.concat(maqG).concat(ctrlG);
-    allRows.sort(function(a,b){return b.t-a.t;});
-    if(ctrlG.length)html+='<div style="background:#fef9c3;border:1px solid #fde047;border-radius:8px;padding:8px 14px;font-size:12px;color:#713f12;margin-bottom:10px">&#9888; Los reclamos de <strong>Control</strong> se ingresan manualmente en el tab Control.</div>';
-    // render tabla
-    html+='<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:'+thBg+'"><th style="padding:8px 12px;text-align:left;border-bottom:2px solid '+brd+'">Grupo</th><th style="padding:8px 12px;text-align:left;border-bottom:2px solid '+brd+'">Operario</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid '+brd+'">M&eacute;trica</th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Reclamos</th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Bono</th></tr></thead><tbody>';
-    var lastGrupo='';var alt2=false;
-    allRows.forEach(function(r){
-      if(r.grupo!==lastGrupo){alt2=!alt2;lastGrupo=r.grupo;}
-      var bg=alt2?rowEven:rowOdd;
-      var tC2=r.t>=12?'#16a34a':r.t>=7.5?'#2563eb':r.t>=5?'#d97706':'#888';
-      var recC2=(r.rec==='-'||r.rec===0)?'#16a34a':(r.rec<=2?'#d97706':'#dc2626');
-      html+='<tr style="background:'+bg+'"><td style="padding:7px 12px;font-size:11px;color:#888">'+r.grupo+'</td><td style="padding:7px 12px;font-weight:600">'+r.nm+'</td><td style="text-align:right;padding:7px 12px">'+r.metric+'</td><td style="text-align:center;padding:7px 12px;font-weight:700;color:'+recC2+'">'+r.rec+'</td><td style="text-align:center;padding:7px 12px"><span style="font-weight:800;font-size:15px;color:'+tC2+'">'+r.t+'%</span></td></tr>';
-    });
-    if(!allRows.length)html+='<tr><td colspan="5" style="text-align:center;padding:20px;color:#888">Sin datos para el per&iacute;odo seleccionado</td></tr>';
-    html+='</tbody></table>';
   }
   document.getElementById('bonContent').innerHTML=html;
 }
@@ -891,7 +728,7 @@ function switchTab(name){
   document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
   document.getElementById('sec-'+name).classList.add('active');
   document.getElementById('btn-'+name).classList.add('active');
-  document.getElementById('opFilterWrap').style.display=(name==='picking'||name==='reclamos'||name==='maquinistas')?'':'none';
+  document.getElementById('opFilterWrap').style.display=(name==='picking'||name==='reclamos'||name==='control'||name==='maquinistas')?'':'none';
   if(name==='control') buildControl();
   if(name==='maquinistas') buildMaquinistas();
   if(name==='resumen') buildResumen();
@@ -904,7 +741,7 @@ const selAnioEl=document.getElementById('selAnio');
 years.forEach(function(y){var o=document.createElement('option');o.value=y;o.textContent=y;selAnioEl.appendChild(o);});
 
 // Poblar selector de operarios
-const operarios=['ADRIAN ROMERO','ARCE ELIAS','ARMOA TAMARA','BRUN TOMAS','CACERES EDISON','CAÑETE FAVIO','CHOQUE LEANDRO','DEMARCHIS EMILIANO','LAURATO MARTINEZ','MARIN LAUTARO','OCAMPO BRIAN','ROMERO DAMIAN','ROMERO MELANIE','SANDOVAL TOMAS'];
+const operarios=['ADRIAN ROMERO','ARCE ELIAS','ARMOA TAMARA','BRIAN OCAMPO','BRUN TOMAS','CACERES EDISON','CAÑETE FAVIO','CHOQUE LEANDRO','DEMARCHIS EMILIANO','LAURATO MARTINEZ','MARIN LAUTARO','OCAMPO BRIAN','ROMERO DAMIAN','ROMERO MELANIE','SANDOVAL TOMAS'];
 const selOpEl=document.getElementById('selOp');
 operarios.forEach(function(op){var o=document.createElement('option');o.value=op;o.textContent=op;selOpEl.appendChild(o);});
 
@@ -930,7 +767,6 @@ function getFilteredIndices(){
 }
 
 function applyFilter(){
-  try{var _fa=document.getElementById('selAnio').value,_fm=document.getElementById('selMes').value;localStorage.setItem('zecat-filter',JSON.stringify({ano:_fa,mes:_fm}));}catch(e){}
   var _s=document.querySelector('.sec.active');var _id=_s?_s.id:'';
   if(_id==='sec-control'){buildControl();return;}
   if(_id==='sec-maquinistas'){buildMaquinistas();return;}
@@ -1156,8 +992,8 @@ function applyFilter(){
     document.getElementById('pieM2L').textContent='-';
   }
   chartPie.data.labels=labels;
-  chartPie.data.datasets[0].data=idx.map(function(i){return merma1[i]==null?NaN:merma1[i];});
-  chartPie.data.datasets[1].data=idx.map(function(i){return merma2[i]==null?NaN:merma2[i];});
+  chartPie.data.datasets[0].data=idx.map(function(i){return merma1[i];});
+  chartPie.data.datasets[1].data=idx.map(function(i){return merma2[i];});
   chartPie.update();
 
   // ===== MUESTRA SIMPLE SECTION =====
@@ -1339,7 +1175,7 @@ const chartRanking=new Chart('chartRanking',{type:'bar',data:{
 
 const chartTeamTrend=new Chart('chartTeamTrend',{type:'line',data:{
   labels:['Enero 2026','Febrero 2026','Marzo 2026','Abril 2026','Mayo 2026','Junio 2026'],datasets:[
-    {label:'Lin/Dia equipo',data:[61.6,62.9,67.7,80.4,99.3,78.2],borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.1)',borderWidth:2.5,tension:.3,fill:true,pointRadius:4,pointBackgroundColor:['#dc2626','#dc2626','#dc2626','#d97706','#16a34a','#d97706']},
+    {label:'Lin/Dia equipo',data:[61.7,65,86,80.6,99.7,55.1],borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.1)',borderWidth:2.5,tension:.3,fill:true,pointRadius:4,pointBackgroundColor:['#dc2626','#dc2626','#16a34a','#d97706','#16a34a','#dc2626']},
     {label:'Target 84',data:Array(6).fill(84),borderColor:'#16a34a',borderWidth:1.5,borderDash:[6,4],pointRadius:0,fill:false}
   ]},options:{responsive:true,maintainAspectRatio:false,
   plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11},color:'#444444'}}},
@@ -1347,8 +1183,8 @@ const chartTeamTrend=new Chart('chartTeamTrend',{type:'line',data:{
 
 const chartStaff=new Chart('chartStaff',{type:'bar',data:{
   labels:['Enero 2026','Febrero 2026','Marzo 2026','Abril 2026','Mayo 2026','Junio 2026'],datasets:[
-    {label:'Necesarias',data:[2.2,3.3,4.1,3.8,4.9,3.7],backgroundColor:'rgba(68,114,196,.8)',borderRadius:4},
-    {label:'Activas (prom/dia)',data:[3,4,4,4,4,4.8],backgroundColor:'rgba(22,163,74,.7)',borderRadius:4}
+    {label:'Necesarias',data:[2.2,3.3,4.1,3.8,4.9,3.3],backgroundColor:'rgba(68,114,196,.8)',borderRadius:4},
+    {label:'Activas (prom/dia)',data:[3,4,4,4,4,4.7],backgroundColor:'rgba(22,163,74,.7)',borderRadius:4}
   ]},options:{responsive:true,maintainAspectRatio:false,
   plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11},color:'#444444'}}},
   scales:{y:{min:0,grid:{color:'#eeeeee'},ticks:{stepSize:1,color:'#666666'}},x:{grid:{display:false},ticks:{color:'#666666'}}}}});
@@ -1357,18 +1193,19 @@ const chartEvol=new Chart('chartEvol',{type:'line',data:{
   labels:['Enero 2026','Febrero 2026','Marzo 2026','Abril 2026','Mayo 2026','Junio 2026'],datasets:[
   {label:'ADRIAN ROMERO',data:[null,null,null,null,1,null],borderColor:'#2563eb',backgroundColor:'#2563eb22',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
   {label:'ARCE ELIAS',data:[8,9,null,null,null,null],borderColor:'#16a34a',backgroundColor:'#16a34a22',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
-  {label:'ARMOA TAMARA',data:[60.6,77.2,83.7,99.8,111.9,108.3],borderColor:'#d97706',backgroundColor:'#d9770622',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
-  {label:'BRUN TOMAS',data:[64,88.3,90.6,92.6,117.1,99.2],borderColor:'#dc2626',backgroundColor:'#dc262622',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
-  {label:'CACERES EDISON',data:[null,null,null,33.7,47.2,36.2],borderColor:'#7c3aed',backgroundColor:'#7c3aed22',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
-  {label:'CAÑETE FAVIO',data:[null,9,null,null,null,null],borderColor:'#0891b2',backgroundColor:'#0891b222',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
-  {label:'CHOQUE LEANDRO',data:[null,null,null,28.3,null,null],borderColor:'#be185d',backgroundColor:'#be185d22',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
-  {label:'DEMARCHIS EMILIANO',data:[3,null,1,25,24,null],borderColor:'#ca8a04',backgroundColor:'#ca8a0422',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
-  {label:'LAURATO MARTINEZ',data:[44.1,62,63.3,75.9,99.9,75.1],borderColor:'#15803d',backgroundColor:'#15803d22',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
-  {label:'MARIN LAUTARO',data:[null,null,31.5,null,null,null],borderColor:'#b45309',backgroundColor:'#b4530922',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
-  {label:'OCAMPO BRIAN',data:[1.5,24.3,15.1,16.2,46,null],borderColor:'#2563eb',backgroundColor:'#2563eb22',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
-  {label:'ROMERO DAMIAN',data:[null,null,44.6,null,null,null],borderColor:'#16a34a',backgroundColor:'#16a34a22',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
-  {label:'ROMERO MELANIE',data:[57.4,58.5,21.5,30.7,35.8,null],borderColor:'#d97706',backgroundColor:'#d9770622',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
-  {label:'SANDOVAL TOMAS',data:[null,null,null,50,19,null],borderColor:'#dc2626',backgroundColor:'#dc262622',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
+  {label:'ARMOA TAMARA',data:[60.6,77.2,103,99.8,113.3,96.3],borderColor:'#d97706',backgroundColor:'#d9770622',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
+  {label:'BRIAN OCAMPO',data:[null,null,null,null,null,10],borderColor:'#dc2626',backgroundColor:'#dc262622',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
+  {label:'BRUN TOMAS',data:[64.3,77.2,140.8,93.4,111.1,89.7],borderColor:'#7c3aed',backgroundColor:'#7c3aed22',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
+  {label:'CACERES EDISON',data:[null,null,null,33.7,47.2,34.2],borderColor:'#0891b2',backgroundColor:'#0891b222',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
+  {label:'CAÑETE FAVIO',data:[null,9,null,null,null,null],borderColor:'#be185d',backgroundColor:'#be185d22',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
+  {label:'CHOQUE LEANDRO',data:[null,null,null,28.3,null,null],borderColor:'#ca8a04',backgroundColor:'#ca8a0422',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
+  {label:'DEMARCHIS EMILIANO',data:[3,null,1,25,24,null],borderColor:'#15803d',backgroundColor:'#15803d22',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
+  {label:'LAURATO MARTINEZ',data:[44.1,62.2,63.8,75.9,99.9,71.4],borderColor:'#b45309',backgroundColor:'#b4530922',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
+  {label:'MARIN LAUTARO',data:[null,null,31.5,null,null,null],borderColor:'#2563eb',backgroundColor:'#2563eb22',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
+  {label:'OCAMPO BRIAN',data:[1.5,24.3,15.1,16.2,46,null],borderColor:'#16a34a',backgroundColor:'#16a34a22',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
+  {label:'ROMERO DAMIAN',data:[null,null,44.6,null,null,null],borderColor:'#d97706',backgroundColor:'#d9770622',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
+  {label:'ROMERO MELANIE',data:[57.4,58.5,21.5,30.7,35.8,null],borderColor:'#dc2626',backgroundColor:'#dc262622',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
+  {label:'SANDOVAL TOMAS',data:[null,null,null,50,19,null],borderColor:'#7c3aed',backgroundColor:'#7c3aed22',borderWidth:2,tension:.3,pointRadius:3,fill:false,spanGaps:true},
 
     {label:'Target 84',data:Array(6).fill(84),borderColor:'#1a1a2e',borderWidth:2,borderDash:[8,4],pointRadius:0,fill:false}
   ]},options:{responsive:true,maintainAspectRatio:false,
@@ -1461,7 +1298,7 @@ const chartMerma=null; // canvas eliminado — datos de Pedido Merma no se muest
 
 const chartPie=new Chart('chartPie',{type:'line',data:{
   labels:['Enero 2026','Febrero 2026','Marzo 2026','Abril 2026','Mayo 2026','Junio 2026'],datasets:[
-    {label:'Turno 1 (06-15h)',data:[28.4,21.3,29.4,25.4,23.1,22.1],borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.12)',borderWidth:2.5,tension:.3,pointRadius:5,fill:true,spanGaps:true},
+    {label:'Turno 1 (06-15h)',data:[28.4,21.3,29.4,25.4,23.1,19.8],borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,.12)',borderWidth:2.5,tension:.3,pointRadius:5,fill:true,spanGaps:true},
     {label:'Turno 2 (resto)',data:[22.2,38,13.8,16.6,16,15.3],borderColor:'#ea580c',backgroundColor:'rgba(234,88,12,.12)',borderWidth:2.5,tension:.3,pointRadius:5,fill:true,spanGaps:true}
   ]},options:{responsive:true,maintainAspectRatio:false,
   plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11},color:'#444444'}}},
@@ -1469,7 +1306,7 @@ const chartPie=new Chart('chartPie',{type:'line',data:{
 
 const chartLez=new Chart('chartLez',{type:'line',data:{
   labels:['Enero 2026','Febrero 2026','Marzo 2026','Abril 2026','Mayo 2026','Junio 2026'],datasets:[
-    {label:'Lin/Dia Lezcano',data:[null,581.5,6007,766.5,274.5,892],borderColor:'#7c3aed',backgroundColor:'rgba(124,58,237,.1)',borderWidth:2.5,tension:.3,pointRadius:5,fill:true,spanGaps:true}
+    {label:'Lin/Dia Lezcano',data:[null,581.5,6007,766.5,274.5,204.3],borderColor:'#7c3aed',backgroundColor:'rgba(124,58,237,.1)',borderWidth:2.5,tension:.3,pointRadius:5,fill:true,spanGaps:true}
   ]},options:{responsive:true,maintainAspectRatio:false,
   plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11},color:'#444444'}}},
   scales:{y:{min:0,grid:{color:'#eeeeee'},ticks:{color:'#666666'}},x:{grid:{display:false},ticks:{color:'#666666'}}}}});
@@ -1540,16 +1377,12 @@ window.addEventListener('message',function(e){
 });
 try{window.parent.postMessage({type:'zecat-theme-ready'},'*');}catch(e){}
 
-// Inicializar tab y filtro al ultimo mes disponible (o al ultimo filtro usado)
+// Inicializar tab y filtro al ultimo mes disponible
 try {
   switchTab('picking');
-  var _initAnio='2026';var _initMes='6';
-  var _restoredOld=false;
-  try{var _sf=JSON.parse(localStorage.getItem('zecat-filter'));if(_sf&&_sf.ano&&_sf.mes){if(_sf.ano!==_initAnio||_sf.mes!==_initMes)_restoredOld=true;_initAnio=_sf.ano;_initMes=_sf.mes;}}catch(e){}
-  document.getElementById('selAnio').value=_initAnio;
-  document.getElementById('selMes').value=_initMes;
+  document.getElementById('selAnio').value='2026';
+  document.getElementById('selMes').value='6';
   applyFilter();
-  if(_restoredOld){var _fb=document.getElementById('filterBadge');_fb.innerHTML=_fb.textContent+' <span onclick="resetFilter()" style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d;border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;margin-left:6px;font-weight:700;">⚠ Restaurado &mdash; Ver mes actual</span>';}
   // Poblar tabla 7 dias (datos estaticos, filtrable por grupo)
   _build7dTable();
   // Si ya hay dark mode guardado, aplicar colores a los charts recién creados
