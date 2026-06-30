@@ -918,18 +918,21 @@ function navigate(item) {
   // Fallback: revelar iframe después de 6s aunque no haya cargado del todo
   setTimeout(() => revealModule(module), 6000);
 
+  // Activar SIEMPRE el frame del módulo clickeado (idempotente: evita el desync con el
+  // módulo recordado en localStorage, que hacía que el primer clic no entrara).
+  document.querySelectorAll('.frame-wrap.active').forEach(fw => { if (fw.id !== 'fw-' + module) fw.classList.remove('active'); });
+  const fwTarget = document.getElementById('fw-' + module);
+  if (fwTarget) fwTarget.classList.add('active');
   if (module !== currentModule) {
-    document.getElementById('fw-' + currentModule).classList.remove('active');
-    document.getElementById('fw-' + module).classList.add('active');
     currentModule = module;
     localStorage.setItem('zecat-portal-module', module);
-    setTimeout(() => {
-      try {
-        const win = document.getElementById('ifr-' + module).contentWindow;
-        if (win.Chart) Object.values(win.Chart.instances).forEach(c => c.resize());
-      } catch(e) {}
-    }, 300);
   }
+  setTimeout(() => {
+    try {
+      const win = document.getElementById('ifr-' + module).contentWindow;
+      if (win.Chart) Object.values(win.Chart.instances).forEach(c => c.resize());
+    } catch(e) {}
+  }, 300);
 
   if (tab !== undefined || page !== undefined) {
     const action = () => switchContent(module, tab, page);
@@ -1332,6 +1335,14 @@ async function saveEditUser() {
 }
 
 checkAuth();
+
+// Precargar el iframe del último módulo usado para que el primer clic sea instantáneo
+setTimeout(() => {
+  try {
+    const ifr = document.getElementById('ifr-' + currentModule);
+    if (ifr && !ifr.getAttribute('src') && ifr.dataset.src) ifr.src = ifr.dataset.src;
+  } catch(e) {}
+}, 1500);
 </script>
 
 <!-- AUTH OVERLAY -->
