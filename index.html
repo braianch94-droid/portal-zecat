@@ -2,6 +2,12 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<script>
+// Portal único: la URL vieja redirige a la oficial (portal-zecat-op). Evita caer en la versión vieja.
+if (location.hostname === 'portal-zecat.pages.dev') {
+  location.replace('https://portal-zecat-op.pages.dev' + location.pathname + location.search + location.hash);
+}
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Zecat — Portal de Gestión</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
