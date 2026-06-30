@@ -1335,6 +1335,18 @@ async function saveEditUser() {
 }
 
 checkAuth();
+
+// Precargar Evaluaciones en segundo plano DESPUÉS de que el portal terminó de cargar.
+// No bloquea el load del portal (a diferencia de hacerlo durante la carga) y deja el
+// iframe listo con sus datos, para que el primer clic entre instantáneo y sin demora.
+function _preloadEvaluaciones() {
+  try {
+    const ifr = document.getElementById('ifr-evaluaciones');
+    if (ifr && !ifr.getAttribute('src') && ifr.dataset.src) ifr.src = ifr.dataset.src;
+  } catch(e) {}
+}
+if (document.readyState === 'complete') setTimeout(_preloadEvaluaciones, 1200);
+else window.addEventListener('load', () => setTimeout(_preloadEvaluaciones, 1200));
 </script>
 
 <!-- AUTH OVERLAY -->
