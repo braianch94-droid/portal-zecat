@@ -110,6 +110,15 @@ export async function onRequest(context) {
     const { email, password, nombre = '' } = await safeJson(request);
     if (!email || !password) return makeResp({ error: 'Email y contraseña requeridos' }, 400);
     if (password.length < 8) return makeResp({ error: 'La contraseña debe tener al menos 8 caracteres' }, 400);
+    // Verificar si el email ya existe antes de intentar insertar
+    const existing = await DB.prepare('SELECT activo FROM users WHERE email=? COLLATE NOCASE').bind(email.toLowerCase()).first();
+    if (existing) {
+      if (existing.activo) {
+        return makeResp({ error: 'Ya existe una cuenta con ese email. Si no recordás tu contraseña, usá "Olvidé mi contraseña".', code: 'ALREADY_ACTIVE' }, 409);
+      } else {
+        return makeResp({ error: 'Tu solicitud ya fue recibida y está pendiente de activación. Si no recordás tu contraseña, usá "Olvidé mi contraseña".', code: 'PENDING_ACTIVATION' }, 409);
+      }
+    }
     const hash = await hashPassword(password);
     const now = new Date().toISOString();
     try {

@@ -1160,7 +1160,14 @@ async function doRegister() {
   try {
     const r=await fetch(AUTH_API+'/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password,nombre})});
     const data=await r.json();
-    if (!r.ok) {errEl.textContent=data.error||'Error al registrar';return;}
+    if (!r.ok) {
+      if (data.code==='ALREADY_ACTIVE'||data.code==='PENDING_ACTIVATION'){
+        errEl.innerHTML=(data.error||'El email ya está registrado')+' <a href="#" style="color:inherit;font-weight:700" onclick="showAuthTab(\'forgot\');return false">Ir a recuperar contraseña →</a>';
+      } else {
+        errEl.textContent=data.error||'Error al registrar';
+      }
+      return;
+    }
     msgEl.textContent='✓ Solicitud enviada. Esperá que el administrador active tu cuenta.';
     document.getElementById('reg-nombre').value='';
     document.getElementById('reg-email').value='';
