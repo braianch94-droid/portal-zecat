@@ -1335,14 +1335,6 @@ async function saveEditUser() {
 }
 
 checkAuth();
-
-// Precargar el iframe del último módulo usado para que el primer clic sea instantáneo
-setTimeout(() => {
-  try {
-    const ifr = document.getElementById('ifr-' + currentModule);
-    if (ifr && !ifr.getAttribute('src') && ifr.dataset.src) ifr.src = ifr.dataset.src;
-  } catch(e) {}
-}, 1500);
 </script>
 
 <!-- AUTH OVERLAY -->
