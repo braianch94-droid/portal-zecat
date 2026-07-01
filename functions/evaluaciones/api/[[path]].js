@@ -196,13 +196,22 @@ async function api(request, env, url) {
   if (path === "/api/dashboard" && method === "GET") {
     const periodo = url.searchParams.get("periodo");
     const sector = url.searchParams.get("sector");
+    const area = url.searchParams.get("area");
+    const turno = url.searchParams.get("turno");
     const where = [];
     const binds = [];
     if (periodo) { where.push("ev.periodo = ?"); binds.push(periodo); }
     if (sector) { where.push("e.sector = ?"); binds.push(sector); }
+    if (area) { where.push("COALESCE(NULLIF(e.area,''), e.tecnica) = ?"); binds.push(area); }
+    if (turno) { where.push("e.turno = ?"); binds.push(turno); }
     const wsql = where.length ? "WHERE " + where.join(" AND ") : "";
 
-    const totalEmpleados = (await db.prepare("SELECT COUNT(*) c FROM empleados WHERE activo=1" + (sector ? " AND sector=?" : "")).bind(...(sector ? [sector] : [])).first()).c;
+    // El total (denominador de "evaluados") respeta sector/área/turno
+    const eWhere = ["activo=1"]; const eBinds = [];
+    if (sector) { eWhere.push("sector = ?"); eBinds.push(sector); }
+    if (area) { eWhere.push("COALESCE(NULLIF(area,''), tecnica) = ?"); eBinds.push(area); }
+    if (turno) { eWhere.push("turno = ?"); eBinds.push(turno); }
+    const totalEmpleados = (await db.prepare("SELECT COUNT(*) c FROM empleados WHERE " + eWhere.join(" AND ")).bind(...eBinds).first()).c;
 
     const base = `FROM evaluaciones ev JOIN empleados e ON e.id=ev.empleado_id ${wsql}`;
     const resumen = await db.prepare(`SELECT COUNT(*) n_evaluaciones, COUNT(DISTINCT ev.empleado_id) n_evaluados, AVG(ev.promedio) prom_global, MIN(ev.promedio) min_prom, MAX(ev.promedio) max_prom ${base}`).bind(...binds).first();

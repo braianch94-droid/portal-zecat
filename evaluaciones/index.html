@@ -164,20 +164,25 @@ async function loadDashboard(){
   const periodos=m.periodos.length?m.periodos:[""];
   const selP=`<select id="dPeriodo"><option value="">Todos los períodos</option>${m.periodos.map((p,i)=>`<option${i===0?' selected':''}>${esc(p)}</option>`).join("")}</select>`;
   const selS=`<select id="dSector"><option value="">Todos los sectores</option>${m.sectores.map(s=>`<option>${esc(s)}</option>`).join("")}</select>`;
+  const areasLineas=[...new Set([...m.areas, ...m.tecnicas])].sort();
+  const selA=`<select id="dArea"><option value="">Todas las áreas/líneas</option>${areasLineas.map(a=>`<option>${esc(a)}</option>`).join("")}</select>`;
+  const selT=`<select id="dTurno"><option value="">Todos los turnos</option>${m.turnos.map(t=>`<option>${esc(t)}</option>`).join("")}</select>`;
   sec.innerHTML=`
     <div class="toolbar">
       <div><label>Período</label>${selP}</div>
       <div><label>Sector</label>${selS}</div>
+      <div><label>Área / Línea</label>${selA}</div>
+      <div><label>Turno</label>${selT}</div>
       <div style="flex:0"><label>&nbsp;</label><button class="btn sec" id="dExport">⬇ Exportar CSV</button></div>
     </div>
     <div id="dBody"></div>`;
-  $("#dPeriodo").onchange=renderDash; $("#dSector").onchange=renderDash;
+  ["dPeriodo","dSector","dArea","dTurno"].forEach(id=>$("#"+id).onchange=renderDash);
   $("#dExport").onclick=exportCSV;
   renderDash();
 }
 async function renderDash(){
-  const p=$("#dPeriodo").value, s=$("#dSector").value;
-  const qs=new URLSearchParams(); if(p)qs.set("periodo",p); if(s)qs.set("sector",s);
+  const p=$("#dPeriodo").value, s=$("#dSector").value, a=$("#dArea").value, tu=$("#dTurno").value;
+  const qs=new URLSearchParams(); if(p)qs.set("periodo",p); if(s)qs.set("sector",s); if(a)qs.set("area",a); if(tu)qs.set("turno",tu);
   const d=await jget("/dashboard?"+qs);
   const r=d.resumen||{};
   const body=$("#dBody");
@@ -232,6 +237,7 @@ async function loadEvaluar(prefillId){
         <div class="col"><label>Empleado a evaluar *</label><select id="fEmpleado"><option value="">Seleccionar…</option>${opts}</select></div>
       </div>
       <div id="empInfo" class="small muted" style="margin:8px 0 4px"></div>
+      <div id="dupWarn" style="display:none;background:var(--warnbg);border:1px solid var(--warn);color:var(--warn);border-radius:9px;padding:10px 12px;margin:6px 0 4px;font-size:13px"></div>
       <div class="row">
         <div class="col"><label>Período *</label><select id="fPeriodo">${[...new Set(["1er semestre 2026","2do semestre 2026","1er semestre 2027","2do semestre 2027",...m.periodos])].map(p=>`<option${p===(localStorage.getItem('ultimo_periodo')||'1er semestre 2026')?' selected':''}>${esc(p)}</option>`).join("")}</select></div>
         <div class="col"><label>Fecha *</label><input id="fFecha" type="date" value="${hoy}" /></div>
@@ -280,7 +286,9 @@ async function loadEvaluar(prefillId){
     const e=evalEmpleados.find(x=>x.id==$("#fEmpleado").value);
     $("#empInfo").innerHTML=e?`Sector: <b>${esc(e.sector)}</b> · Área/Línea: <b>${sectorLinea(e)}</b> · Turno: <b>${esc(e.turno)}</b> · ${esc(e.categoria||"")}${e.n_eval?` · <span style="color:var(--warn)">Ya tiene ${e.n_eval} evaluación(es)</span>`:""}`:"";
     if(e&&!$("#fPosDesemp").value)$("#fPosDesemp").value=e.tecnica||e.area||"";
+    checkDuplicadoEval();
   };
+  $("#fPeriodo").onchange=checkDuplicadoEval;
   $("#btnSave").onclick=saveEval;
   $("#btnCancel").onclick=()=>loadEvaluar();
   if(prefillId){$("#fEmpleado").value=prefillId;$("#fEmpleado").onchange();}
@@ -301,6 +309,20 @@ function gatherPuntajes(){
     if(sel)out.push({objetivo_id:+row.dataset.obj,puntaje:+sel.dataset.v});
   });
   return out;
+}
+async function checkDuplicadoEval(){
+  const w=$("#dupWarn"); if(!w) return;
+  const id=+$("#fEmpleado").value, per=$("#fPeriodo").value;
+  if(EDIT_ID || !id || !per){ w.style.display="none"; return; }
+  try{
+    const emp=await jget("/empleados/"+id);
+    const ya=(emp.evaluaciones||[]).find(x=>x.periodo===per);
+    if(ya){
+      w.style.display="block";
+      w.innerHTML=`⚠️ <b>${nombre(emp)}</b> ya tiene una evaluación en <b>${esc(per)}</b> (prom. ${fmt(ya.promedio)}${ya.evaluador?` · ${esc(ya.evaluador)}`:""}). `+
+        `<button class="btn ghost" style="color:var(--brand);padding:2px 8px" onclick="editEval(${ya.id})">✏ Editar esa</button>`;
+    } else w.style.display="none";
+  }catch(e){ w.style.display="none"; }
 }
 async function saveEval(){
   const ev=$("#evaluador").value.trim();
@@ -342,17 +364,29 @@ async function loadEmpleados(){
       <div><label>Línea/Técnica</label><select id="eTec"><option value="">Todas</option>${m.tecnicas.map(s=>`<option>${esc(s)}</option>`).join("")}</select></div>
       <div><label>Turno</label><select id="eTurno"><option value="">Todos</option>${m.turnos.map(s=>`<option>${esc(s)}</option>`).join("")}</select></div>
       <div><label>Estado</label><select id="eEstado"><option value="activos">Activos</option><option value="inactivos">Inactivos</option><option value="todos">Todos</option></select></div>
+      <div><label>Período</label><select id="ePeriodo"><option value="">Todos</option>${[...new Set(["1er semestre 2026","2do semestre 2026","1er semestre 2027","2do semestre 2027",...m.periodos])].map(p=>`<option>${esc(p)}</option>`).join("")}</select></div>
+      <div><label>Evaluación</label><select id="eEval"><option value="">Todas</option><option value="sin">Sin evaluar</option><option value="con">Evaluados</option></select></div>
     </div>
+    <div id="empResumen" class="small muted" style="margin:0 0 10px 2px"></div>
     <div class="card" style="padding:0"><div id="empTable"></div></div>`;
-  ["eQ","eSector","eArea","eTec","eTurno","eEstado"].forEach(id=>{$("#"+id).oninput=$("#"+id).onchange=renderEmpleados;});
+  ["eQ","eSector","eArea","eTec","eTurno","eEstado","ePeriodo","eEval"].forEach(id=>{$("#"+id).oninput=$("#"+id).onchange=renderEmpleados;});
   $("#btnNuevoColab").onclick=()=>colabModal(null);
   renderEmpleados();
 }
 async function renderEmpleados(){
   const qs=new URLSearchParams();
-  const q=$("#eQ").value, s=$("#eSector").value, a=$("#eArea").value, t=$("#eTec").value, tu=$("#eTurno").value, est=$("#eEstado").value;
-  if(q)qs.set("q",q); if(s)qs.set("sector",s); if(a)qs.set("area",a); if(t)qs.set("tecnica",t); if(tu)qs.set("turno",tu); if(est)qs.set("estado",est);
-  const rows=await jget("/empleados?"+qs);
+  const q=$("#eQ").value, s=$("#eSector").value, a=$("#eArea").value, t=$("#eTec").value, tu=$("#eTurno").value, est=$("#eEstado").value, per=$("#ePeriodo").value, ev=$("#eEval").value;
+  if(q)qs.set("q",q); if(s)qs.set("sector",s); if(a)qs.set("area",a); if(t)qs.set("tecnica",t); if(tu)qs.set("turno",tu); if(est)qs.set("estado",est); if(per)qs.set("periodo",per);
+  let rows=await jget("/empleados?"+qs);
+  const totalAntes=rows.length;
+  if(ev==="sin") rows=rows.filter(e=>!e.n_eval);
+  else if(ev==="con") rows=rows.filter(e=>e.n_eval>0);
+  const res=$("#empResumen");
+  if(res){
+    if(ev==="sin") res.innerHTML=`⏳ <b>${rows.length}</b> sin evaluar${per?` en ${esc(per)}`:""} (de ${totalAntes})`;
+    else if(ev==="con") res.innerHTML=`✅ <b>${rows.length}</b> evaluado(s)${per?` en ${esc(per)}`:""}`;
+    else res.textContent=`${rows.length} colaborador(es)`;
+  }
   const el=$("#empTable");
   if(!rows.length){el.innerHTML='<div class="empty">Sin resultados</div>';return;}
   el.innerHTML=`<table><thead><tr><th>Empleado</th><th>Sector</th><th>Área / Línea</th><th>Turno</th><th>Estado</th><th class="right">Eval.</th><th class="right">Últ. prom.</th><th></th></tr></thead><tbody>
