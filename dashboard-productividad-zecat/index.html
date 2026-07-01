@@ -124,7 +124,7 @@ body.dark .grp-btn.active{background:#2563eb;border-color:#2563eb;color:white}
       <h1>Dashboard de Productividad</h1>
     </div>
   </div>
-  <div class="badge">Actualizado: 01/07/2026 09:58<br>Target picking: 84 lin/d&iacute;a</div>
+  <div class="badge">Actualizado: 01/07/2026 10:10<br>Target picking: 84 lin/d&iacute;a</div>
   <button id="themeToggle" onclick="toggleTheme()" title="Cambiar tema claro / oscuro" aria-label="Cambiar tema"><span id="themeIcon">&#9790;</span></button>
 </header>
 
@@ -402,7 +402,8 @@ body.dark .grp-btn.active{background:#2563eb;border-color:#2563eb;color:white}
 <!-- ===== SECCION: BONOS ===== -->
 <div id="sec-eficiencia" class="sec">
 <div class="grp-btns" style="margin-bottom:16px">
-  <button class="grp-btn active" id="bonBtn-pick" onclick="bonSetSub('pick')">Pickeadores</button>
+  <button class="grp-btn active" id="bonBtn-gen" onclick="bonSetSub('gen')">General</button>
+  <button class="grp-btn" id="bonBtn-pick" onclick="bonSetSub('pick')">Pickeadores</button>
   <button class="grp-btn" id="bonBtn-maq" onclick="bonSetSub('maq')">Maquinistas</button>
   <button class="grp-btn" id="bonBtn-ctrl" onclick="bonSetSub('ctrl')">Control</button>
   <button class="grp-btn" id="bonBtn-pie" onclick="bonSetSub('pie')">Pie de M&aacute;quina</button>
@@ -412,7 +413,7 @@ body.dark .grp-btn.active{background:#2563eb;border-color:#2563eb;color:white}
 </div><!-- /sec-eficiencia -->
 
 </div><!-- /container -->
-<footer>Dashboard v5 &mdash; Zecat Art&iacute;culos Promocionales SA &nbsp;|&nbsp; 01/07/2026 09:58</footer>
+<footer>Dashboard v5 &mdash; Zecat Art&iacute;culos Promocionales SA &nbsp;|&nbsp; 01/07/2026 10:10</footer>
 
 <script>
 Chart.defaults.font.family='Arial,sans-serif';
@@ -605,8 +606,8 @@ function buildResumen(){
 // ===========================================================
 // BONOS
 // ===========================================================
-var _bonSub='pick';
-var _bonGrupal=true;
+var _bonSub='gen';
+var _bonGrupal=false;
 var _bonPres={};
 var _bonCtrlRec={};
 var _bonPieErr=0;
@@ -622,7 +623,7 @@ try{var _bc=localStorage.getItem('zecat-bon-ctrl');if(_bc)_bonCtrlRec=JSON.parse
 
 function bonSetSub(sub){
   _bonSub=sub;
-  ['pick','maq','ctrl','pie'].forEach(function(s){var b=document.getElementById('bonBtn-'+s);if(b)b.classList.toggle('active',s===sub);});
+  ['gen','pick','maq','ctrl','pie'].forEach(function(s){var b=document.getElementById('bonBtn-'+s);if(b)b.classList.toggle('active',s===sub);});
   _bonRenderContent();
 }
 function bonToggleGrupal(){
@@ -659,7 +660,57 @@ function _bonRenderContent(){
   function boolIcon(v){return v?'<span style="color:#16a34a;font-weight:700">&#10003;</span>':'<span style="color:#dc2626">&#8212;</span>';}
   function presCheck(key){var chk=(_bonPres[key]!==undefined)?_bonPres[key]:true;return '<input type="checkbox" data-key="'+key+'" '+(chk?'checked':'')+' onchange="bonTogglePres(this.dataset.key)" id="bonPres-'+key+'" style="width:15px;height:15px;cursor:pointer">';}
   function tblHdr(extra){return '<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:'+thBg+'"><th style="padding:8px 12px;text-align:left;border-bottom:2px solid '+brd+'">Operario</th>'+extra+'<th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Presentismo<br><span style="font-size:10px;font-weight:400">5%</span></th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">N1<br><span style="font-size:10px;font-weight:400">+2.5%</span></th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">N2<br><span style="font-size:10px;font-weight:400">+4.5%</span></th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Grupal<br><span style="font-size:10px;font-weight:400">+3%</span></th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">TOTAL</th></tr></thead><tbody>';}
-  if(_bonSub==='pick'){
+  if(_bonSub==='gen'){
+    var idxG=getFilteredIndices();
+    var selKeysG=idxG.map(function(i){return allMonKeys[i];});
+    var allPeople=[];
+    // Pickeadores
+    var opsMapG={};
+    selKeysG.forEach(function(k){var d=monthlyData[k];if(!d)return;d.pickers.forEach(function(pk){if(!opsMapG[pk.resp])opsMapG[pk.resp]={dias:0,lineas:0};opsMapG[pk.resp].dias+=pk.dias;opsMapG[pk.resp].lineas+=pk.lineas;});});
+    Object.entries(opsMapG).forEach(function(e){
+      var resp=e[0],p=e[1];var ld=p.dias?Math.round(p.lineas/p.dias*10)/10:0;var cumpl=Math.round(ld/TARGET*1000)/10;
+      var key='pk'+resp.replace(/[^A-Za-z0-9]/g,'_');
+      var t=_bonCalc((_bonPres[key]!==undefined?_bonPres[key]:true),cumpl>=100,cumpl>=120,_bonGrupal);
+      allPeople.push({nm:resp,cat:'Pickeador',total:t});
+    });
+    // Maquinistas
+    var maqMsG=_bonFiltMon(Object.keys(maqDetailData).sort());
+    var opsMapMG={};
+    maqMsG.forEach(function(ym){(maqDetailData[ym]||{ops:[]}).ops.forEach(function(op){if(!opsMapMG[op.nm])opsMapMG[op.nm]={mov:0,dias:0};opsMapMG[op.nm].mov+=op.mov;opsMapMG[op.nm].dias+=op.dias;});});
+    Object.entries(opsMapMG).forEach(function(e){
+      var nm=e[0],o=e[1];var mpd=o.dias?Math.round(o.mov/o.dias):0;
+      var key='mq'+nm.replace(/[^A-Za-z0-9]/g,'_');
+      var t=_bonCalc((_bonPres[key]!==undefined?_bonPres[key]:true),mpd>=100,mpd>=120,_bonGrupal);
+      allPeople.push({nm:nm,cat:'Maquinista',total:t});
+    });
+    // Control
+    var ctrlMsG=_bonFiltMon(Object.keys(ctrlExcelData).sort());
+    var opsMapCG={};
+    ctrlMsG.forEach(function(ym){(ctrlExcelData[ym]||[]).forEach(function(op){if(!opsMapCG[op.nm])opsMapCG[op.nm]={und:0,dias:0};opsMapCG[op.nm].und+=op.und;opsMapCG[op.nm].dias+=op.dias;});});
+    Object.entries(opsMapCG).forEach(function(e){
+      var nm=e[0],o=e[1];var upd=o.dias?Math.round(o.und/o.dias):0;
+      var key='ct'+nm.replace(/[^A-Za-z0-9]/g,'_');
+      var rec=(_bonCtrlRec[key]!==undefined)?_bonCtrlRec[key]:0;
+      var n1=upd>3000&&rec<=1, n2=upd>3500&&rec===0;
+      var t=_bonCalc((_bonPres[key]!==undefined?_bonPres[key]:true),n1,n2,_bonGrupal);
+      allPeople.push({nm:nm,cat:'Control',total:t});
+    });
+    // Pie de Maquina (rol unico, manual)
+    var n1PieG=_bonPieErr<=1, n2PieG=_bonPieErr===0;
+    var tPieG=_bonCalc(true,n1PieG,n2PieG,_bonGrupal);
+    allPeople.push({nm:'Operario Pie de Máquina',cat:'Pie de Máquina',total:tPieG});
+
+    allPeople.sort(function(a,b){return b.total-a.total;});
+    html+='<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:'+thBg+'"><th style="padding:8px 12px;text-align:left;border-bottom:2px solid '+brd+'">Operario</th><th style="padding:8px 12px;text-align:left;border-bottom:2px solid '+brd+'">Categor&iacute;a</th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Bono Total</th></tr></thead><tbody>';
+    var altG=false;
+    allPeople.forEach(function(p){
+      var bg=altG?rowEven:rowOdd;altG=!altG;
+      html+='<tr style="background:'+bg+'"><td style="padding:8px 12px;font-weight:600">'+p.nm+'</td><td style="padding:8px 12px;color:#888">'+p.cat+'</td><td style="text-align:center;padding:8px 12px">'+_bonBadge(p.total)+'</td></tr>';
+    });
+    if(!allPeople.length)html+='<tr><td colspan="3" style="text-align:center;padding:20px;color:#888">Sin datos para el per&iacute;odo seleccionado</td></tr>';
+    html+='</tbody></table>';
+  }
+  else if(_bonSub==='pick'){
     var idx=getFilteredIndices();
     var selKeys=idx.map(function(i){return allMonKeys[i];});
     var opsMap={};
