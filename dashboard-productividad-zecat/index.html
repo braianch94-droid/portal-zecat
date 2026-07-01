@@ -124,7 +124,7 @@ body.dark .grp-btn.active{background:#2563eb;border-color:#2563eb;color:white}
       <h1>Dashboard de Productividad</h1>
     </div>
   </div>
-  <div class="badge">Actualizado: 01/07/2026 09:30<br>Target picking: 84 lin/d&iacute;a</div>
+  <div class="badge">Actualizado: 01/07/2026 09:58<br>Target picking: 84 lin/d&iacute;a</div>
   <button id="themeToggle" onclick="toggleTheme()" title="Cambiar tema claro / oscuro" aria-label="Cambiar tema"><span id="themeIcon">&#9790;</span></button>
 </header>
 
@@ -412,7 +412,7 @@ body.dark .grp-btn.active{background:#2563eb;border-color:#2563eb;color:white}
 </div><!-- /sec-eficiencia -->
 
 </div><!-- /container -->
-<footer>Dashboard v5 &mdash; Zecat Art&iacute;culos Promocionales SA &nbsp;|&nbsp; 01/07/2026 09:30</footer>
+<footer>Dashboard v5 &mdash; Zecat Art&iacute;culos Promocionales SA &nbsp;|&nbsp; 01/07/2026 09:58</footer>
 
 <script>
 Chart.defaults.font.family='Arial,sans-serif';
@@ -610,6 +610,12 @@ var _bonGrupal=true;
 var _bonPres={};
 var _bonCtrlRec={};
 var _bonPieErr=0;
+var _bonRecExpanded={};
+function bonToggleRecView(key){
+  var el=document.getElementById('bonRecChk-'+key);
+  _bonRecExpanded[key]=el?el.checked:false;
+  _bonRenderContent();
+}
 try{var _bg=localStorage.getItem('zecat-bon-grupal');if(_bg!==null)_bonGrupal=_bg==='1';}catch(e){}
 try{var _bp=localStorage.getItem('zecat-bon-pres');if(_bp)_bonPres=JSON.parse(_bp);}catch(e){}
 try{var _bc=localStorage.getItem('zecat-bon-ctrl');if(_bc)_bonCtrlRec=JSON.parse(_bc);}catch(e){}
@@ -658,17 +664,41 @@ function _bonRenderContent(){
     var selKeys=idx.map(function(i){return allMonKeys[i];});
     var opsMap={};
     selKeys.forEach(function(k){var d=monthlyData[k];if(!d)return;d.pickers.forEach(function(pk){if(!opsMap[pk.resp])opsMap[pk.resp]={dias:0,lineas:0};opsMap[pk.resp].dias+=pk.dias;opsMap[pk.resp].lineas+=pk.lineas;});});
-    var pickers=Object.entries(opsMap).map(function(e){var resp=e[0],p=e[1];var ld=p.dias?Math.round(p.lineas/p.dias*10)/10:0;var cumpl=Math.round(ld/TARGET*1000)/10;return{nm:resp,ld:ld,cumpl:cumpl,n1:cumpl>=100,n2:cumpl>=120};}).sort(function(a,b){return b.ld-a.ld;});
-    html+=tblHdr('<th style="padding:8px 12px;text-align:right;border-bottom:2px solid '+brd+'">Lin/D&iacute;a</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid '+brd+'">Cumpl%</th>');
+    // Reclamos reales del periodo por operario (recMonthly.byOp / byOpCat)
+    var recByOpSel={},recByOpCatSel={},recTotalSel=0;
+    selKeys.forEach(function(k){
+      var rd=recMonthly[k];if(!rd)return;
+      recTotalSel+=rd.cnt;
+      Object.keys(rd.byOp||{}).forEach(function(op){recByOpSel[op]=(recByOpSel[op]||0)+rd.byOp[op];});
+      Object.keys(rd.byOpCat||{}).forEach(function(op){
+        if(!recByOpCatSel[op])recByOpCatSel[op]={};
+        Object.keys(rd.byOpCat[op]).forEach(function(cat){recByOpCatSel[op][cat]=(recByOpCatSel[op][cat]||0)+rd.byOpCat[op][cat];});
+      });
+    });
+    var pickers=Object.entries(opsMap).map(function(e){var resp=e[0],p=e[1];var ld=p.dias?Math.round(p.lineas/p.dias*10)/10:0;var cumpl=Math.round(ld/TARGET*1000)/10;return{nm:resp,ld:ld,cumpl:cumpl,n1:cumpl>=100,n2:cumpl>=120,rec:recByOpSel[resp]||0};}).sort(function(a,b){return b.ld-a.ld;});
+    html+='<div style="display:flex;align-items:center;gap:8px;padding:8px 14px;margin-bottom:10px;font-size:13px;color:'+(isDark?'#94a3b8':'#64748b')+'">&#128683; Reclamos del per&iacute;odo (todo el equipo): <strong style="color:'+(recTotalSel===0?'#16a34a':recTotalSel<=5?'#d97706':'#dc2626')+';font-size:15px">'+recTotalSel+'</strong></div>';
+    html+=tblHdr('<th style="padding:8px 12px;text-align:right;border-bottom:2px solid '+brd+'">Lin/D&iacute;a</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid '+brd+'">Cumpl%</th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Reclamos</th>');
     var alt=false;
     pickers.forEach(function(p){
       var key='pk'+p.nm.replace(/[^A-Za-z0-9]/g,'_');
       var bg=alt?rowEven:rowOdd;alt=!alt;
       var cumplC=p.cumpl>=100?'#16a34a':p.cumpl>=83?'#d97706':'#dc2626';
+      var recC=p.rec===0?'#16a34a':p.rec<=2?'#d97706':'#dc2626';
       var t=_bonCalc((_bonPres[key]!==undefined?_bonPres[key]:true),p.n1,p.n2,_bonGrupal);
-      html+='<tr style="background:'+bg+'"><td style="padding:8px 12px;font-weight:600">'+p.nm+'</td><td style="text-align:right;padding:8px 12px;font-weight:700;color:'+cumplC+'">'+p.ld+'</td><td style="text-align:right;padding:8px 12px;color:'+cumplC+'">'+p.cumpl+'%</td><td style="text-align:center;padding:8px 12px">'+presCheck(key)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(p.n1)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(p.n2)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(_bonGrupal)+'</td><td style="text-align:center;padding:8px 12px">'+_bonBadge(t)+'</td></tr>';
+      var expanded=!!_bonRecExpanded[key];
+      var recCell='<span style="font-weight:700;color:'+recC+'">'+p.rec+'</span>';
+      if(p.rec>0){
+        recCell+=' <label style="cursor:pointer;font-size:11px;color:#2563eb;margin-left:4px" title="Ver detalle"><input type="checkbox" id="bonRecChk-'+key+'" '+(expanded?'checked':'')+' onchange="bonToggleRecView(\''+key+'\')" style="vertical-align:middle;cursor:pointer"> Ver</label>';
+      }
+      html+='<tr style="background:'+bg+'"><td style="padding:8px 12px;font-weight:600">'+p.nm+'</td><td style="text-align:right;padding:8px 12px;font-weight:700;color:'+cumplC+'">'+p.ld+'</td><td style="text-align:right;padding:8px 12px;color:'+cumplC+'">'+p.cumpl+'%</td><td style="text-align:center;padding:8px 12px">'+recCell+'</td><td style="text-align:center;padding:8px 12px">'+presCheck(key)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(p.n1)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(p.n2)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(_bonGrupal)+'</td><td style="text-align:center;padding:8px 12px">'+_bonBadge(t)+'</td></tr>';
+      if(expanded){
+        var cats=recByOpCatSel[p.nm]||{};
+        var catList=Object.keys(cats).sort(function(a,b){return cats[b]-cats[a];}).map(function(c){return '<span style="display:inline-block;margin:2px 6px 2px 0;padding:3px 10px;border-radius:12px;background:'+(isDark?'#334155':'#f1f5f9')+';font-size:12px">'+c+': <strong>'+cats[c]+'</strong></span>';}).join('');
+        if(!catList)catList='<span style="color:#888;font-size:12px">Sin categor&iacute;a registrada</span>';
+        html+='<tr style="background:'+bg+'"><td colspan="9" style="padding:4px 12px 12px 28px">'+catList+'</td></tr>';
+      }
     });
-    if(!pickers.length)html+='<tr><td colspan="8" style="text-align:center;padding:20px;color:#888">Sin datos para el per&iacute;odo seleccionado</td></tr>';
+    if(!pickers.length)html+='<tr><td colspan="9" style="text-align:center;padding:20px;color:#888">Sin datos para el per&iacute;odo seleccionado</td></tr>';
     html+='</tbody></table>';
   }
   else if(_bonSub==='maq'){
@@ -1390,6 +1420,26 @@ window.addEventListener('message',function(e){
 });
 try{window.parent.postMessage({type:'zecat-theme-ready'},'*');}catch(e){}
 
+// Frescura de datos: comparar ultima fecha de picking regular vs hoy
+function checkDataFreshness(){
+  try{
+    if(!evol30Labels || !evol30Labels.length) return;
+    var lastStr=evol30Labels[evol30Labels.length-1]; // 'DD/MM'
+    var parts=lastStr.split('/'); var d=parseInt(parts[0]),m=parseInt(parts[1]);
+    var today=new Date(); today.setHours(0,0,0,0);
+    var year=today.getFullYear();
+    var last=new Date(year,m-1,d);
+    if(last>today) last=new Date(year-1,m-1,d); // fin de año
+    var diffDays=Math.round((today-last)/86400000);
+    if(diffDays>=2){
+      var banner=document.createElement('div');
+      banner.style.cssText='position:sticky;top:0;z-index:999;padding:10px 16px;text-align:center;font-weight:700;font-size:13px;'
+        +(diffDays>=4?'background:#fecaca;color:#991b1b':'background:#fde68a;color:#92400e');
+      banner.textContent=(diffDays>=4?'\u{1F534} ':'⚠️ ')+'Datos de picking hasta el '+lastStr+' — hace '+diffDays+' días. Revisar la descarga automática.';
+      document.body.insertBefore(banner,document.body.firstChild);
+    }
+  }catch(e){}
+}
 // Inicializar tab y filtro al ultimo mes disponible
 try {
   switchTab('picking');
@@ -1398,6 +1448,7 @@ try {
   applyFilter();
   // Poblar tabla 7 dias (datos estaticos, filtrable por grupo)
   _build7dTable();
+  checkDataFreshness();
   // Si ya hay dark mode guardado, aplicar colores a los charts recién creados
   if(document.body.classList.contains('dark')) updateChartColors(true);
 } catch(err) {
