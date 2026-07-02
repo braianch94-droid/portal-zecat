@@ -826,7 +826,16 @@ async function syncFromAPI(){
     ]);
     if(r1.status==='fulfilled'&&r1.value.ok){
       const c=await r1.value.json();
-      if(Array.isArray(c)&&c.length){await idbClear('conteos');await idbBulkPut('conteos',c);}
+      if(Array.isArray(c)&&c.length){
+        // No usar clear+replace directo: si hay conteos guardados localmente que
+        // todavia no se confirmaron en el servidor (ej. se cargaron sin conexion),
+        // un clear los borraria para siempre. Se preservan y se reintenta enviarlos.
+        const pendientes=(await idbGetAll('conteos')).filter(r=>r._pending);
+        await idbClear('conteos');
+        await idbBulkPut('conteos',c);
+        for(const p of pendientes){ await idbPut('conteos',p); }
+        if(pendientes.length) reintentarPendientes();
+      }
     }
     if(r2.status==='fulfilled'&&r2.value.ok){
       const s=await r2.value.json();
@@ -1109,8 +1118,34 @@ async function apiAddConteo(data) {
   try{
     const r=await fetch(CICLICO_API+'/conteos?tabla='+CICLICO_TABLA,{method:'POST',headers:CICLICO_HDRS,body:JSON.stringify(rec)});
     if(r.ok){const res=await r.json();const fr={...rec,id:res.id};await idbPut('conteos',fr);return fr;}
-  }catch(e){console.warn('API addConteo:',e);}
-  const id=await idbAdd('conteos',rec);return {...rec,id};
+    throw new Error('El servidor respondió '+r.status);
+  }catch(e){
+    console.warn('API addConteo (guardado local pendiente de sincronizar):',e);
+    // No confirmado por el servidor: se guarda local con id negativo (nunca choca
+    // con un id real de D1) y _pending=true para que syncFromAPI no lo borre.
+    const localId=-Date.now();
+    const pendingRec={...rec,id:localId,_pending:true};
+    await idbPut('conteos',pendingRec);
+    const err=new Error('No se pudo confirmar con el servidor — se guardó localmente y se reintentará solo.');
+    err.pendingRecord=pendingRec;
+    throw err;
+  }
+}
+
+async function reintentarPendientes(){
+  const pendientes=(await idbGetAll('conteos')).filter(r=>r._pending);
+  for(const p of pendientes){
+    const {id,_pending,...rec}=p;
+    try{
+      const r=await fetch(CICLICO_API+'/conteos?tabla='+CICLICO_TABLA,{method:'POST',headers:CICLICO_HDRS,body:JSON.stringify(rec)});
+      if(r.ok){
+        const res=await r.json();
+        await idbDelete('conteos',id);
+        await idbPut('conteos',{...rec,id:res.id});
+        console.log('Conteo pendiente sincronizado:',rec.articulo,rec.dia);
+      }
+    }catch(e){ /* sigue pendiente, se reintenta en el proximo sync */ }
+  }
 }
 
 async function apiUpdateConteo(id, data) {
@@ -1912,13 +1947,19 @@ async function guardarConteoHoy() {
     return;
   }
   if (msgEl) msgEl.innerHTML = `<span style="color:var(--text-muted);font-size:12px;">Guardando ${toSave.length} conteo(s)...</span>`;
-  try {
-    for (const body of toSave) { await apiAddConteo(body); }
-    if (msgEl) msgEl.innerHTML = `<span class="text-green">Guardados ${toSave.length} conteo(s) correctamente.</span>`;
-    setTimeout(() => loadHoy(), 800);
-  } catch(e) {
-    if (msgEl) msgEl.innerHTML = `<span class="text-red">Error: ${e.message}</span>`;
+  let ok = 0, fail = 0;
+  for (const body of toSave) {
+    try { await apiAddConteo(body); ok++; }
+    catch(e) { fail++; console.warn('Conteo no confirmado por el servidor:', body.articulo, e); }
   }
+  if (fail === 0) {
+    if (msgEl) msgEl.innerHTML = `<span class="text-green">Guardados ${ok} conteo(s) correctamente.</span>`;
+  } else if (ok === 0) {
+    if (msgEl) msgEl.innerHTML = `<span class="text-red">No se pudo confirmar ningún conteo con el servidor (sin conexión). Se guardaron localmente y se reintentará solo — no cierres esta pestaña hasta ver que se sincronicen.</span>`;
+  } else {
+    if (msgEl) msgEl.innerHTML = `<span class="text-red">${ok} confirmados, ${fail} pendientes de sincronizar (se reintentará solo).</span>`;
+  }
+  setTimeout(() => loadHoy(), 800);
 }
 
 async function editarFila(btn) {
@@ -2459,6 +2500,8 @@ async function exportarDashboardExcel() {
    ================================================================ */
 window.addEventListener('DOMContentLoaded', () => {
   syncFromAPI();
+  reintentarPendientes();
+  setInterval(reintentarPendientes, 60000); // reintentar conteos sin confirmar cada 1 min
   // Auto-cargar stock embebido si IndexedDB está vacío
   (async () => {
     try {
