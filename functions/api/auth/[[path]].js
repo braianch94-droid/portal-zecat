@@ -1,4 +1,6 @@
 const DB_BINDING = 'CICLICO_DB';
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+function isValidEmail(v) { return typeof v === 'string' && EMAIL_RE.test(v.trim()); }
 
 async function hashPassword(password) {
   const enc = new TextEncoder();
@@ -88,14 +90,26 @@ export async function onRequest(context) {
     const expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
     await DB.prepare('INSERT INTO sessions (token,user_id,expires_at) VALUES (?,?,?)').bind(token, user.id, expires).run();
     await DB.prepare('UPDATE users SET last_login=? WHERE id=?').bind(new Date().toISOString(), user.id).run();
-    return makeResp({ token, user: { id: user.id, email: user.email, nombre: user.nombre, role: user.role, modulos: safeJSON(user.modulos, []) } });
+    return makeResp({ token, user: { id: user.id, email: user.email, nombre: user.nombre, role: user.role, modulos: safeJSON(user.modulos, []), emailValido: isValidEmail(user.email) } });
   }
 
   // ME
   if (seg[0] === 'me' && method === 'GET') {
     const sess = await getSession(DB, request);
     if (!sess) return makeResp({ error: 'No autenticado' }, 401);
-    return makeResp({ user: { id: sess.userId, email: sess.email, nombre: sess.nombre, role: sess.role, modulos: sess.modulos } });
+    return makeResp({ user: { id: sess.userId, email: sess.email, nombre: sess.nombre, role: sess.role, modulos: sess.modulos, emailValido: isValidEmail(sess.email) } });
+  }
+
+  // ACTUALIZAR EL PROPIO EMAIL (self-service, para cuentas viejas sin email real)
+  if (seg[0] === 'me' && seg[1] === 'email' && method === 'PUT') {
+    const sess = await getSession(DB, request);
+    if (!sess) return makeResp({ error: 'No autenticado' }, 401);
+    const { email } = await safeJson(request);
+    if (!isValidEmail(email)) return makeResp({ error: 'Ingresá un email válido (ej: nombre@zecat.com)' }, 400);
+    try {
+      await DB.prepare('UPDATE users SET email=? WHERE id=?').bind(email.toLowerCase().trim(), sess.userId).run();
+    } catch(e) { return makeResp({ error: 'Ese email ya está en uso por otra cuenta' }, 409); }
+    return makeResp({ ok: true });
   }
 
   // LOGOUT
@@ -109,6 +123,7 @@ export async function onRequest(context) {
   if (seg[0] === 'register' && method === 'POST') {
     const { email, password, nombre = '' } = await safeJson(request);
     if (!email || !password) return makeResp({ error: 'Email y contraseña requeridos' }, 400);
+    if (!isValidEmail(email)) return makeResp({ error: 'Ingresá un email válido (ej: nombre@zecat.com)' }, 400);
     if (password.length < 8) return makeResp({ error: 'La contraseña debe tener al menos 8 caracteres' }, 400);
     // Verificar si el email ya existe antes de intentar insertar
     const existing = await DB.prepare('SELECT activo FROM users WHERE email=? COLLATE NOCASE').bind(email.toLowerCase()).first();
@@ -143,6 +158,7 @@ export async function onRequest(context) {
     if (method === 'POST') {
       const { email, password, nombre = '', role = 'viewer', modulos = [] } = await safeJson(request);
       if (!email || !password) return makeResp({ error: 'Email y contraseña requeridos' }, 400);
+      if (!isValidEmail(email)) return makeResp({ error: 'Ingresá un email válido (ej: nombre@zecat.com)' }, 400);
       if (sess.role !== 'superadmin' && role === 'superadmin') return makeResp({ error: 'Solo un superadmin puede crear superadmins' }, 403);
       try {
         const hash = await hashPassword(password);
@@ -158,7 +174,9 @@ export async function onRequest(context) {
       if (target?.role === 'superadmin' && sess.userId !== id) return makeResp({ error: 'No podés modificar otro superadmin' }, 403);
       const body = await safeJson(request);
       if (sess.role !== 'superadmin' && body.role === 'superadmin') return makeResp({ error: 'Solo un superadmin puede asignar el rol superadmin' }, 403);
+      if (body.email !== undefined && !isValidEmail(body.email)) return makeResp({ error: 'Ingresá un email válido (ej: nombre@zecat.com)' }, 400);
       const upd = [], binds = [];
+      if (body.email !== undefined) { upd.push('email=?'); binds.push(body.email.toLowerCase().trim()); }
       if (body.nombre !== undefined) { upd.push('nombre=?'); binds.push(body.nombre); }
       if (body.role !== undefined) { upd.push('role=?'); binds.push(body.role); }
       if (body.modulos !== undefined) { upd.push('modulos=?'); binds.push(JSON.stringify(body.modulos)); }
@@ -166,7 +184,9 @@ export async function onRequest(context) {
       if (body.password) { upd.push('password_hash=?'); binds.push(await hashPassword(body.password)); }
       if (!upd.length) return makeResp({ ok: true });
       binds.push(id);
-      await DB.prepare(`UPDATE users SET ${upd.join(',')} WHERE id=?`).bind(...binds).run();
+      try {
+        await DB.prepare(`UPDATE users SET ${upd.join(',')} WHERE id=?`).bind(...binds).run();
+      } catch(e) { return makeResp({ error: 'Ese email ya está en uso por otra cuenta' }, 409); }
       if (body.activo === false) await DB.prepare('DELETE FROM sessions WHERE user_id=?').bind(id).run();
       return makeResp({ ok: true });
     }

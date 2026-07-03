@@ -1026,6 +1026,11 @@ async function checkAuth() {
 
 function onAuthSuccess() {
   document.getElementById('auth-overlay').style.display = 'none';
+  if (authUser && authUser.emailValido === false) {
+    document.getElementById('email-update-overlay').style.display = 'flex';
+    return;
+  }
+  document.getElementById('email-update-overlay').style.display = 'none';
   document.getElementById('user-profile').style.display = 'flex';
   document.getElementById('u-avatar').textContent = (authUser.nombre||authUser.email||'?')[0].toUpperCase();
   document.getElementById('u-name').textContent = authUser.nombre||authUser.email;
@@ -1145,6 +1150,26 @@ async function doLogin() {
     onAuthSuccess();
   } catch(e) {errEl.textContent='Error de conexión. Intentá de nuevo.';}
   finally {btn.disabled=false; btn.textContent='Ingresar';}
+}
+
+async function doUpdateEmail() {
+  const email = document.getElementById('upd-email').value.trim();
+  const msgEl = document.getElementById('upd-email-msg');
+  const errEl = document.getElementById('upd-email-err');
+  msgEl.textContent=''; errEl.textContent='';
+  if (!email) {errEl.textContent='Ingresá tu email';return;}
+  const btn = document.getElementById('btn-upd-email');
+  btn.disabled=true; btn.textContent='Guardando…';
+  try {
+    const r = await fetch(AUTH_API+'/me/email',{method:'PUT',headers:{'Content-Type':'application/json','Authorization':'Bearer '+authUser.token},body:JSON.stringify({email})});
+    const data = await r.json();
+    if (!r.ok) {errEl.textContent=data.error||'Error al guardar el email';return;}
+    authUser.email = email.toLowerCase();
+    authUser.emailValido = true;
+    msgEl.textContent='✓ Email actualizado.';
+    setTimeout(() => { onAuthSuccess(); }, 600);
+  } catch(e) {errEl.textContent='Error de conexión. Intentá de nuevo.';}
+  finally {btn.disabled=false; btn.textContent='Guardar email';}
 }
 
 async function doRegister() {
@@ -1410,6 +1435,22 @@ else window.addEventListener('load', () => setTimeout(_preloadEvaluaciones, 1200
       <div id="rst-msg" class="auth-ok"></div>
       <div id="rst-err" class="auth-err"></div>
     </div>
+  </div>
+</div>
+
+<!-- EMAIL UPDATE OVERLAY — obligatorio para cuentas viejas sin email valido cargado -->
+<div id="email-update-overlay" style="position:fixed;inset:0;z-index:9999;background:var(--bg,#0f172a);display:none;align-items:center;justify-content:center;">
+  <div class="auth-box">
+    <div class="auth-logo-wrap">
+      <div class="auth-logo-ico">Z</div>
+      <div style="font-size:15px;font-weight:700;color:var(--sb-text,#e2e8f0);margin-top:8px">Zecat</div>
+      <div class="auth-logo-sub">Portal de Gestión</div>
+    </div>
+    <p style="font-size:13px;color:var(--sb-text-dim,#94a3b8);margin:0 0 12px">Tu cuenta no tiene un email válido cargado. Necesitamos que lo actualices para que puedas recuperar tu contraseña si la olvidás.</p>
+    <input id="upd-email" class="auth-inp" type="email" placeholder="Tu email (ej: nombre@zecat.com)" autocomplete="email" onkeydown="if(event.key==='Enter')doUpdateEmail()" />
+    <button class="auth-btn" id="btn-upd-email" onclick="doUpdateEmail()">Guardar email</button>
+    <div id="upd-email-msg" class="auth-ok"></div>
+    <div id="upd-email-err" class="auth-err"></div>
   </div>
 </div>
 
