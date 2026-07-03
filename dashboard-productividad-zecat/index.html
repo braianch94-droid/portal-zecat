@@ -124,7 +124,7 @@ body.dark .grp-btn.active{background:#2563eb;border-color:#2563eb;color:white}
       <h1>Dashboard de Productividad</h1>
     </div>
   </div>
-  <div class="badge">Actualizado: 03/07/2026 10:34<br>Target picking: 84 lin/d&iacute;a</div>
+  <div class="badge">Actualizado: 03/07/2026 10:44<br>Target picking: 84 lin/d&iacute;a</div>
   <button id="themeToggle" onclick="toggleTheme()" title="Cambiar tema claro / oscuro" aria-label="Cambiar tema"><span id="themeIcon">&#9790;</span></button>
 </header>
 
@@ -416,7 +416,7 @@ body.dark .grp-btn.active{background:#2563eb;border-color:#2563eb;color:white}
 </div><!-- /sec-eficiencia -->
 
 </div><!-- /container -->
-<footer>Dashboard v5 &mdash; Zecat Art&iacute;culos Promocionales SA &nbsp;|&nbsp; 03/07/2026 10:34</footer>
+<footer>Dashboard v5 &mdash; Zecat Art&iacute;culos Promocionales SA &nbsp;|&nbsp; 03/07/2026 10:44</footer>
 
 <script>
 Chart.defaults.font.family='Arial,sans-serif';
@@ -688,10 +688,13 @@ function _bonRenderContent(){
     // Pickeadores
     var opsMapG={};
     selKeysG.forEach(function(k){var d=monthlyData[k];if(!d)return;d.pickers.forEach(function(pk){if(!opsMapG[pk.resp])opsMapG[pk.resp]={dias:0,lineas:0};opsMapG[pk.resp].dias+=pk.dias;opsMapG[pk.resp].lineas+=pk.lineas;});});
+    var recByOpSelG={};
+    selKeysG.forEach(function(k){var bd=recBonoMonthly[k];if(!bd)return;Object.keys(bd.byOpPick||{}).forEach(function(op){recByOpSelG[op]=(recByOpSelG[op]||0)+bd.byOpPick[op];});});
     Object.entries(opsMapG).forEach(function(e){
       var resp=e[0],p=e[1];var ld=p.dias?Math.round(p.lineas/p.dias*10)/10:0;var cumpl=Math.round(ld/TARGET*1000)/10;
+      var recG=recByOpSelG[resp]||0;
       var key='pk'+resp.replace(/[^A-Za-z0-9]/g,'_');
-      var t=_bonCalc((_bonPres[key]!==undefined?_bonPres[key]:true),cumpl>=100,cumpl>=120,_bonGrupal);
+      var t=_bonCalc((_bonPres[key]!==undefined?_bonPres[key]:true),cumpl>=100&&recG<=1,cumpl>=120&&recG===0,_bonGrupal);
       allPeople.push({nm:resp,cat:'Pickeador',total:t});
     });
     // Maquinistas
@@ -763,8 +766,16 @@ function _bonRenderContent(){
         Object.keys(bd.byOpCatPick[op]).forEach(function(cat){recByOpCatSel[op][cat]=(recByOpCatSel[op][cat]||0)+bd.byOpCatPick[op][cat];});
       });
     });
-    var pickers=Object.entries(opsMap).map(function(e){var resp=e[0],p=e[1];var ld=p.dias?Math.round(p.lineas/p.dias*10)/10:0;var cumpl=Math.round(ld/TARGET*1000)/10;return{nm:resp,ld:ld,cumpl:cumpl,n1:cumpl>=100,n2:cumpl>=120,rec:recByOpSel[resp]||0};}).sort(function(a,b){return b.ld-a.ld;});
-    html+='<div style="display:flex;align-items:center;gap:8px;padding:8px 14px;margin-bottom:10px;font-size:13px;color:'+(isDark?'#94a3b8':'#64748b')+'">&#128683; Reclamos que aplican al bono (per&iacute;odo, todo el equipo): <strong style="color:'+(recTotalSel===0?'#16a34a':recTotalSel<=5?'#d97706':'#dc2626')+';font-size:15px">'+recTotalSel+'</strong> <span style="font-size:11px;color:#888">&mdash; solo reclamos marcados &quot;Aplica Pickeador&quot; en la hoja Reclamos</span></div>';
+    var pickers=Object.entries(opsMap).map(function(e){
+      var resp=e[0],p=e[1];
+      var ld=p.dias?Math.round(p.lineas/p.dias*10)/10:0;
+      var cumpl=Math.round(ld/TARGET*1000)/10;
+      var rec=recByOpSel[resp]||0;
+      // Igual que Control: el cumplimiento habilita el nivel, pero los reclamos que aplican lo bajan
+      var n1=cumpl>=100&&rec<=1, n2=cumpl>=120&&rec===0;
+      return{nm:resp,ld:ld,cumpl:cumpl,n1:n1,n2:n2,rec:rec};
+    }).sort(function(a,b){return b.ld-a.ld;});
+    html+='<div style="display:flex;align-items:center;gap:8px;padding:8px 14px;margin-bottom:10px;font-size:13px;color:'+(isDark?'#94a3b8':'#64748b')+'">&#128683; Reclamos que aplican al bono (per&iacute;odo, todo el equipo): <strong style="color:'+(recTotalSel===0?'#16a34a':recTotalSel<=5?'#d97706':'#dc2626')+';font-size:15px">'+recTotalSel+'</strong> <span style="font-size:11px;color:#888">&mdash; solo reclamos marcados &quot;Aplica Pickeador&quot;. N1 requiere cumpl&iacute;miento&ge;100% y &le;1 reclamo, N2 requiere cumplimiento&ge;120% y 0 reclamos</span></div>';
     html+=tblHdr('<th style="padding:8px 12px;text-align:right;border-bottom:2px solid '+brd+'">Lin/D&iacute;a</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid '+brd+'">Cumpl%</th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Reclamos</th>');
     var alt=false;
     pickers.forEach(function(p){
