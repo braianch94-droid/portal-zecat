@@ -124,7 +124,7 @@ body.dark .grp-btn.active{background:#2563eb;border-color:#2563eb;color:white}
       <h1>Dashboard de Productividad</h1>
     </div>
   </div>
-  <div class="badge">Actualizado: 03/07/2026 15:11<br>Target picking: 84 lin/d&iacute;a</div>
+  <div class="badge">Actualizado: 03/07/2026 15:25<br>Target picking: 84 lin/d&iacute;a</div>
   <button id="themeToggle" onclick="toggleTheme()" title="Cambiar tema claro / oscuro" aria-label="Cambiar tema"><span id="themeIcon">&#9790;</span></button>
 </header>
 
@@ -417,7 +417,7 @@ body.dark .grp-btn.active{background:#2563eb;border-color:#2563eb;color:white}
 </div><!-- /sec-eficiencia -->
 
 </div><!-- /container -->
-<footer>Dashboard v5 &mdash; Zecat Art&iacute;culos Promocionales SA &nbsp;|&nbsp; 03/07/2026 15:11</footer>
+<footer>Dashboard v5 &mdash; Zecat Art&iacute;culos Promocionales SA &nbsp;|&nbsp; 03/07/2026 15:25</footer>
 
 <script>
 Chart.defaults.font.family='Arial,sans-serif';
@@ -636,10 +636,36 @@ var _bonMsErr={};   // Muestra Simple - errores, por persona
 var _bonDbErr={};   // Despacho - errores al despachar/entregar pedidos, por persona
 var _bonPieErrMap={}; // Pie de Maquina - errores, por persona
 var _bonProdChecks={}; // Produccion - MAG/PBI/reclamos/mermas, por persona y condicion
+var _bonActivo={};     // Activo/Inactivo en el tablero de bono, por persona (default: activo)
+var _bonMostrarInactivos={}; // por pestaña: mostrar los inactivos ocultos
 try{var _bme=localStorage.getItem('zecat-bon-ms-err');if(_bme)_bonMsErr=JSON.parse(_bme);}catch(e){}
 try{var _bde=localStorage.getItem('zecat-bon-db-err');if(_bde)_bonDbErr=JSON.parse(_bde);}catch(e){}
 try{var _bpe=localStorage.getItem('zecat-bon-pie-err');if(_bpe)_bonPieErrMap=JSON.parse(_bpe);}catch(e){}
 try{var _bpc=localStorage.getItem('zecat-bon-prod');if(_bpc)_bonProdChecks=JSON.parse(_bpc);}catch(e){}
+try{var _bac=localStorage.getItem('zecat-bon-activo');if(_bac)_bonActivo=JSON.parse(_bac);}catch(e){}
+function isActivoBono(key){ return _bonActivo[key]!==false; }
+function bonToggleActivo(key){
+  var el=document.getElementById('bonActivo-'+key);
+  _bonActivo[key]=el?el.checked:true;
+  try{localStorage.setItem('zecat-bon-activo',JSON.stringify(_bonActivo));}catch(e){}
+  _bonRenderContent();
+}
+function activoCheckbox(key){
+  var val=isActivoBono(key);
+  return '<input type="checkbox" id="bonActivo-'+key+'" '+(val?'checked':'')+' onchange="bonToggleActivo(\''+key+'\')" title="Activo en el tablero de bono" style="width:15px;height:15px;cursor:pointer">';
+}
+function bonToggleMostrarInactivos(sub){
+  _bonMostrarInactivos[sub]=!_bonMostrarInactivos[sub];
+  _bonRenderContent();
+}
+function bonInactivosBanner(sub,ocultos){
+  if(!ocultos.length) return '';
+  var mostrando=!!_bonMostrarInactivos[sub];
+  return '<div style="font-size:12px;color:#888;margin-bottom:10px">'
+    +'<a href="#" onclick="bonToggleMostrarInactivos(\''+sub+'\');return false" style="color:#2563eb;text-decoration:underline">'
+    +(mostrando?'Ocultar':'Mostrar')+' '+ocultos.length+' persona'+(ocultos.length!==1?'s':'')+' inactiva'+(ocultos.length!==1?'s':'')
+    +'</a> en el tablero de bono &mdash; no se les calcula el bono mientras est&eacute;n inactivas.</div>';
+}
 function bonToggleProd(key,field){
   var el=document.getElementById('bonProd-'+key+'-'+field);
   _bonProdChecks[key+'_'+field]=el?el.checked:false;
@@ -699,7 +725,7 @@ function _bonRenderContent(){
   var html='';
   function boolIcon(v){return v?'<span style="color:#16a34a;font-weight:700">&#10003;</span>':'<span style="color:#dc2626">&#8212;</span>';}
   function presCheck(key){var chk=(_bonPres[key]!==undefined)?_bonPres[key]:true;return '<input type="checkbox" data-key="'+key+'" '+(chk?'checked':'')+' onchange="bonTogglePres(this.dataset.key)" id="bonPres-'+key+'" style="width:15px;height:15px;cursor:pointer">';}
-  function tblHdr(extra){return '<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:'+thBg+'"><th style="padding:8px 12px;text-align:left;border-bottom:2px solid '+brd+'">Operario</th>'+extra+'<th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Presentismo<br><span style="font-size:10px;font-weight:400">5%</span></th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">N1<br><span style="font-size:10px;font-weight:400">+2.5%</span></th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">N2<br><span style="font-size:10px;font-weight:400">+4.5%</span></th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Grupal<br><span style="font-size:10px;font-weight:400">+3%</span></th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">TOTAL</th></tr></thead><tbody>';}
+  function tblHdr(extra){return '<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:'+thBg+'"><th style="padding:8px 12px;text-align:left;border-bottom:2px solid '+brd+'">Operario</th>'+extra+'<th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Presentismo<br><span style="font-size:10px;font-weight:400">5%</span></th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">N1<br><span style="font-size:10px;font-weight:400">+2.5%</span></th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">N2<br><span style="font-size:10px;font-weight:400">+4.5%</span></th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Grupal<br><span style="font-size:10px;font-weight:400">+3%</span></th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">TOTAL</th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Activo</th></tr></thead><tbody>';}
   if(_bonSub==='gen'){
     var idxG=getFilteredIndices();
     var selKeysG=idxG.map(function(i){return allMonKeys[i];});
@@ -714,7 +740,7 @@ function _bonRenderContent(){
       var recG=recByOpSelG[resp]||0;
       var key='pk'+resp.replace(/[^A-Za-z0-9]/g,'_');
       var t=_bonCalc((_bonPres[key]!==undefined?_bonPres[key]:true),ld>=TARGET&&recG<=1,ld>=100&&recG===0,_bonGrupal);
-      allPeople.push({nm:resp,cat:'Pickeador',total:t});
+      allPeople.push({nm:resp,cat:'Pickeador',total:t,key:key});
     });
     // Maquinistas
     var maqMsG=_bonFiltMon(Object.keys(maqDetailData).sort());
@@ -724,7 +750,7 @@ function _bonRenderContent(){
       var nm=e[0],o=e[1];var mpd=o.dias?Math.round(o.mov/o.dias):0;
       var key='mq'+nm.replace(/[^A-Za-z0-9]/g,'_');
       var t=_bonCalc((_bonPres[key]!==undefined?_bonPres[key]:true),mpd>=100,mpd>=120,_bonGrupal);
-      allPeople.push({nm:nm,cat:'Maquinista',total:t});
+      allPeople.push({nm:nm,cat:'Maquinista',total:t,key:key});
     });
     // Control
     var ctrlMsG=_bonFiltMon(Object.keys(ctrlExcelData).sort());
@@ -738,14 +764,14 @@ function _bonRenderContent(){
       var rec=recByCtrlSelG[nm]||0;
       var n1=upd>3000&&rec<=1, n2=upd>3500&&rec===0;
       var t=_bonCalc((_bonPres[key]!==undefined?_bonPres[key]:true),n1,n2,_bonGrupal);
-      allPeople.push({nm:nm,cat:'Control',total:t});
+      allPeople.push({nm:nm,cat:'Control',total:t,key:key});
     });
     // Personas que por ahora solo cobran Presentismo (sin N1/N2/Grupal)
     BONO_SOLO_PRESENTISMO.forEach(function(nm){
       var key='ps'+nm.replace(/[^A-Za-z0-9]/g,'_');
       var pres=(_bonPres[key]!==undefined)?_bonPres[key]:true;
       var t=_bonCalc(pres,false,false,false);
-      allPeople.push({nm:nm,cat:'Presentismo',total:t});
+      allPeople.push({nm:nm,cat:'Presentismo',total:t,key:key});
     });
     // Muestra Simple, Despacho y Pie de Maquina (presentismo + N1/N2 por errores + grupal)
     [['ms',BONO_MUESTRA_SIMPLE,'Muestra Simple'],['db',BONO_DESPACHO,'Despacho'],['pie',BONO_PIE_MAQUINA,'Pie de Máquina']].forEach(function(grp){
@@ -756,7 +782,7 @@ function _bonRenderContent(){
         var err=errMap[key]!==undefined?errMap[key]:0;
         var pres=(_bonPres[key]!==undefined)?_bonPres[key]:true;
         var t=_bonCalc(pres,err<=1,err===0,_bonGrupal);
-        allPeople.push({nm:nm,cat:catNm,total:t});
+        allPeople.push({nm:nm,cat:catNm,total:t,key:key});
       });
     });
     // Produccion (escalonado, sin grupal)
@@ -766,17 +792,22 @@ function _bonRenderContent(){
       var n1=!!_bonProdChecks[key+'_mag']&&!!_bonProdChecks[key+'_pbi'];
       var n2=!!_bonProdChecks[key+'_rec']&&!!_bonProdChecks[key+'_mer'];
       var t=Math.min((pres?5:0)+(n1?5:0)+(n2?5:0),15);
-      allPeople.push({nm:nm,cat:'Producción',total:t});
+      allPeople.push({nm:nm,cat:'Producción',total:t,key:key});
     });
 
     allPeople.sort(function(a,b){return b.total-a.total;});
-    html+='<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:'+thBg+'"><th style="padding:8px 12px;text-align:left;border-bottom:2px solid '+brd+'">Operario</th><th style="padding:8px 12px;text-align:left;border-bottom:2px solid '+brd+'">Categor&iacute;a</th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Bono Total</th></tr></thead><tbody>';
+    var inactivosG=allPeople.filter(function(p){return !isActivoBono(p.key);});
+    var mostrarG=!!_bonMostrarInactivos['gen'];
+    var visiblesG=mostrarG?allPeople:allPeople.filter(function(p){return isActivoBono(p.key);});
+    html+=bonInactivosBanner('gen',inactivosG);
+    html+='<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:'+thBg+'"><th style="padding:8px 12px;text-align:left;border-bottom:2px solid '+brd+'">Operario</th><th style="padding:8px 12px;text-align:left;border-bottom:2px solid '+brd+'">Categor&iacute;a</th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Activo</th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Bono Total</th></tr></thead><tbody>';
     var altG=false;
-    allPeople.forEach(function(p){
+    visiblesG.forEach(function(p){
       var bg=altG?rowEven:rowOdd;altG=!altG;
-      html+='<tr style="background:'+bg+'"><td style="padding:8px 12px;font-weight:600">'+p.nm+'</td><td style="padding:8px 12px;color:#888">'+p.cat+'</td><td style="text-align:center;padding:8px 12px">'+_bonBadge(p.total)+'</td></tr>';
+      var inactivo=!isActivoBono(p.key);
+      html+='<tr style="background:'+bg+';'+(inactivo?'opacity:.5':'')+'"><td style="padding:8px 12px;font-weight:600">'+p.nm+'</td><td style="padding:8px 12px;color:#888">'+p.cat+'</td><td style="text-align:center;padding:8px 12px">'+activoCheckbox(p.key)+'</td><td style="text-align:center;padding:8px 12px">'+(inactivo?'<span style="color:#888">inactivo</span>':_bonBadge(p.total))+'</td></tr>';
     });
-    if(!allPeople.length)html+='<tr><td colspan="3" style="text-align:center;padding:20px;color:#888">Sin datos para el per&iacute;odo seleccionado</td></tr>';
+    if(!visiblesG.length)html+='<tr><td colspan="4" style="text-align:center;padding:20px;color:#888">Sin datos para el per&iacute;odo seleccionado</td></tr>';
     html+='</tbody></table>';
   }
   else if(_bonSub==='pick'){
@@ -801,14 +832,20 @@ function _bonRenderContent(){
       var rec=recByOpSel[resp]||0;
       // N1: >=84 lin/dia y maximo 1 reclamo que aplique. N2: >=100 lin/dia y 0 reclamos.
       var n1=ld>=TARGET&&rec<=1, n2=ld>=100&&rec===0;
-      return{nm:resp,ld:ld,cumpl:cumpl,n1:n1,n2:n2,rec:rec};
+      var key='pk'+resp.replace(/[^A-Za-z0-9]/g,'_');
+      return{nm:resp,ld:ld,cumpl:cumpl,n1:n1,n2:n2,rec:rec,key:key};
     }).sort(function(a,b){return b.ld-a.ld;});
+    var inactivosPk=pickers.filter(function(p){return !isActivoBono(p.key);});
+    var mostrarPk=!!_bonMostrarInactivos['pick'];
+    var pickersVis=mostrarPk?pickers:pickers.filter(function(p){return isActivoBono(p.key);});
     html+='<div style="display:flex;align-items:center;gap:8px;padding:8px 14px;margin-bottom:10px;font-size:13px;color:'+(isDark?'#94a3b8':'#64748b')+'">&#128683; Reclamos que aplican al bono (per&iacute;odo, todo el equipo): <strong style="color:'+(recTotalSel===0?'#16a34a':recTotalSel<=5?'#d97706':'#dc2626')+';font-size:15px">'+recTotalSel+'</strong> <span style="font-size:11px;color:#888">&mdash; solo reclamos marcados &quot;Aplica Pickeador&quot;. N1 requiere &ge;84 lin/d&iacute;a y &le;1 reclamo, N2 requiere &ge;100 lin/d&iacute;a y 0 reclamos</span></div>';
+    html+=bonInactivosBanner('pick',inactivosPk);
     html+=tblHdr('<th style="padding:8px 12px;text-align:right;border-bottom:2px solid '+brd+'">Lin/D&iacute;a</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid '+brd+'">Cumpl%</th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Reclamos</th>');
     var alt=false;
-    pickers.forEach(function(p){
-      var key='pk'+p.nm.replace(/[^A-Za-z0-9]/g,'_');
+    pickersVis.forEach(function(p){
+      var key=p.key;
       var bg=alt?rowEven:rowOdd;alt=!alt;
+      var inactivo=!isActivoBono(key);
       var cumplC=p.cumpl>=100?'#16a34a':p.cumpl>=83?'#d97706':'#dc2626';
       var recC=p.rec===0?'#16a34a':p.rec<=2?'#d97706':'#dc2626';
       var t=_bonCalc((_bonPres[key]!==undefined?_bonPres[key]:true),p.n1,p.n2,_bonGrupal);
@@ -817,32 +854,37 @@ function _bonRenderContent(){
       if(p.rec>0){
         recCell+=' <label style="cursor:pointer;font-size:11px;color:#2563eb;margin-left:4px" title="Ver detalle"><input type="checkbox" id="bonRecChk-'+key+'" '+(expanded?'checked':'')+' onchange="bonToggleRecView(\''+key+'\')" style="vertical-align:middle;cursor:pointer"> Ver</label>';
       }
-      html+='<tr style="background:'+bg+'"><td style="padding:8px 12px;font-weight:600">'+p.nm+'</td><td style="text-align:right;padding:8px 12px;font-weight:700;color:'+cumplC+'">'+p.ld+'</td><td style="text-align:right;padding:8px 12px;color:'+cumplC+'">'+p.cumpl+'%</td><td style="text-align:center;padding:8px 12px">'+recCell+'</td><td style="text-align:center;padding:8px 12px">'+presCheck(key)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(p.n1)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(p.n2)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(_bonGrupal)+'</td><td style="text-align:center;padding:8px 12px">'+_bonBadge(t)+'</td></tr>';
+      html+='<tr style="background:'+bg+';'+(inactivo?'opacity:.5':'')+'"><td style="padding:8px 12px;font-weight:600">'+p.nm+'</td><td style="text-align:right;padding:8px 12px;font-weight:700;color:'+cumplC+'">'+p.ld+'</td><td style="text-align:right;padding:8px 12px;color:'+cumplC+'">'+p.cumpl+'%</td><td style="text-align:center;padding:8px 12px">'+recCell+'</td><td style="text-align:center;padding:8px 12px">'+presCheck(key)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(p.n1)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(p.n2)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(_bonGrupal)+'</td><td style="text-align:center;padding:8px 12px">'+(inactivo?'<span style="color:#888">inactivo</span>':_bonBadge(t))+'</td><td style="text-align:center;padding:8px 12px">'+activoCheckbox(key)+'</td></tr>';
       if(expanded){
         var cats=recByOpCatSel[p.nm]||{};
         var catList=Object.keys(cats).sort(function(a,b){return cats[b]-cats[a];}).map(function(c){return '<span style="display:inline-block;margin:2px 6px 2px 0;padding:3px 10px;border-radius:12px;background:'+(isDark?'#334155':'#f1f5f9')+';font-size:12px">'+c+': <strong>'+cats[c]+'</strong></span>';}).join('');
         if(!catList)catList='<span style="color:#888;font-size:12px">Sin categor&iacute;a registrada</span>';
-        html+='<tr style="background:'+bg+'"><td colspan="9" style="padding:4px 12px 12px 28px">'+catList+'</td></tr>';
+        html+='<tr style="background:'+bg+'"><td colspan="10" style="padding:4px 12px 12px 28px">'+catList+'</td></tr>';
       }
     });
-    if(!pickers.length)html+='<tr><td colspan="9" style="text-align:center;padding:20px;color:#888">Sin datos para el per&iacute;odo seleccionado</td></tr>';
+    if(!pickersVis.length)html+='<tr><td colspan="10" style="text-align:center;padding:20px;color:#888">Sin datos para el per&iacute;odo seleccionado</td></tr>';
     html+='</tbody></table>';
   }
   else if(_bonSub==='maq'){
     var maqMs=_bonFiltMon(Object.keys(maqDetailData).sort());
     var opsMapM={};
     maqMs.forEach(function(ym){(maqDetailData[ym]||{ops:[]}).ops.forEach(function(op){if(!opsMapM[op.nm])opsMapM[op.nm]={mov:0,dias:0};opsMapM[op.nm].mov+=op.mov;opsMapM[op.nm].dias+=op.dias;});});
-    var maqOps=Object.entries(opsMapM).map(function(e){var nm=e[0],o=e[1];var mpd=o.dias?Math.round(o.mov/o.dias):0;return{nm:nm,mpd:mpd,n1:mpd>=100,n2:mpd>=120};}).sort(function(a,b){return b.mpd-a.mpd;});
+    var maqOps=Object.entries(opsMapM).map(function(e){var nm=e[0],o=e[1];var mpd=o.dias?Math.round(o.mov/o.dias):0;var key='mq'+nm.replace(/[^A-Za-z0-9]/g,'_');return{nm:nm,mpd:mpd,n1:mpd>=100,n2:mpd>=120,key:key};}).sort(function(a,b){return b.mpd-a.mpd;});
+    var inactivosMq=maqOps.filter(function(p){return !isActivoBono(p.key);});
+    var mostrarMq=!!_bonMostrarInactivos['maq'];
+    var maqOpsVis=mostrarMq?maqOps:maqOps.filter(function(p){return isActivoBono(p.key);});
+    html+=bonInactivosBanner('maq',inactivosMq);
     html+=tblHdr('<th style="padding:8px 12px;text-align:right;border-bottom:2px solid '+brd+'">MOV/D&iacute;a</th>');
     var alt=false;
-    maqOps.forEach(function(p){
-      var key='mq'+p.nm.replace(/[^A-Za-z0-9]/g,'_');
+    maqOpsVis.forEach(function(p){
+      var key=p.key;
       var bg=alt?rowEven:rowOdd;alt=!alt;
+      var inactivo=!isActivoBono(key);
       var mpdC=p.mpd>=100?'#16a34a':p.mpd>=50?'#d97706':'#dc2626';
       var t=_bonCalc((_bonPres[key]!==undefined?_bonPres[key]:true),p.n1,p.n2,_bonGrupal);
-      html+='<tr style="background:'+bg+'"><td style="padding:8px 12px;font-weight:600">'+p.nm+'</td><td style="text-align:right;padding:8px 12px;font-weight:700;color:'+mpdC+'">'+p.mpd+'</td><td style="text-align:center;padding:8px 12px">'+presCheck(key)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(p.n1)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(p.n2)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(_bonGrupal)+'</td><td style="text-align:center;padding:8px 12px">'+_bonBadge(t)+'</td></tr>';
+      html+='<tr style="background:'+bg+';'+(inactivo?'opacity:.5':'')+'"><td style="padding:8px 12px;font-weight:600">'+p.nm+'</td><td style="text-align:right;padding:8px 12px;font-weight:700;color:'+mpdC+'">'+p.mpd+'</td><td style="text-align:center;padding:8px 12px">'+presCheck(key)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(p.n1)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(p.n2)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(_bonGrupal)+'</td><td style="text-align:center;padding:8px 12px">'+(inactivo?'<span style="color:#888">inactivo</span>':_bonBadge(t))+'</td><td style="text-align:center;padding:8px 12px">'+activoCheckbox(key)+'</td></tr>';
     });
-    if(!maqOps.length)html+='<tr><td colspan="7" style="text-align:center;padding:20px;color:#888">Sin datos para el per&iacute;odo seleccionado</td></tr>';
+    if(!maqOpsVis.length)html+='<tr><td colspan="8" style="text-align:center;padding:20px;color:#888">Sin datos para el per&iacute;odo seleccionado</td></tr>';
     html+='</tbody></table>';
   }
   else if(_bonSub==='ctrl'){
@@ -859,12 +901,17 @@ function _bonRenderContent(){
         Object.keys(bd.byOpCatCtrl[op]).forEach(function(cat){recByCtrlCatSel[op][cat]=(recByCtrlCatSel[op][cat]||0)+bd.byOpCatCtrl[op][cat];});
       });
     });
-    var ctrlOps=Object.entries(opsMapC).map(function(e){var nm=e[0],o=e[1];var upd=o.dias?Math.round(o.und/o.dias):0;return{nm:nm,upd:upd,rec:recByCtrlSel[nm]||0};}).sort(function(a,b){return b.upd-a.upd;});
+    var ctrlOps=Object.entries(opsMapC).map(function(e){var nm=e[0],o=e[1];var upd=o.dias?Math.round(o.und/o.dias):0;var key='ct'+nm.replace(/[^A-Za-z0-9]/g,'_');return{nm:nm,upd:upd,rec:recByCtrlSel[nm]||0,key:key};}).sort(function(a,b){return b.upd-a.upd;});
+    var inactivosCt=ctrlOps.filter(function(p){return !isActivoBono(p.key);});
+    var mostrarCt=!!_bonMostrarInactivos['ctrl'];
+    var ctrlOpsVis=mostrarCt?ctrlOps:ctrlOps.filter(function(p){return isActivoBono(p.key);});
     html+='<div style="font-size:12px;color:'+(isDark?'#94a3b8':'#64748b')+';margin-bottom:12px">&#128683; Reclamos que aplican al bono &mdash; solo reclamos marcados &quot;Aplica Control&quot; en la hoja Reclamos.</div>';
+    html+=bonInactivosBanner('ctrl',inactivosCt);
     html+=tblHdr('<th style="padding:8px 12px;text-align:right;border-bottom:2px solid '+brd+'">UND/D&iacute;a</th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Reclamos</th>');
     var alt=false;
-    ctrlOps.forEach(function(p){
-      var key='ct'+p.nm.replace(/[^A-Za-z0-9]/g,'_');
+    ctrlOpsVis.forEach(function(p){
+      var key=p.key;
+      var inactivo=!isActivoBono(key);
       var rec=p.rec;
       var n1=p.upd>3000&&rec<=1;
       var n2=p.upd>3500&&rec===0;
@@ -877,30 +924,35 @@ function _bonRenderContent(){
         recCell+=' <label style="cursor:pointer;font-size:11px;color:#2563eb;margin-left:4px" title="Ver detalle"><input type="checkbox" id="bonRecChk-'+key+'" '+(expanded?'checked':'')+' onchange="bonToggleRecView(\''+key+'\')" style="vertical-align:middle;cursor:pointer"> Ver</label>';
       }
       var t=_bonCalc((_bonPres[key]!==undefined?_bonPres[key]:true),n1,n2,_bonGrupal);
-      html+='<tr style="background:'+bg+'"><td style="padding:8px 12px;font-weight:600">'+p.nm+'</td><td style="text-align:right;padding:8px 12px;font-weight:700;color:'+updC+'">'+p.upd.toLocaleString('es-AR')+'</td><td style="text-align:center;padding:8px 12px">'+recCell+'</td><td style="text-align:center;padding:8px 12px">'+presCheck(key)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(n1)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(n2)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(_bonGrupal)+'</td><td style="text-align:center;padding:8px 12px">'+_bonBadge(t)+'</td></tr>';
+      html+='<tr style="background:'+bg+';'+(inactivo?'opacity:.5':'')+'"><td style="padding:8px 12px;font-weight:600">'+p.nm+'</td><td style="text-align:right;padding:8px 12px;font-weight:700;color:'+updC+'">'+p.upd.toLocaleString('es-AR')+'</td><td style="text-align:center;padding:8px 12px">'+recCell+'</td><td style="text-align:center;padding:8px 12px">'+presCheck(key)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(n1)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(n2)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(_bonGrupal)+'</td><td style="text-align:center;padding:8px 12px">'+(inactivo?'<span style="color:#888">inactivo</span>':_bonBadge(t))+'</td><td style="text-align:center;padding:8px 12px">'+activoCheckbox(key)+'</td></tr>';
       if(expanded){
         var cats=recByCtrlCatSel[p.nm]||{};
         var catList=Object.keys(cats).sort(function(a,b){return cats[b]-cats[a];}).map(function(c){return '<span style="display:inline-block;margin:2px 6px 2px 0;padding:3px 10px;border-radius:12px;background:'+(isDark?'#334155':'#f1f5f9')+';font-size:12px">'+c+': <strong>'+cats[c]+'</strong></span>';}).join('');
         if(!catList)catList='<span style="color:#888;font-size:12px">Sin categor&iacute;a registrada</span>';
-        html+='<tr style="background:'+bg+'"><td colspan="8" style="padding:4px 12px 12px 28px">'+catList+'</td></tr>';
+        html+='<tr style="background:'+bg+'"><td colspan="9" style="padding:4px 12px 12px 28px">'+catList+'</td></tr>';
       }
     });
-    if(!ctrlOps.length)html+='<tr><td colspan="8" style="text-align:center;padding:20px;color:#888">Sin datos para el per&iacute;odo seleccionado</td></tr>';
+    if(!ctrlOpsVis.length)html+='<tr><td colspan="9" style="text-align:center;padding:20px;color:#888">Sin datos para el per&iacute;odo seleccionado</td></tr>';
     html+='</tbody></table>';
   }
   else if(_bonSub==='pie'){
     html+=_bonRenderErrorArea(BONO_PIE_MAQUINA,'pie','trabajar en Pie de M&aacute;quina',thBg,brd,rowEven,rowOdd);
   }
   else if(_bonSub==='pres'){
+    var inactivosPs=BONO_SOLO_PRESENTISMO.filter(function(nm){return !isActivoBono('ps'+nm.replace(/[^A-Za-z0-9]/g,'_'));});
+    var mostrarPs=!!_bonMostrarInactivos['pres'];
+    var presVis=mostrarPs?BONO_SOLO_PRESENTISMO:BONO_SOLO_PRESENTISMO.filter(function(nm){return isActivoBono('ps'+nm.replace(/[^A-Za-z0-9]/g,'_'));});
     html+='<div style="font-size:12px;color:'+(isDark?'#94a3b8':'#64748b')+';margin-bottom:12px">Por ahora estas personas solo cobran Presentismo (5%), todos los meses &mdash; sin N1/N2/Grupal.</div>';
-    html+='<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:'+thBg+'"><th style="padding:8px 12px;text-align:left;border-bottom:2px solid '+brd+'">Operario</th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Presentismo<br><span style="font-size:10px;font-weight:400">5%</span></th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">TOTAL</th></tr></thead><tbody>';
+    html+=bonInactivosBanner('pres',inactivosPs);
+    html+='<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:'+thBg+'"><th style="padding:8px 12px;text-align:left;border-bottom:2px solid '+brd+'">Operario</th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Presentismo<br><span style="font-size:10px;font-weight:400">5%</span></th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">TOTAL</th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Activo</th></tr></thead><tbody>';
     var altP=false;
-    BONO_SOLO_PRESENTISMO.forEach(function(nm){
+    presVis.forEach(function(nm){
       var key='ps'+nm.replace(/[^A-Za-z0-9]/g,'_');
       var bg=altP?rowEven:rowOdd;altP=!altP;
+      var inactivo=!isActivoBono(key);
       var pres=(_bonPres[key]!==undefined)?_bonPres[key]:true;
       var t=_bonCalc(pres,false,false,false);
-      html+='<tr style="background:'+bg+'"><td style="padding:8px 12px;font-weight:600">'+nm+'</td><td style="text-align:center;padding:8px 12px">'+presCheck(key)+'</td><td style="text-align:center;padding:8px 12px">'+_bonBadge(t)+'</td></tr>';
+      html+='<tr style="background:'+bg+';'+(inactivo?'opacity:.5':'')+'"><td style="padding:8px 12px;font-weight:600">'+nm+'</td><td style="text-align:center;padding:8px 12px">'+presCheck(key)+'</td><td style="text-align:center;padding:8px 12px">'+(inactivo?'<span style="color:#888">inactivo</span>':_bonBadge(t))+'</td><td style="text-align:center;padding:8px 12px">'+activoCheckbox(key)+'</td></tr>';
     });
     html+='</tbody></table>';
   }
@@ -923,7 +975,11 @@ function _bonRenderProduccion(thBg,brd,rowEven,rowOdd){
   function boolIcon(v){return v?'<span style="color:#16a34a;font-weight:700">&#10003;</span>':'<span style="color:#dc2626">&#8212;</span>';}
   function presCheck(key){var chk=(_bonPres[key]!==undefined)?_bonPres[key]:true;return '<input type="checkbox" data-key="'+key+'" '+(chk?'checked':'')+' onchange="bonTogglePres(this.dataset.key)" id="bonPres-'+key+'" style="width:15px;height:15px;cursor:pointer">';}
   function prodChk(key,field){var val=!!_bonProdChecks[key+'_'+field];return '<input type="checkbox" id="bonProd-'+key+'-'+field+'" '+(val?'checked':'')+' onchange="bonToggleProd(\''+key+'\',\''+field+'\')" style="width:15px;height:15px;cursor:pointer">';}
+  var inactivosPr=BONO_PRODUCCION.filter(function(nm){return !isActivoBono('pr'+nm.replace(/[^A-Za-z0-9]/g,'_'));});
+  var mostrarPr=!!_bonMostrarInactivos['prod'];
+  var prodVis=mostrarPr?BONO_PRODUCCION:BONO_PRODUCCION.filter(function(nm){return isActivoBono('pr'+nm.replace(/[^A-Za-z0-9]/g,'_'));});
   var html='<div style="font-size:12px;color:#888;margin-bottom:12px">Bono escalonado, sin Bono Grupal, m&aacute;ximo 15%. N1: carga MAG&gt;80% <strong>y</strong> productividad PBI +20% sobre lo programado (si falla una de las 2, no suma). N2: reclamos&lt;1% del total de pedidos <strong>y</strong> mermas&le;0,05% (si falla una de las 2, no suma).</div>';
+  html+=bonInactivosBanner('prod',inactivosPr);
   html+='<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:'+thBg+'">'
     +'<th style="padding:8px 12px;text-align:left;border-bottom:2px solid '+brd+'">Operario</th>'
     +'<th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Presentismo<br><span style="font-size:10px;font-weight:400">5%</span></th>'
@@ -934,17 +990,19 @@ function _bonRenderProduccion(thBg,brd,rowEven,rowOdd){
     +'<th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Mermas&le;0,05%</th>'
     +'<th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">N2<br><span style="font-size:10px;font-weight:400">+5%</span></th>'
     +'<th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">TOTAL</th>'
+    +'<th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Activo</th>'
     +'</tr></thead><tbody>';
   var alt=false;
-  BONO_PRODUCCION.forEach(function(nm){
+  prodVis.forEach(function(nm){
     var key='pr'+nm.replace(/[^A-Za-z0-9]/g,'_');
+    var inactivo=!isActivoBono(key);
     var pres=(_bonPres[key]!==undefined)?_bonPres[key]:true;
     var mag=!!_bonProdChecks[key+'_mag'], pbi=!!_bonProdChecks[key+'_pbi'];
     var rec=!!_bonProdChecks[key+'_rec'], mer=!!_bonProdChecks[key+'_mer'];
     var n1=mag&&pbi, n2=rec&&mer;
     var t=Math.min((pres?5:0)+(n1?5:0)+(n2?5:0),15);
     var bg=alt?rowEven:rowOdd;alt=!alt;
-    html+='<tr style="background:'+bg+'">'
+    html+='<tr style="background:'+bg+';'+(inactivo?'opacity:.5':'')+'">'
       +'<td style="padding:8px 12px;font-weight:600">'+nm+'</td>'
       +'<td style="text-align:center;padding:8px 12px">'+presCheck(key)+'</td>'
       +'<td style="text-align:center;padding:8px 12px">'+prodChk(key,'mag')+'</td>'
@@ -953,7 +1011,8 @@ function _bonRenderProduccion(thBg,brd,rowEven,rowOdd){
       +'<td style="text-align:center;padding:8px 12px">'+prodChk(key,'rec')+'</td>'
       +'<td style="text-align:center;padding:8px 12px">'+prodChk(key,'mer')+'</td>'
       +'<td style="text-align:center;padding:8px 12px">'+boolIcon(n2)+'</td>'
-      +'<td style="text-align:center;padding:8px 12px">'+_bonBadge(t)+'</td>'
+      +'<td style="text-align:center;padding:8px 12px">'+(inactivo?'<span style="color:#888">inactivo</span>':_bonBadge(t))+'</td>'
+      +'<td style="text-align:center;padding:8px 12px">'+activoCheckbox(key)+'</td>'
       +'</tr>';
   });
   html+='</tbody></table>';
@@ -965,19 +1024,24 @@ function _bonRenderProduccion(thBg,brd,rowEven,rowOdd){
 function _bonRenderErrorArea(personas,store,errLabel,thBg,brd,rowEven,rowOdd){
   var errMap = store==='ms'?_bonMsErr:store==='db'?_bonDbErr:_bonPieErrMap;
   var storeAttr = store;
-  var html='<div style="font-size:12px;color:#888;margin-bottom:12px">Errores al '+errLabel+', por persona. N1 si &le;1 error, N2 si 0 errores.</div>';
-  html+='<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:'+thBg+'"><th style="padding:8px 12px;text-align:left;border-bottom:2px solid '+brd+'">Operario</th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Errores</th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Presentismo<br><span style="font-size:10px;font-weight:400">5%</span></th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">N1<br><span style="font-size:10px;font-weight:400">+2.5%</span></th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">N2<br><span style="font-size:10px;font-weight:400">+4.5%</span></th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Grupal<br><span style="font-size:10px;font-weight:400">+3%</span></th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">TOTAL</th></tr></thead><tbody>';
   function boolIcon(v){return v?'<span style="color:#16a34a;font-weight:700">&#10003;</span>':'<span style="color:#dc2626">&#8212;</span>';}
   function presCheck(key){var chk=(_bonPres[key]!==undefined)?_bonPres[key]:true;return '<input type="checkbox" data-key="'+key+'" '+(chk?'checked':'')+' onchange="bonTogglePres(this.dataset.key)" id="bonPres-'+key+'" style="width:15px;height:15px;cursor:pointer">';}
+  var inactivos=personas.filter(function(nm){return !isActivoBono(store+nm.replace(/[^A-Za-z0-9]/g,'_'));});
+  var mostrar=!!_bonMostrarInactivos[store];
+  var personasVis=mostrar?personas:personas.filter(function(nm){return isActivoBono(store+nm.replace(/[^A-Za-z0-9]/g,'_'));});
+  var html='<div style="font-size:12px;color:#888;margin-bottom:12px">Errores al '+errLabel+', por persona. N1 si &le;1 error, N2 si 0 errores.</div>';
+  html+=bonInactivosBanner(store,inactivos);
+  html+='<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:'+thBg+'"><th style="padding:8px 12px;text-align:left;border-bottom:2px solid '+brd+'">Operario</th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Errores</th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Presentismo<br><span style="font-size:10px;font-weight:400">5%</span></th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">N1<br><span style="font-size:10px;font-weight:400">+2.5%</span></th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">N2<br><span style="font-size:10px;font-weight:400">+4.5%</span></th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Grupal<br><span style="font-size:10px;font-weight:400">+3%</span></th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">TOTAL</th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Activo</th></tr></thead><tbody>';
   var alt=false;
-  personas.forEach(function(nm){
+  personasVis.forEach(function(nm){
     var key=store+nm.replace(/[^A-Za-z0-9]/g,'_');
+    var inactivo=!isActivoBono(key);
     var err=errMap[key]!==undefined?errMap[key]:0;
     var n1=err<=1, n2=err===0;
     var pres=(_bonPres[key]!==undefined)?_bonPres[key]:true;
     var t=_bonCalc(pres,n1,n2,_bonGrupal);
     var bg=alt?rowEven:rowOdd;alt=!alt;
-    html+='<tr style="background:'+bg+'"><td style="padding:8px 12px;font-weight:600">'+nm+'</td><td style="text-align:center;padding:8px 12px"><input type="number" min="0" max="99" value="'+err+'" data-key="'+key+'" onchange="bonSetErr(\''+storeAttr+'\',this.dataset.key,this.value)" style="width:60px;text-align:center;border:1px solid '+brd+';border-radius:4px;padding:2px 4px;font-size:13px;background:'+rowOdd+'"></td><td style="text-align:center;padding:8px 12px">'+presCheck(key)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(n1)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(n2)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(_bonGrupal)+'</td><td style="text-align:center;padding:8px 12px">'+_bonBadge(t)+'</td></tr>';
+    html+='<tr style="background:'+bg+';'+(inactivo?'opacity:.5':'')+'"><td style="padding:8px 12px;font-weight:600">'+nm+'</td><td style="text-align:center;padding:8px 12px"><input type="number" min="0" max="99" value="'+err+'" data-key="'+key+'" onchange="bonSetErr(\''+storeAttr+'\',this.dataset.key,this.value)" style="width:60px;text-align:center;border:1px solid '+brd+';border-radius:4px;padding:2px 4px;font-size:13px;background:'+rowOdd+'"></td><td style="text-align:center;padding:8px 12px">'+presCheck(key)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(n1)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(n2)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(_bonGrupal)+'</td><td style="text-align:center;padding:8px 12px">'+(inactivo?'<span style="color:#888">inactivo</span>':_bonBadge(t))+'</td><td style="text-align:center;padding:8px 12px">'+activoCheckbox(key)+'</td></tr>';
   });
   html+='</tbody></table>';
   return html;
