@@ -124,7 +124,7 @@ body.dark .grp-btn.active{background:#2563eb;border-color:#2563eb;color:white}
       <h1>Dashboard de Productividad</h1>
     </div>
   </div>
-  <div class="badge">Actualizado: 03/07/2026 11:45<br>Target picking: 84 lin/d&iacute;a</div>
+  <div class="badge">Actualizado: 03/07/2026 15:11<br>Target picking: 84 lin/d&iacute;a</div>
   <button id="themeToggle" onclick="toggleTheme()" title="Cambiar tema claro / oscuro" aria-label="Cambiar tema"><span id="themeIcon">&#9790;</span></button>
 </header>
 
@@ -410,13 +410,14 @@ body.dark .grp-btn.active{background:#2563eb;border-color:#2563eb;color:white}
   <button class="grp-btn" id="bonBtn-pres" onclick="bonSetSub('pres')">Presentismo</button>
   <button class="grp-btn" id="bonBtn-ms" onclick="bonSetSub('ms')">Muestra Simple</button>
   <button class="grp-btn" id="bonBtn-db" onclick="bonSetSub('db')">Despacho</button>
+  <button class="grp-btn" id="bonBtn-prod" onclick="bonSetSub('prod')">Producci&oacute;n</button>
 </div>
 <div id="bonGrupalWrap" style="margin-bottom:12px"></div>
 <div id="bonContent"></div>
 </div><!-- /sec-eficiencia -->
 
 </div><!-- /container -->
-<footer>Dashboard v5 &mdash; Zecat Art&iacute;culos Promocionales SA &nbsp;|&nbsp; 03/07/2026 11:45</footer>
+<footer>Dashboard v5 &mdash; Zecat Art&iacute;culos Promocionales SA &nbsp;|&nbsp; 03/07/2026 15:11</footer>
 
 <script>
 Chart.defaults.font.family='Arial,sans-serif';
@@ -447,6 +448,16 @@ const BONO_SOLO_PRESENTISMO=['Flavio Malagrino','Maria Ledesma','Adrian Romero']
 const BONO_MUESTRA_SIMPLE=['Agustin Lezcano'];
 const BONO_DESPACHO=['Pato Cotugno','Fabricio Vargas','Agustin Kapp','Maxi Coria'];
 const BONO_PIE_MAQUINA=['Jose Penida','Brian Ocampo'];
+// Produccion: sector separado de Logistica/Deposito (fuente: Evaluacion de Desempeño, sector=Produccion).
+// Bono escalonado, maximo 15%: 5% Presentismo + N1(5%, MAG>80% Y PBI+20% programado, excluyente)
+// + N2(5%, reclamos<1% del total de pedidos Y mermas<=0.05%, excluyente). Sin Bono Grupal.
+const BONO_PRODUCCION=['Julian Agostinelli','Evelyn Aguilar','David Agüero','Yamila Barreto','Sofia Barrios',
+  'Lara Bello','Gisela Britez','Gabriel Cabello','Mariano Camerano','Gloria Chequere','Federico Decapua',
+  'Jeremias Delgado','Lucas Diaz','Fiorela Dominici','Sofia Escobar','Mariela Espindola','Araceli Farias',
+  'Vanesa Flores','Omar Fortunato','Ariel Galarza','Leandro Galarza','Agustina Gomez','Alejandro Gomez',
+  'Candela Gomez','Luz Gomez','Martina Gomez','Laura Herrera','Noelia Lopez','Diego Lopez Arizmendi',
+  'Monica Maciel','Brenda Martinez','Flavia Martinez','Florencia Montenegro','Marcelo Perez','Nancy Ramirez',
+  'Alan Resquin','Franco Resquin','Florencia Robledo','Lucila Roldan','Estefania Romero','Angela Sanchez','Mayra Seco'];
 const MES=['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const day7Rows=[{f:'24/06',d:'Mi',ops:4,lines:290,lpo:72.5,tgt:336,cum:86.3,dlt:null,cl:82,clops:2,sl:208,slops:4},{f:'25/06',d:'Ju',ops:4,lines:123,lpo:30.8,tgt:336,cum:36.6,dlt:-167,cl:42,clops:3,sl:81,slops:4},{f:'26/06',d:'Vi',ops:4,lines:240,lpo:60,tgt:336,cum:71.4,dlt:117,cl:51,clops:3,sl:189,slops:4},{f:'29/06',d:'Lu',ops:4,lines:299,lpo:74.8,tgt:336,cum:89,dlt:59,cl:101,clops:3,sl:198,slops:3},{f:'30/06',d:'Ma',ops:4,lines:219,lpo:54.8,tgt:336,cum:65.2,dlt:-80,cl:82,clops:4,sl:137,slops:3},{f:'01/07',d:'Mi',ops:4,lines:295,lpo:73.8,tgt:336,cum:87.8,dlt:76,cl:82,clops:3,sl:213,slops:2},{f:'02/07',d:'Ju',ops:2,lines:102,lpo:51,tgt:168,cum:60.7,dlt:-193,cl:31,clops:2,sl:71,slops:2}];
 const evol30Labels=['20/05','21/05','22/05','26/05','27/05','28/05','29/05','01/06','02/06','03/06','04/06','05/06','08/06','09/06','10/06','11/06','12/06','16/06','17/06','18/06','19/06','22/06','23/06','24/06','25/06','26/06','29/06','30/06','01/07','02/07'];
@@ -624,9 +635,17 @@ var _bonRecExpanded={};
 var _bonMsErr={};   // Muestra Simple - errores, por persona
 var _bonDbErr={};   // Despacho - errores al despachar/entregar pedidos, por persona
 var _bonPieErrMap={}; // Pie de Maquina - errores, por persona
+var _bonProdChecks={}; // Produccion - MAG/PBI/reclamos/mermas, por persona y condicion
 try{var _bme=localStorage.getItem('zecat-bon-ms-err');if(_bme)_bonMsErr=JSON.parse(_bme);}catch(e){}
 try{var _bde=localStorage.getItem('zecat-bon-db-err');if(_bde)_bonDbErr=JSON.parse(_bde);}catch(e){}
 try{var _bpe=localStorage.getItem('zecat-bon-pie-err');if(_bpe)_bonPieErrMap=JSON.parse(_bpe);}catch(e){}
+try{var _bpc=localStorage.getItem('zecat-bon-prod');if(_bpc)_bonProdChecks=JSON.parse(_bpc);}catch(e){}
+function bonToggleProd(key,field){
+  var el=document.getElementById('bonProd-'+key+'-'+field);
+  _bonProdChecks[key+'_'+field]=el?el.checked:false;
+  try{localStorage.setItem('zecat-bon-prod',JSON.stringify(_bonProdChecks));}catch(e){}
+  _bonRenderContent();
+}
 function bonSetErr(store,key,val){
   var map = store==='ms'?_bonMsErr:store==='db'?_bonDbErr:_bonPieErrMap;
   map[key]=parseInt(val)||0;
@@ -644,7 +663,7 @@ try{var _bc=localStorage.getItem('zecat-bon-ctrl');if(_bc)_bonCtrlRec=JSON.parse
 
 function bonSetSub(sub){
   _bonSub=sub;
-  ['gen','pick','maq','ctrl','pie','pres','ms','db'].forEach(function(s){var b=document.getElementById('bonBtn-'+s);if(b)b.classList.toggle('active',s===sub);});
+  ['gen','pick','maq','ctrl','pie','pres','ms','db','prod'].forEach(function(s){var b=document.getElementById('bonBtn-'+s);if(b)b.classList.toggle('active',s===sub);});
   _bonRenderContent();
 }
 function bonToggleGrupal(){
@@ -739,6 +758,15 @@ function _bonRenderContent(){
         var t=_bonCalc(pres,err<=1,err===0,_bonGrupal);
         allPeople.push({nm:nm,cat:catNm,total:t});
       });
+    });
+    // Produccion (escalonado, sin grupal)
+    BONO_PRODUCCION.forEach(function(nm){
+      var key='pr'+nm.replace(/[^A-Za-z0-9]/g,'_');
+      var pres=(_bonPres[key]!==undefined)?_bonPres[key]:true;
+      var n1=!!_bonProdChecks[key+'_mag']&&!!_bonProdChecks[key+'_pbi'];
+      var n2=!!_bonProdChecks[key+'_rec']&&!!_bonProdChecks[key+'_mer'];
+      var t=Math.min((pres?5:0)+(n1?5:0)+(n2?5:0),15);
+      allPeople.push({nm:nm,cat:'Producción',total:t});
     });
 
     allPeople.sort(function(a,b){return b.total-a.total;});
@@ -881,7 +909,55 @@ function _bonRenderContent(){
       _bonSub==='ms'?'pasar mercader&iacute;a a producci&oacute;n':'despachar/entregar pedidos',
       thBg,brd,rowEven,rowOdd);
   }
+  else if(_bonSub==='prod'){
+    html+=_bonRenderProduccion(thBg,brd,rowEven,rowOdd);
+  }
   document.getElementById('bonContent').innerHTML=html;
+}
+
+// Produccion: bono escalonado (no usa Bono Grupal). 5% Presentismo + N1(5%, MAG>80% Y PBI+20%
+// programado) + N2(5%, reclamos<1% del total de pedidos Y mermas<=0.05%). Ambas partes son
+// excluyentes: si falla una sola de las 2 condiciones de la parte, no suma esa parte.
+// Ninguna de las 4 metricas vive en productividad.xlsx todavia, se cargan a mano por persona.
+function _bonRenderProduccion(thBg,brd,rowEven,rowOdd){
+  function boolIcon(v){return v?'<span style="color:#16a34a;font-weight:700">&#10003;</span>':'<span style="color:#dc2626">&#8212;</span>';}
+  function presCheck(key){var chk=(_bonPres[key]!==undefined)?_bonPres[key]:true;return '<input type="checkbox" data-key="'+key+'" '+(chk?'checked':'')+' onchange="bonTogglePres(this.dataset.key)" id="bonPres-'+key+'" style="width:15px;height:15px;cursor:pointer">';}
+  function prodChk(key,field){var val=!!_bonProdChecks[key+'_'+field];return '<input type="checkbox" id="bonProd-'+key+'-'+field+'" '+(val?'checked':'')+' onchange="bonToggleProd(\''+key+'\',\''+field+'\')" style="width:15px;height:15px;cursor:pointer">';}
+  var html='<div style="font-size:12px;color:#888;margin-bottom:12px">Bono escalonado, sin Bono Grupal, m&aacute;ximo 15%. N1: carga MAG&gt;80% <strong>y</strong> productividad PBI +20% sobre lo programado (si falla una de las 2, no suma). N2: reclamos&lt;1% del total de pedidos <strong>y</strong> mermas&le;0,05% (si falla una de las 2, no suma).</div>';
+  html+='<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:'+thBg+'">'
+    +'<th style="padding:8px 12px;text-align:left;border-bottom:2px solid '+brd+'">Operario</th>'
+    +'<th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Presentismo<br><span style="font-size:10px;font-weight:400">5%</span></th>'
+    +'<th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">MAG&gt;80%</th>'
+    +'<th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">PBI +20%</th>'
+    +'<th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">N1<br><span style="font-size:10px;font-weight:400">+5%</span></th>'
+    +'<th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Reclamos&lt;1%</th>'
+    +'<th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Mermas&le;0,05%</th>'
+    +'<th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">N2<br><span style="font-size:10px;font-weight:400">+5%</span></th>'
+    +'<th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">TOTAL</th>'
+    +'</tr></thead><tbody>';
+  var alt=false;
+  BONO_PRODUCCION.forEach(function(nm){
+    var key='pr'+nm.replace(/[^A-Za-z0-9]/g,'_');
+    var pres=(_bonPres[key]!==undefined)?_bonPres[key]:true;
+    var mag=!!_bonProdChecks[key+'_mag'], pbi=!!_bonProdChecks[key+'_pbi'];
+    var rec=!!_bonProdChecks[key+'_rec'], mer=!!_bonProdChecks[key+'_mer'];
+    var n1=mag&&pbi, n2=rec&&mer;
+    var t=Math.min((pres?5:0)+(n1?5:0)+(n2?5:0),15);
+    var bg=alt?rowEven:rowOdd;alt=!alt;
+    html+='<tr style="background:'+bg+'">'
+      +'<td style="padding:8px 12px;font-weight:600">'+nm+'</td>'
+      +'<td style="text-align:center;padding:8px 12px">'+presCheck(key)+'</td>'
+      +'<td style="text-align:center;padding:8px 12px">'+prodChk(key,'mag')+'</td>'
+      +'<td style="text-align:center;padding:8px 12px">'+prodChk(key,'pbi')+'</td>'
+      +'<td style="text-align:center;padding:8px 12px">'+boolIcon(n1)+'</td>'
+      +'<td style="text-align:center;padding:8px 12px">'+prodChk(key,'rec')+'</td>'
+      +'<td style="text-align:center;padding:8px 12px">'+prodChk(key,'mer')+'</td>'
+      +'<td style="text-align:center;padding:8px 12px">'+boolIcon(n2)+'</td>'
+      +'<td style="text-align:center;padding:8px 12px">'+_bonBadge(t)+'</td>'
+      +'</tr>';
+  });
+  html+='</tbody></table>';
+  return html;
 }
 
 // Muestra Simple y Despacho comparten la misma regla: 5% presentismo + N1(2.5%) si <=1 error +
