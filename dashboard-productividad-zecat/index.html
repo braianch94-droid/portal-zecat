@@ -124,7 +124,7 @@ body.dark .grp-btn.active{background:#2563eb;border-color:#2563eb;color:white}
       <h1>Dashboard de Productividad</h1>
     </div>
   </div>
-  <div class="badge">Actualizado: 03/07/2026 10:49<br>Target picking: 84 lin/d&iacute;a</div>
+  <div class="badge">Actualizado: 03/07/2026 11:45<br>Target picking: 84 lin/d&iacute;a</div>
   <button id="themeToggle" onclick="toggleTheme()" title="Cambiar tema claro / oscuro" aria-label="Cambiar tema"><span id="themeIcon">&#9790;</span></button>
 </header>
 
@@ -416,7 +416,7 @@ body.dark .grp-btn.active{background:#2563eb;border-color:#2563eb;color:white}
 </div><!-- /sec-eficiencia -->
 
 </div><!-- /container -->
-<footer>Dashboard v5 &mdash; Zecat Art&iacute;culos Promocionales SA &nbsp;|&nbsp; 03/07/2026 10:49</footer>
+<footer>Dashboard v5 &mdash; Zecat Art&iacute;culos Promocionales SA &nbsp;|&nbsp; 03/07/2026 11:45</footer>
 
 <script>
 Chart.defaults.font.family='Arial,sans-serif';
@@ -952,6 +952,25 @@ function getFilteredIndices(){
 }
 
 function applyFilter(){
+  // El badge se actualiza siempre, sin importar que pestaña este activa —
+  // antes quedaba pegado con el ultimo valor de Picking porque las otras
+  // pestañas (Bonos/Control/Maquinistas/Resumen) cortaban con return antes de llegar aca.
+  (function(){
+    var anioB=document.getElementById('selAnio').value;
+    var mesB=document.getElementById('selMes').value;
+    var selOpElB=document.getElementById('selOp');
+    var selOpB=selOpElB?selOpElB.value:'all';
+    var idxB=getFilteredIndices();
+    var badge='Mostrando: todos los datos';
+    if(anioB!=='all'||mesB!=='all'||selOpB!=='all'){
+      var bp=[];
+      if(anioB!=='all') bp.push(anioB);
+      if(mesB!=='all') bp.push(MES[parseInt(mesB)]);
+      if(selOpB!=='all') bp.push(selOpB);
+      badge='Filtro: '+bp.join(' / ')+' ('+idxB.length+' mes'+(idxB.length!==1?'es':'')+')';
+    }
+    document.getElementById('filterBadge').textContent=badge;
+  })();
   var _s=document.querySelector('.sec.active');var _id=_s?_s.id:'';
   if(_id==='sec-control'){buildControl();return;}
   if(_id==='sec-maquinistas'){buildMaquinistas();return;}
