@@ -124,7 +124,7 @@ body.dark .grp-btn.active{background:#2563eb;border-color:#2563eb;color:white}
       <h1>Dashboard de Productividad</h1>
     </div>
   </div>
-  <div class="badge">Actualizado: 03/07/2026 10:05<br>Target picking: 84 lin/d&iacute;a</div>
+  <div class="badge">Actualizado: 03/07/2026 10:12<br>Target picking: 84 lin/d&iacute;a</div>
   <button id="themeToggle" onclick="toggleTheme()" title="Cambiar tema claro / oscuro" aria-label="Cambiar tema"><span id="themeIcon">&#9790;</span></button>
 </header>
 
@@ -408,13 +408,15 @@ body.dark .grp-btn.active{background:#2563eb;border-color:#2563eb;color:white}
   <button class="grp-btn" id="bonBtn-ctrl" onclick="bonSetSub('ctrl')">Control</button>
   <button class="grp-btn" id="bonBtn-pie" onclick="bonSetSub('pie')">Pie de M&aacute;quina</button>
   <button class="grp-btn" id="bonBtn-pres" onclick="bonSetSub('pres')">Presentismo</button>
+  <button class="grp-btn" id="bonBtn-ms" onclick="bonSetSub('ms')">Muestra Simple</button>
+  <button class="grp-btn" id="bonBtn-db" onclick="bonSetSub('db')">Despacho</button>
 </div>
 <div id="bonGrupalWrap" style="margin-bottom:12px"></div>
 <div id="bonContent"></div>
 </div><!-- /sec-eficiencia -->
 
 </div><!-- /container -->
-<footer>Dashboard v5 &mdash; Zecat Art&iacute;culos Promocionales SA &nbsp;|&nbsp; 03/07/2026 10:05</footer>
+<footer>Dashboard v5 &mdash; Zecat Art&iacute;culos Promocionales SA &nbsp;|&nbsp; 03/07/2026 10:12</footer>
 
 <script>
 Chart.defaults.font.family='Arial,sans-serif';
@@ -440,7 +442,10 @@ const merma2L=[133,342,83,133,112,50,0];
 const recMonthly={'2026-01':{cnt:13,sinId:0,byOp:{'ARMOA TAMARA':3,'BRUN TOMAS':5,'LAURATO MARTINEZ':2,'ROMERO MELANIE':2},byCat:{'El packaging presenta fallas o hay faltantes de estos.':2,'Hay un producto/s defectuoso/s o con fallas.':9,'Recibí una cantidad distinta a la comprada.':2},byOpCat:{'ARMOA TAMARA':{'Hay un producto/s defectuoso/s o con fallas.':3},'BRUN TOMAS':{'El packaging presenta fallas o hay faltantes de estos.':1,'Hay un producto/s defectuoso/s o con fallas.':3,'Recibí una cantidad distinta a la comprada.':1},'LAURATO MARTINEZ':{'Hay un producto/s defectuoso/s o con fallas.':1,'Recibí una cantidad distinta a la comprada.':1},'ROMERO MELANIE':{'Hay un producto/s defectuoso/s o con fallas.':2}}},'2026-02':{cnt:20,sinId:0,byOp:{'ARCE ELIAS':1,'ARMOA TAMARA':5,'BRUN TOMAS':4,'LAURATO MARTINEZ':5,'ROMERO MELANIE':4},byCat:{'El packaging presenta fallas o hay faltantes de estos.':1,'Hay un producto/s defectuoso/s o con fallas.':13,'Recibi otro producto.':2,'Recibí una cantidad distinta a la comprada.':4},byOpCat:{'ARCE ELIAS':{'Hay un producto/s defectuoso/s o con fallas.':1},'ARMOA TAMARA':{'Hay un producto/s defectuoso/s o con fallas.':2,'Recibí una cantidad distinta a la comprada.':3},'BRUN TOMAS':{'Hay un producto/s defectuoso/s o con fallas.':2,'Recibi otro producto.':1,'Recibí una cantidad distinta a la comprada.':1},'LAURATO MARTINEZ':{'El packaging presenta fallas o hay faltantes de estos.':1,'Hay un producto/s defectuoso/s o con fallas.':4},'ROMERO MELANIE':{'Hay un producto/s defectuoso/s o con fallas.':3,'Recibi otro producto.':1}}},'2026-03':{cnt:18,sinId:0,byOp:{'ARMOA TAMARA':4,'BRUN TOMAS':9,'LAURATO MARTINEZ':2,'OCAMPO BRIAN':1,'ROMERO MELANIE':2},byCat:{'Consultas/comunicaciones administrativas.':1,'Hay un producto/s defectuoso/s o con fallas.':10,'Recibi otro producto.':3,'Recibí una cantidad distinta a la comprada.':4},byOpCat:{'ARMOA TAMARA':{'Hay un producto/s defectuoso/s o con fallas.':1,'Recibi otro producto.':1,'Recibí una cantidad distinta a la comprada.':2},'BRUN TOMAS':{'Consultas/comunicaciones administrativas.':1,'Hay un producto/s defectuoso/s o con fallas.':5,'Recibi otro producto.':2,'Recibí una cantidad distinta a la comprada.':1},'LAURATO MARTINEZ':{'Hay un producto/s defectuoso/s o con fallas.':2},'OCAMPO BRIAN':{'Recibí una cantidad distinta a la comprada.':1},'ROMERO MELANIE':{'Hay un producto/s defectuoso/s o con fallas.':2}}},'2026-04':{cnt:22,sinId:0,byOp:{'ARMOA TAMARA':12,'BRUN TOMAS':8,'LAURATO MARTINEZ':2},byCat:{'El packaging presenta fallas o hay faltantes de estos.':1,'Hay un producto/s defectuoso/s o con fallas.':8,'Recibi otro producto.':6,'Recibí una cantidad distinta a la comprada.':6,'Reclamo por plazo de entrega.':1},byOpCat:{'ARMOA TAMARA':{'El packaging presenta fallas o hay faltantes de estos.':1,'Hay un producto/s defectuoso/s o con fallas.':5,'Recibi otro producto.':2,'Recibí una cantidad distinta a la comprada.':4},'BRUN TOMAS':{'Hay un producto/s defectuoso/s o con fallas.':2,'Recibi otro producto.':4,'Recibí una cantidad distinta a la comprada.':2},'LAURATO MARTINEZ':{'Hay un producto/s defectuoso/s o con fallas.':1,'Reclamo por plazo de entrega.':1}}},'2026-05':{cnt:35,sinId:0,byOp:{'ARMOA TAMARA':11,'BRUN TOMAS':11,'CACERES EDISON':2,'LAURATO MARTINEZ':10,'ROMERO MELANIE':1},byCat:{'Consultas/comunicaciones administrativas.':1,'El packaging presenta fallas o hay faltantes de estos.':4,'Hay un producto/s defectuoso/s o con fallas.':19,'Recibi otro producto.':4,'Recibí una cantidad distinta a la comprada.':7},byOpCat:{'ARMOA TAMARA':{'El packaging presenta fallas o hay faltantes de estos.':2,'Hay un producto/s defectuoso/s o con fallas.':6,'Recibi otro producto.':1,'Recibí una cantidad distinta a la comprada.':2},'BRUN TOMAS':{'Consultas/comunicaciones administrativas.':1,'El packaging presenta fallas o hay faltantes de estos.':1,'Hay un producto/s defectuoso/s o con fallas.':6,'Recibi otro producto.':2,'Recibí una cantidad distinta a la comprada.':1},'CACERES EDISON':{'Hay un producto/s defectuoso/s o con fallas.':1,'Recibí una cantidad distinta a la comprada.':1},'LAURATO MARTINEZ':{'El packaging presenta fallas o hay faltantes de estos.':1,'Hay un producto/s defectuoso/s o con fallas.':6,'Recibi otro producto.':1,'Recibí una cantidad distinta a la comprada.':2},'ROMERO MELANIE':{'Recibí una cantidad distinta a la comprada.':1}}},'2026-06':{cnt:38,sinId:0,byOp:{'ADRIAN ROMERO':2,'ARMOA TAMARA':12,'BRUN TOMAS':6,'CACERES EDISON':4,'LAURATO MARTINEZ':14},byCat:{'El packaging presenta fallas o hay faltantes de estos.':2,'Hay un producto/s defectuoso/s o con fallas.':16,'Recibi otro producto.':10,'Recibí una cantidad distinta a la comprada.':10},byOpCat:{'ADRIAN ROMERO':{'Recibi otro producto.':2},'ARMOA TAMARA':{'Hay un producto/s defectuoso/s o con fallas.':3,'Recibi otro producto.':5,'Recibí una cantidad distinta a la comprada.':4},'BRUN TOMAS':{'Hay un producto/s defectuoso/s o con fallas.':6},'CACERES EDISON':{'Hay un producto/s defectuoso/s o con fallas.':1,'Recibi otro producto.':1,'Recibí una cantidad distinta a la comprada.':2},'LAURATO MARTINEZ':{'El packaging presenta fallas o hay faltantes de estos.':2,'Hay un producto/s defectuoso/s o con fallas.':6,'Recibi otro producto.':2,'Recibí una cantidad distinta a la comprada.':4}}},'2026-07':null};
 const recBonoMonthly={'2026-01':{byOpPick:{},byOpCatPick:{},byOpCtrl:{},byOpCatCtrl:{}},'2026-02':{byOpPick:{},byOpCatPick:{},byOpCtrl:{},byOpCatCtrl:{}},'2026-03':{byOpPick:{},byOpCatPick:{},byOpCtrl:{},byOpCatCtrl:{}},'2026-04':{byOpPick:{},byOpCatPick:{},byOpCtrl:{},byOpCatCtrl:{}},'2026-05':{byOpPick:{},byOpCatPick:{},byOpCtrl:{},byOpCatCtrl:{}},'2026-06':{byOpPick:{'ADRIAN ROMERO':2,'ARMOA TAMARA':4},byOpCatPick:{'ADRIAN ROMERO':{'Recibi otro producto.':2},'ARMOA TAMARA':{'Recibi otro producto.':4}},byOpCtrl:{'Pittala Tomas':8,'Romero Melanie':7},byOpCatCtrl:{'Pittala Tomas':{'Hay un producto/s defectuoso/s o con fallas.':1,'Recibi otro producto.':5,'Recibí una cantidad distinta a la comprada.':2},'Romero Melanie':{'Hay un producto/s defectuoso/s o con fallas.':4,'Recibi otro producto.':2,'Recibí una cantidad distinta a la comprada.':1}}},'2026-07':null};
 // Personas que por ahora solo cobran Presentismo (5%) todos los meses — sin N1/N2/Grupal.
-const BONO_SOLO_PRESENTISMO=['Flavio Malagrino','Agustin Lezcano','Maria Ledesma','Adrian Romero Flores'];
+const BONO_SOLO_PRESENTISMO=['Flavio Malagrino','Agustin Lezcano','Maria Ledesma','Adrian Romero'];
+// Muestra Simple y Despacho: 5% presentismo + N1(2.5%) si <=1 error + N2(4.5%) si 0 errores + 3% grupal.
+const BONO_MUESTRA_SIMPLE=['Jose Penida','Brian Ocampo'];
+const BONO_DESPACHO=['Pato Cotugno','Fabricio Vargas','Agustin Kapp','Maxi Coria'];
 const MES=['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const day7Rows=[{f:'24/06',d:'Mi',ops:4,lines:290,lpo:72.5,tgt:336,cum:86.3,dlt:null,cl:82,clops:2,sl:208,slops:4},{f:'25/06',d:'Ju',ops:4,lines:123,lpo:30.8,tgt:336,cum:36.6,dlt:-167,cl:42,clops:3,sl:81,slops:4},{f:'26/06',d:'Vi',ops:4,lines:240,lpo:60,tgt:336,cum:71.4,dlt:117,cl:51,clops:3,sl:189,slops:4},{f:'29/06',d:'Lu',ops:4,lines:299,lpo:74.8,tgt:336,cum:89,dlt:59,cl:101,clops:3,sl:198,slops:3},{f:'30/06',d:'Ma',ops:4,lines:219,lpo:54.8,tgt:336,cum:65.2,dlt:-80,cl:82,clops:4,sl:137,slops:3},{f:'01/07',d:'Mi',ops:4,lines:295,lpo:73.8,tgt:336,cum:87.8,dlt:76,cl:82,clops:3,sl:213,slops:2},{f:'02/07',d:'Ju',ops:2,lines:102,lpo:51,tgt:168,cum:60.7,dlt:-193,cl:31,clops:2,sl:71,slops:2}];
 const evol30Labels=['20/05','21/05','22/05','26/05','27/05','28/05','29/05','01/06','02/06','03/06','04/06','05/06','08/06','09/06','10/06','11/06','12/06','16/06','17/06','18/06','19/06','22/06','23/06','24/06','25/06','26/06','29/06','30/06','01/07','02/07'];
@@ -616,6 +621,16 @@ var _bonPres={};
 var _bonCtrlRec={};
 var _bonPieErr=0;
 var _bonRecExpanded={};
+var _bonMsErr={};   // Muestra Simple - errores al pasar mercaderia a produccion, por persona
+var _bonDbErr={};   // Despacho - errores al despachar/entregar pedidos, por persona
+try{var _bme=localStorage.getItem('zecat-bon-ms-err');if(_bme)_bonMsErr=JSON.parse(_bme);}catch(e){}
+try{var _bde=localStorage.getItem('zecat-bon-db-err');if(_bde)_bonDbErr=JSON.parse(_bde);}catch(e){}
+function bonSetErr(store,key,val){
+  var map = store==='ms'?_bonMsErr:_bonDbErr;
+  map[key]=parseInt(val)||0;
+  try{localStorage.setItem(store==='ms'?'zecat-bon-ms-err':'zecat-bon-db-err',JSON.stringify(map));}catch(e){}
+  _bonRenderContent();
+}
 function bonToggleRecView(key){
   var el=document.getElementById('bonRecChk-'+key);
   _bonRecExpanded[key]=el?el.checked:false;
@@ -627,7 +642,7 @@ try{var _bc=localStorage.getItem('zecat-bon-ctrl');if(_bc)_bonCtrlRec=JSON.parse
 
 function bonSetSub(sub){
   _bonSub=sub;
-  ['gen','pick','maq','ctrl','pie','pres'].forEach(function(s){var b=document.getElementById('bonBtn-'+s);if(b)b.classList.toggle('active',s===sub);});
+  ['gen','pick','maq','ctrl','pie','pres','ms','db'].forEach(function(s){var b=document.getElementById('bonBtn-'+s);if(b)b.classList.toggle('active',s===sub);});
   _bonRenderContent();
 }
 function bonToggleGrupal(){
@@ -707,6 +722,18 @@ function _bonRenderContent(){
       var pres=(_bonPres[key]!==undefined)?_bonPres[key]:true;
       var t=_bonCalc(pres,false,false,false);
       allPeople.push({nm:nm,cat:'Presentismo',total:t});
+    });
+    // Muestra Simple y Despacho (presentismo + N1/N2 por errores + grupal)
+    [['ms',BONO_MUESTRA_SIMPLE,'Muestra Simple'],['db',BONO_DESPACHO,'Despacho']].forEach(function(grp){
+      var storeKey=grp[0],personas=grp[1],catNm=grp[2];
+      var errMap=storeKey==='ms'?_bonMsErr:_bonDbErr;
+      personas.forEach(function(nm){
+        var key=storeKey+nm.replace(/[^A-Za-z0-9]/g,'_');
+        var err=errMap[key]!==undefined?errMap[key]:0;
+        var pres=(_bonPres[key]!==undefined)?_bonPres[key]:true;
+        var t=_bonCalc(pres,err<=1,err===0,_bonGrupal);
+        allPeople.push({nm:nm,cat:catNm,total:t});
+      });
     });
 
     allPeople.sort(function(a,b){return b.total-a.total;});
@@ -845,7 +872,35 @@ function _bonRenderContent(){
     });
     html+='</tbody></table>';
   }
+  else if(_bonSub==='ms'||_bonSub==='db'){
+    html+=_bonRenderErrorArea(_bonSub==='ms'?BONO_MUESTRA_SIMPLE:BONO_DESPACHO,_bonSub,
+      _bonSub==='ms'?'pasar mercader&iacute;a a producci&oacute;n':'despachar/entregar pedidos',
+      thBg,brd,rowEven,rowOdd);
+  }
   document.getElementById('bonContent').innerHTML=html;
+}
+
+// Muestra Simple y Despacho comparten la misma regla: 5% presentismo + N1(2.5%) si <=1 error +
+// N2(4.5%) si 0 errores + 3% grupal. El error se carga a mano (no hay dato automatico por persona).
+function _bonRenderErrorArea(personas,store,errLabel,thBg,brd,rowEven,rowOdd){
+  var errMap = store==='ms'?_bonMsErr:_bonDbErr;
+  var storeAttr = store;
+  var html='<div style="font-size:12px;color:#888;margin-bottom:12px">Errores al '+errLabel+', por persona. N1 si &le;1 error, N2 si 0 errores.</div>';
+  html+='<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:'+thBg+'"><th style="padding:8px 12px;text-align:left;border-bottom:2px solid '+brd+'">Operario</th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Errores</th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Presentismo<br><span style="font-size:10px;font-weight:400">5%</span></th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">N1<br><span style="font-size:10px;font-weight:400">+2.5%</span></th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">N2<br><span style="font-size:10px;font-weight:400">+4.5%</span></th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Grupal<br><span style="font-size:10px;font-weight:400">+3%</span></th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">TOTAL</th></tr></thead><tbody>';
+  function boolIcon(v){return v?'<span style="color:#16a34a;font-weight:700">&#10003;</span>':'<span style="color:#dc2626">&#8212;</span>';}
+  function presCheck(key){var chk=(_bonPres[key]!==undefined)?_bonPres[key]:true;return '<input type="checkbox" data-key="'+key+'" '+(chk?'checked':'')+' onchange="bonTogglePres(this.dataset.key)" id="bonPres-'+key+'" style="width:15px;height:15px;cursor:pointer">';}
+  var alt=false;
+  personas.forEach(function(nm){
+    var key=(store==='ms'?'ms':'db')+nm.replace(/[^A-Za-z0-9]/g,'_');
+    var err=errMap[key]!==undefined?errMap[key]:0;
+    var n1=err<=1, n2=err===0;
+    var pres=(_bonPres[key]!==undefined)?_bonPres[key]:true;
+    var t=_bonCalc(pres,n1,n2,_bonGrupal);
+    var bg=alt?rowEven:rowOdd;alt=!alt;
+    html+='<tr style="background:'+bg+'"><td style="padding:8px 12px;font-weight:600">'+nm+'</td><td style="text-align:center;padding:8px 12px"><input type="number" min="0" max="99" value="'+err+'" data-key="'+key+'" onchange="bonSetErr(\''+storeAttr+'\',this.dataset.key,this.value)" style="width:60px;text-align:center;border:1px solid '+brd+';border-radius:4px;padding:2px 4px;font-size:13px;background:'+rowOdd+'"></td><td style="text-align:center;padding:8px 12px">'+presCheck(key)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(n1)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(n2)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(_bonGrupal)+'</td><td style="text-align:center;padding:8px 12px">'+_bonBadge(t)+'</td></tr>';
+  });
+  html+='</tbody></table>';
+  return html;
 }
 
 // Tab navigation
