@@ -180,20 +180,28 @@ input::placeholder{color:var(--muted);opacity:.7}
 </div>
 
 <script>
-/* ══════════════ PERSISTENCIA (localStorage) ══════════════ */
-const KEY='muestra-wms-data-v1';
-let DB={ubicaciones:[],articulos:[],stock:{},movimientos:[],seq:{ubi:0,art:0,mov:0}};
-function load(){try{const r=localStorage.getItem(KEY);if(r)DB=JSON.parse(r);}catch(e){}
-  DB.ubicaciones=DB.ubicaciones||[];DB.articulos=DB.articulos||[];DB.stock=DB.stock||{};
-  DB.movimientos=DB.movimientos||[];DB.seq=DB.seq||{ubi:0,art:0,mov:0};}
-function save(){localStorage.setItem(KEY,JSON.stringify(DB));}
-function nid(k){DB.seq[k]=(DB.seq[k]||0)+1;return DB.seq[k];}
+/* ══════════════ API (Cloudflare D1 — datos compartidos) ══════════════ */
+const API='/api/wms';
+const WMS_KEY='zecat-wms-2026';
+let DB={ubicaciones:[],articulos:[],stock:{},movimientos:[]};
+async function api(path,method,body){
+  const r=await fetch(API+path,{method:method||'GET',headers:{'Content-Type':'application/json','X-Wms-Key':WMS_KEY},body:body?JSON.stringify(body):undefined});
+  const data=await r.json().catch(()=>({error:'Respuesta inválida del servidor'}));
+  if(!r.ok)throw new Error(data.error||('Error '+r.status));
+  return data;
+}
+function setState(s){
+  DB.ubicaciones=s.ubicaciones||[];
+  DB.articulos=s.articulos||[];
+  DB.movimientos=s.movimientos||[];   // llegan del más nuevo al más viejo
+  DB.stock={};
+  (s.stock||[]).forEach(x=>{DB.stock[x.articulo_id+':'+x.ubicacion_id]=x.cantidad;});
+}
+async function recargar(){setState(await api('/state'));}
 
-/* ── helpers de stock ── */
+/* ── helpers de stock (lectura del espejo local) ── */
 function sk(a,u){return a+':'+u;}
 function getStock(a,u){return DB.stock[sk(a,u)]||0;}
-function setStock(a,u,v){if(v<=0)delete DB.stock[sk(a,u)];else DB.stock[sk(a,u)]=v;}
-function ajustar(a,u,delta){const n=getStock(a,u)+delta;if(n<-1e-9)throw new Error('Stock insuficiente en la ubicación.');setStock(a,u,Math.round(n*1e6)/1e6);}
 function art(id){return DB.articulos.find(x=>x.id===id);}
 function ubi(id){return DB.ubicaciones.find(x=>x.id===id);}
 function stockTotal(aid){let s=0;for(const k in DB.stock){if(k.startsWith(aid+':'))s+=DB.stock[k];}return s;}
@@ -257,7 +265,7 @@ function renderDashboard(){
       </tbody></table></div>`:'';
 
   // últimos movimientos
-  const ult=[...DB.movimientos].slice(-10).reverse();
+  const ult=DB.movimientos.slice(0,10);
   document.getElementById('dash-ultimos').innerHTML=ult.length?`
     <table><thead><tr><th>Fecha</th><th>Tipo</th><th>Artículo</th><th>Origen → Destino</th><th class="num">Cant.</th></tr></thead><tbody>
     ${ult.map(m=>rowMov(m)).join('')}</tbody></table>`
@@ -302,13 +310,13 @@ function renderMover(){
     <div class="field" style="margin-bottom:14px"><label>Cantidad</label><input id="m-cant" type="number" step="any" min="0" placeholder="0" style="max-width:200px"></div>
     <div class="field" style="margin-bottom:14px"><label>Usuario / operario (opcional)</label><input id="m-user" placeholder="Nombre"></div>
     <div class="field" style="margin-bottom:18px"><label>Nota (opcional)</label><input id="m-nota" placeholder="Remito, OC, observación…"></div>
-    <button class="btn" onclick="registrarMov()">Registrar ${movTipo.toLowerCase()}</button>`;
+    <button class="btn" onclick="registrarMov(this)">Registrar ${movTipo.toLowerCase()}</button>`;
 }
 function hintStock(){const h=document.getElementById('m-hint');if(!h)return;
   const a=+document.getElementById('m-art').value, o=+document.getElementById('m-ori').value;
   if(!a||!o){h.textContent='';return;}
   const s=getStock(a,o);h.textContent='Disponible en origen: '+fmt(s);h.style.color=s>0?'var(--green)':'var(--red)';}
-function registrarMov(){
+async function registrarMov(btn){
   const a=+document.getElementById('m-art').value;
   const cant=parseFloat(document.getElementById('m-cant').value);
   const oEl=document.getElementById('m-ori'), dEl=document.getElementById('m-dest');
@@ -316,20 +324,18 @@ function registrarMov(){
   const user=(document.getElementById('m-user').value||'').trim();
   const nota=(document.getElementById('m-nota').value||'').trim();
   if(!a||!(cant>0)){flash('Completá artículo y cantidad válida.','error');return;}
+  if(btn)btn.disabled=true;
   try{
-    if(movTipo==='INGRESO'){if(!d)throw new Error('Elegí la ubicación de destino.');ajustar(a,d,cant);}
-    else if(movTipo==='EGRESO'){if(!o)throw new Error('Elegí la ubicación de origen.');ajustar(a,o,-cant);}
-    else{if(!o||!d)throw new Error('Elegí origen y destino.');if(o===d)throw new Error('Origen y destino no pueden ser iguales.');ajustar(a,o,-cant);ajustar(a,d,cant);}
-    DB.movimientos.push({id:nid('mov'),fecha:now(),tipo:movTipo,articulo_id:a,origen_id:movTipo==='INGRESO'?null:o,destino_id:movTipo==='EGRESO'?null:d,cantidad:cant,usuario:user,nota:nota});
-    save();flash('Movimiento registrado correctamente.','ok');renderMover();
-  }catch(e){flash(e.message,'error');}
+    setState(await api('/mover','POST',{tipo:movTipo,articulo_id:a,origen_id:o,destino_id:d,cantidad:cant,usuario:user,nota:nota}));
+    flash('Movimiento registrado correctamente.','ok');renderMover();
+  }catch(e){flash(e.message,'error');if(btn)btn.disabled=false;}
 }
 
 /* ── HISTORIAL ── */
 function renderHistorial(){
   const tipo=document.getElementById('h-tipo').value;
   const q=(document.getElementById('h-q').value||'').toLowerCase();
-  let ms=[...DB.movimientos].reverse();
+  let ms=[...DB.movimientos];
   if(tipo)ms=ms.filter(m=>m.tipo===tipo);
   if(q)ms=ms.filter(m=>{const a=art(m.articulo_id)||{};return (a.sku||'').toLowerCase().includes(q)||(a.descripcion||'').toLowerCase().includes(q)||(m.nota||'').toLowerCase().includes(q);});
   ms=ms.slice(0,300);
@@ -344,15 +350,15 @@ function renderHistorial(){
 }
 
 /* ── ARTÍCULOS ── */
-function crearArticulo(){
+async function crearArticulo(){
   const sku=(document.getElementById('a-sku').value||'').trim().toUpperCase();
   if(!sku){flash('El SKU es obligatorio.','error');return;}
-  if(DB.articulos.some(a=>a.sku===sku)){flash('Ya existe un artículo con el SKU '+sku+'.','error');return;}
-  let min=parseFloat(document.getElementById('a-min').value);if(!(min>=0)||isNaN(min))min=0;
-  DB.articulos.push({id:nid('art'),sku,descripcion:(document.getElementById('a-desc').value||'').trim(),
-    unidad:(document.getElementById('a-un').value||'UN').trim()||'UN',stock_minimo:min});
-  save();document.getElementById('a-sku').value='';document.getElementById('a-desc').value='';document.getElementById('a-un').value='UN';document.getElementById('a-min').value='';
-  flash('Artículo '+sku+' creado.','ok');renderArticulos();
+  try{
+    setState(await api('/articulos','POST',{sku,descripcion:(document.getElementById('a-desc').value||'').trim(),
+      unidad:(document.getElementById('a-un').value||'UN').trim()||'UN',stock_minimo:document.getElementById('a-min').value}));
+    document.getElementById('a-sku').value='';document.getElementById('a-desc').value='';document.getElementById('a-un').value='UN';document.getElementById('a-min').value='';
+    flash('Artículo '+sku+' creado.','ok');renderArticulos();
+  }catch(e){flash(e.message,'error');}
 }
 function renderArticulos(){
   const q=(document.getElementById('a-buscar').value||'').toLowerCase();
@@ -373,7 +379,7 @@ function verArticulo(id){
   const a=art(id);if(!a)return;
   const ubs=[];for(const k in DB.stock){if(k.startsWith(id+':')&&DB.stock[k]>0){const uid=+k.split(':')[1];ubs.push({u:ubi(uid),c:DB.stock[k]});}}
   ubs.sort((x,y)=>x.u.codigo.localeCompare(y.u.codigo));
-  const movs=DB.movimientos.filter(m=>m.articulo_id===id).slice(-30).reverse();
+  const movs=DB.movimientos.filter(m=>m.articulo_id===id).slice(0,30);
   document.getElementById('art-detalle').innerHTML=`
     <div class="panel">
       <h2>Editar artículo · ${esc(a.sku)}</h2>
@@ -390,20 +396,23 @@ function verArticulo(id){
     </div>`;
   document.getElementById('art-detalle').scrollIntoView({behavior:'smooth',block:'start'});
 }
-function guardarArticulo(id){const a=art(id);if(!a)return;
-  a.descripcion=(document.getElementById('e-desc').value||'').trim();
-  a.unidad=(document.getElementById('e-un').value||'UN').trim()||'UN';
-  let min=parseFloat(document.getElementById('e-min').value);a.stock_minimo=(min>=0&&!isNaN(min))?min:0;
-  save();flash('Artículo actualizado.','ok');renderArticulos();verArticulo(id);}
+async function guardarArticulo(id){
+  try{
+    setState(await api('/articulos/'+id,'PUT',{descripcion:(document.getElementById('e-desc').value||'').trim(),
+      unidad:(document.getElementById('e-un').value||'UN').trim()||'UN',stock_minimo:document.getElementById('e-min').value}));
+    flash('Artículo actualizado.','ok');renderArticulos();verArticulo(id);
+  }catch(e){flash(e.message,'error');}
+}
 
 /* ── UBICACIONES ── */
-function crearUbicacion(){
+async function crearUbicacion(){
   const cod=(document.getElementById('u-cod').value||'').trim().toUpperCase();
   if(!cod){flash('El código de ubicación es obligatorio.','error');return;}
-  if(DB.ubicaciones.some(u=>u.codigo===cod)){flash('Ya existe una ubicación con el código '+cod+'.','error');return;}
-  DB.ubicaciones.push({id:nid('ubi'),codigo:cod,descripcion:(document.getElementById('u-desc').value||'').trim(),zona:(document.getElementById('u-zona').value||'').trim(),activa:1});
-  save();document.getElementById('u-cod').value='';document.getElementById('u-desc').value='';document.getElementById('u-zona').value='';
-  flash('Ubicación '+cod+' creada.','ok');renderUbicaciones();
+  try{
+    setState(await api('/ubicaciones','POST',{codigo:cod,descripcion:(document.getElementById('u-desc').value||'').trim(),zona:(document.getElementById('u-zona').value||'').trim()}));
+    document.getElementById('u-cod').value='';document.getElementById('u-desc').value='';document.getElementById('u-zona').value='';
+    flash('Ubicación '+cod+' creada.','ok');renderUbicaciones();
+  }catch(e){flash(e.message,'error');}
 }
 function renderUbicaciones(){
   const q=(document.getElementById('u-buscar').value||'').toLowerCase();
@@ -419,7 +428,7 @@ function renderUbicaciones(){
     </tbody></table>`:`<div class="empty">No hay ubicaciones cargadas todavía.</div>`;
   document.getElementById('ubi-detalle').innerHTML='';
 }
-function toggleUbi(id){const u=ubi(id);if(u){u.activa=u.activa?0:1;save();renderUbicaciones();}}
+async function toggleUbi(id){try{setState(await api('/ubicaciones/toggle','POST',{id}));renderUbicaciones();}catch(e){flash(e.message,'error');}}
 function verUbicacion(id){
   switchTab('ubicaciones');const u=ubi(id);if(!u)return;
   const cont=[];for(const k in DB.stock){if(k.endsWith(':'+id)&&DB.stock[k]>0){const aid=+k.split(':')[0];cont.push({a:art(aid),c:DB.stock[k]});}}
@@ -437,13 +446,16 @@ function applyTheme(dark){document.body.classList.toggle('light',!dark);}
 window.addEventListener('message',e=>{if(e.data&&e.data.type==='zecat-theme')applyTheme(e.data.dark);});
 
 /* ══════════════ INIT ══════════════ */
-load();
 // Si estamos embebidos en el portal, ocultar la topbar propia y avisar tema
 if(window.self!==window.top){
   document.body.classList.add('embedded');
   try{window.parent.postMessage({type:'zecat-theme-ready'},'*');}catch(e){}
 }
-switchTab('dashboard');
+(async function init(){
+  try{ await recargar(); }
+  catch(e){ flash('No se pudo conectar con el servidor: '+e.message,'error'); }
+  switchTab('dashboard');
+})();
 </script>
 </body>
 </html>

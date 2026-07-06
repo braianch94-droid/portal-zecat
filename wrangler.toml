@@ -13,3 +13,9 @@ binding = "DB"
 database_name = "evaluaciones-desempeno"
 database_id = "976f9621-96f2-4f74-b604-9e2ba594ff22"
 preview_database_id = "976f9621-96f2-4f74-b604-9e2ba594ff22"
+
+[[d1_databases]]
+binding = "WMS_DB"
+database_name = "wms-muestra"
+database_id = "9e9eaf9e-1bc2-4b69-88c5-068c5bcee467"
+preview_database_id = "9e9eaf9e-1bc2-4b69-88c5-068c5bcee467"
