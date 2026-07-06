@@ -19,7 +19,7 @@ function ahora() {
 async function getState(DB) {
   const [ubis, arts, stk, movs] = await Promise.all([
     DB.prepare('SELECT * FROM ubicaciones ORDER BY codigo').all(),
-    DB.prepare('SELECT * FROM articulos ORDER BY sku').all(),
+    DB.prepare('SELECT id, sku, codigo_bejerman, descripcion, unidad, stock_minimo FROM articulos ORDER BY sku').all(),
     DB.prepare('SELECT articulo_id, ubicacion_id, cantidad FROM stock WHERE cantidad > 0').all(),
     DB.prepare('SELECT id, fecha, tipo, articulo_id, ubicacion_origen_id AS origen_id, ubicacion_destino_id AS destino_id, cantidad, usuario, nota FROM movimientos ORDER BY id DESC LIMIT 1000').all(),
   ]);
@@ -75,13 +75,17 @@ export async function onRequest(context) {
       if (method === 'POST' && seg[1] === 'bulk') {
         const items = Array.isArray(body.items) ? body.items : [];
         let inserted = 0;
-        const stmt = DB.prepare('INSERT OR IGNORE INTO articulos (sku, descripcion, unidad, stock_minimo) VALUES (?, ?, ?, ?)');
+        // Upsert por SKU: crea o actualiza descripción/unidad/código Bejerman (no toca stock_minimo)
+        const stmt = DB.prepare(
+          'INSERT INTO articulos (sku, codigo_bejerman, descripcion, unidad, stock_minimo) VALUES (?, ?, ?, ?, ?) ' +
+          'ON CONFLICT(sku) DO UPDATE SET codigo_bejerman = excluded.codigo_bejerman, descripcion = excluded.descripcion, unidad = excluded.unidad'
+        );
         for (let i = 0; i < items.length; i += 50) {
           const chunk = items.slice(i, i + 50);
           const res = await DB.batch(chunk.map(it => {
             let min = parseFloat(it.stock_minimo);
             if (!(min >= 0) || isNaN(min)) min = 0;
-            return stmt.bind((it.sku || '').trim().toUpperCase(), (it.descripcion || '').trim(), (it.unidad || 'UN').trim() || 'UN', min);
+            return stmt.bind((it.sku || '').trim().toUpperCase(), (it.codigo_bejerman || '').trim(), (it.descripcion || '').trim(), (it.unidad || 'UN').trim() || 'UN', min);
           }));
           for (const r of res) inserted += (r.meta && r.meta.changes) ? r.meta.changes : 0;
         }
@@ -93,8 +97,8 @@ export async function onRequest(context) {
         let min = parseFloat(body.stock_minimo);
         if (!(min >= 0) || isNaN(min)) min = 0;
         try {
-          await DB.prepare('INSERT INTO articulos (sku, descripcion, unidad, stock_minimo) VALUES (?, ?, ?, ?)')
-            .bind(sku, (body.descripcion || '').trim(), (body.unidad || 'UN').trim() || 'UN', min).run();
+          await DB.prepare('INSERT INTO articulos (sku, codigo_bejerman, descripcion, unidad, stock_minimo) VALUES (?, ?, ?, ?, ?)')
+            .bind(sku, (body.codigo_bejerman || '').trim(), (body.descripcion || '').trim(), (body.unidad || 'UN').trim() || 'UN', min).run();
         } catch (e) {
           if (String(e).includes('UNIQUE')) return json({error: `Ya existe un artículo con el SKU ${sku}.`}, 409);
           throw e;
@@ -104,8 +108,8 @@ export async function onRequest(context) {
       if (method === 'PUT' && seg[1]) {
         let min = parseFloat(body.stock_minimo);
         if (!(min >= 0) || isNaN(min)) min = 0;
-        await DB.prepare('UPDATE articulos SET descripcion = ?, unidad = ?, stock_minimo = ? WHERE id = ?')
-          .bind((body.descripcion || '').trim(), (body.unidad || 'UN').trim() || 'UN', min, +seg[1]).run();
+        await DB.prepare('UPDATE articulos SET codigo_bejerman = ?, descripcion = ?, unidad = ?, stock_minimo = ? WHERE id = ?')
+          .bind((body.codigo_bejerman || '').trim(), (body.descripcion || '').trim(), (body.unidad || 'UN').trim() || 'UN', min, +seg[1]).run();
         return json(await getState(DB));
       }
     }

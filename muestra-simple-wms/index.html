@@ -148,7 +148,8 @@ input::placeholder{color:var(--muted);opacity:.7}
     <div class="panel">
       <h2>Nuevo artículo</h2>
       <form class="inline" style="margin-bottom:0" onsubmit="crearArticulo();return false">
-        <div class="field"><label>SKU *</label><input id="a-sku" placeholder="TAZA-BLANCA" required></div>
+        <div class="field"><label>SKU * (Cód. Zecat)</label><input id="a-sku" placeholder="A0110000000" required></div>
+        <div class="field"><label>Cód. Bejerman</label><input id="a-bej" placeholder="19017000..."></div>
         <div class="field" style="flex:1"><label>Descripción</label><input id="a-desc" placeholder="Descripción" style="width:100%"></div>
         <div class="field"><label>Unidad</label><input id="a-un" value="UN" style="max-width:80px"></div>
         <div class="field"><label>Stock mín.</label><input id="a-min" type="number" step="any" min="0" placeholder="0" style="max-width:100px"></div>
@@ -354,21 +355,21 @@ async function crearArticulo(){
   const sku=(document.getElementById('a-sku').value||'').trim().toUpperCase();
   if(!sku){flash('El SKU es obligatorio.','error');return;}
   try{
-    setState(await api('/articulos','POST',{sku,descripcion:(document.getElementById('a-desc').value||'').trim(),
+    setState(await api('/articulos','POST',{sku,codigo_bejerman:(document.getElementById('a-bej').value||'').trim(),descripcion:(document.getElementById('a-desc').value||'').trim(),
       unidad:(document.getElementById('a-un').value||'UN').trim()||'UN',stock_minimo:document.getElementById('a-min').value}));
-    document.getElementById('a-sku').value='';document.getElementById('a-desc').value='';document.getElementById('a-un').value='UN';document.getElementById('a-min').value='';
+    document.getElementById('a-sku').value='';document.getElementById('a-bej').value='';document.getElementById('a-desc').value='';document.getElementById('a-un').value='UN';document.getElementById('a-min').value='';
     flash('Artículo '+sku+' creado.','ok');renderArticulos();
   }catch(e){flash(e.message,'error');}
 }
 function renderArticulos(){
   const q=(document.getElementById('a-buscar').value||'').toLowerCase();
   let as=DB.articulos.slice().sort((a,b)=>a.sku.localeCompare(b.sku));
-  if(q)as=as.filter(a=>a.sku.toLowerCase().includes(q)||(a.descripcion||'').toLowerCase().includes(q));
+  if(q)as=as.filter(a=>a.sku.toLowerCase().includes(q)||(a.codigo_bejerman||'').toLowerCase().includes(q)||(a.descripcion||'').toLowerCase().includes(q));
   document.getElementById('art-body').innerHTML=as.length?`
-    <table><thead><tr><th>SKU</th><th>Descripción</th><th>Unidad</th><th class="num">Ubic.</th><th class="num">Stock total</th><th class="num">Mínimo</th></tr></thead><tbody>
+    <table><thead><tr><th>SKU</th><th>Cód. Bejerman</th><th>Descripción</th><th>Unidad</th><th class="num">Ubic.</th><th class="num">Stock total</th><th class="num">Mínimo</th></tr></thead><tbody>
     ${as.map(a=>{const tot=stockTotal(a.id);const bajo=a.stock_minimo>0&&tot<a.stock_minimo;
       return `<tr><td><a class="link" onclick="verArticulo(${a.id})"><b>${esc(a.sku)}</b></a></td>
-      <td>${esc(a.descripcion)}</td><td class="muted">${esc(a.unidad)}</td><td class="num">${ubisConStock(a.id)}</td>
+      <td class="muted">${esc(a.codigo_bejerman)}</td><td>${esc(a.descripcion)}</td><td class="muted">${esc(a.unidad)}</td><td class="num">${ubisConStock(a.id)}</td>
       <td class="num" ${bajo?'style="color:var(--red);font-weight:700"':''}>${fmt(tot)}${bajo?' <span class="badge b-egreso" style="margin-left:6px">bajo mín.</span>':''}</td>
       <td class="num muted">${a.stock_minimo?fmt(a.stock_minimo):'—'}</td></tr>`;}).join('')}
     </tbody></table>`:`<div class="empty">No hay artículos cargados todavía.</div>`;
@@ -384,6 +385,7 @@ function verArticulo(id){
     <div class="panel">
       <h2>Editar artículo · ${esc(a.sku)}</h2>
       <form class="inline" style="margin-bottom:0" onsubmit="guardarArticulo(${id});return false">
+        <div class="field"><label>Cód. Bejerman</label><input id="e-bej" value="${esc(a.codigo_bejerman)}"></div>
         <div class="field" style="flex:1"><label>Descripción</label><input id="e-desc" value="${esc(a.descripcion)}" style="width:100%"></div>
         <div class="field"><label>Unidad</label><input id="e-un" value="${esc(a.unidad)}" style="max-width:80px"></div>
         <div class="field"><label>Stock mínimo</label><input id="e-min" type="number" step="any" min="0" value="${a.stock_minimo||0}" style="max-width:120px"></div>
@@ -398,7 +400,7 @@ function verArticulo(id){
 }
 async function guardarArticulo(id){
   try{
-    setState(await api('/articulos/'+id,'PUT',{descripcion:(document.getElementById('e-desc').value||'').trim(),
+    setState(await api('/articulos/'+id,'PUT',{codigo_bejerman:(document.getElementById('e-bej').value||'').trim(),descripcion:(document.getElementById('e-desc').value||'').trim(),
       unidad:(document.getElementById('e-un').value||'UN').trim()||'UN',stock_minimo:document.getElementById('e-min').value}));
     flash('Artículo actualizado.','ok');renderArticulos();verArticulo(id);
   }catch(e){flash(e.message,'error');}
