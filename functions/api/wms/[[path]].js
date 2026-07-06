@@ -71,6 +71,22 @@ export async function onRequest(context) {
 
     // === ARTÍCULOS ===
     if (seg[0] === 'articulos') {
+      // Carga masiva (maestro). Idempotente: INSERT OR IGNORE por SKU único.
+      if (method === 'POST' && seg[1] === 'bulk') {
+        const items = Array.isArray(body.items) ? body.items : [];
+        let inserted = 0;
+        const stmt = DB.prepare('INSERT OR IGNORE INTO articulos (sku, descripcion, unidad, stock_minimo) VALUES (?, ?, ?, ?)');
+        for (let i = 0; i < items.length; i += 50) {
+          const chunk = items.slice(i, i + 50);
+          const res = await DB.batch(chunk.map(it => {
+            let min = parseFloat(it.stock_minimo);
+            if (!(min >= 0) || isNaN(min)) min = 0;
+            return stmt.bind((it.sku || '').trim().toUpperCase(), (it.descripcion || '').trim(), (it.unidad || 'UN').trim() || 'UN', min);
+          }));
+          for (const r of res) inserted += (r.meta && r.meta.changes) ? r.meta.changes : 0;
+        }
+        return json({ok: true, received: items.length, inserted});
+      }
       if (method === 'POST') {
         const sku = (body.sku || '').trim().toUpperCase();
         if (!sku) return json({error: 'El SKU es obligatorio.'}, 400);
