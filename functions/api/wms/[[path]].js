@@ -114,6 +114,53 @@ export async function onRequest(context) {
       }
     }
 
+    // === CARGA MASIVA DE STOCK (saldos) ===
+    // body: { ubicacion:{codigo,descripcion,zona}, items:[{sku,cantidad,stock_minimo}] }
+    // Setea stock ABSOLUTO en la ubicación e (opcional) stock_minimo del artículo. Idempotente.
+    if (seg[0] === 'stock' && seg[1] === 'bulk' && method === 'POST') {
+      const u = body.ubicacion || {};
+      const cod = (u.codigo || '').trim().toUpperCase();
+      if (!cod) return json({error: 'Falta el código de ubicación.'}, 400);
+      let loc = await DB.prepare('SELECT id FROM ubicaciones WHERE codigo = ?').bind(cod).first();
+      if (!loc) {
+        await DB.prepare('INSERT INTO ubicaciones (codigo, descripcion, zona, activa) VALUES (?, ?, ?, 1)')
+          .bind(cod, (u.descripcion || '').trim(), (u.zona || '').trim()).run();
+        loc = await DB.prepare('SELECT id FROM ubicaciones WHERE codigo = ?').bind(cod).first();
+      }
+      const uid = loc.id;
+      const items = Array.isArray(body.items) ? body.items : [];
+      const stmtMin = DB.prepare('UPDATE articulos SET stock_minimo = ? WHERE sku = ?');
+      const stmtStock = DB.prepare(
+        'INSERT INTO stock (articulo_id, ubicacion_id, cantidad) ' +
+        'SELECT id, ?, ? FROM articulos WHERE sku = ? ' +
+        'ON CONFLICT(articulo_id, ubicacion_id) DO UPDATE SET cantidad = excluded.cantidad'
+      );
+      let minRows = 0, stockRows = 0;
+      for (let i = 0; i < items.length; i += 40) {
+        const chunk = items.slice(i, i + 40);
+        const stmts = [];
+        for (const it of chunk) {
+          const sku = (it.sku || '').trim().toUpperCase();
+          if (!sku) continue;
+          let min = parseFloat(it.stock_minimo);
+          if (!(min >= 0) || isNaN(min)) min = 0;
+          let cant = parseFloat(it.cantidad);
+          if (isNaN(cant)) cant = 0;
+          stmts.push(stmtMin.bind(min, sku));
+          if (cant > 0) stmts.push(stmtStock.bind(uid, cant, sku));
+        }
+        if (stmts.length) {
+          const res = await DB.batch(stmts);
+          for (const r of res) {
+            const ch = (r.meta && r.meta.changes) ? r.meta.changes : 0;
+            // no distinguimos fino; sumamos como filas afectadas
+            stockRows += ch;
+          }
+        }
+      }
+      return json({ok: true, ubicacion: cod, ubicacion_id: uid, received: items.length, filas_afectadas: stockRows, min_rows: minRows});
+    }
+
     // === MOVIMIENTO (ingreso / egreso / transferencia) ===
     if (seg[0] === 'mover' && method === 'POST') {
       const tipo = body.tipo;
