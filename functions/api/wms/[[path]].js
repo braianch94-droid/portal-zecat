@@ -161,6 +161,23 @@ export async function onRequest(context) {
       return json({ok: true, ubicacion: cod, ubicacion_id: uid, received: items.length, filas_afectadas: stockRows, min_rows: minRows});
     }
 
+    // === FIJAR STOCK de un artículo en una posición (carga manual, cantidad absoluta) ===
+    if (seg[0] === 'stock' && seg[1] === 'set' && method === 'POST') {
+      const uid = +body.ubicacion_id, aid = +body.articulo_id;
+      if (!uid || !aid) return json({error: 'Faltan ubicación o artículo.'}, 400);
+      let c = parseFloat(body.cantidad);
+      if (isNaN(c) || c < 0) c = 0;
+      if (c <= 0) {
+        await DB.prepare('DELETE FROM stock WHERE articulo_id = ? AND ubicacion_id = ?').bind(aid, uid).run();
+      } else {
+        await DB.prepare(
+          'INSERT INTO stock (articulo_id, ubicacion_id, cantidad) VALUES (?, ?, ?) ' +
+          'ON CONFLICT(articulo_id, ubicacion_id) DO UPDATE SET cantidad = excluded.cantidad'
+        ).bind(aid, uid, c).run();
+      }
+      return json(await getState(DB));
+    }
+
     // === MOVIMIENTO (ingreso / egreso / transferencia) ===
     if (seg[0] === 'mover' && method === 'POST') {
       const tipo = body.tipo;

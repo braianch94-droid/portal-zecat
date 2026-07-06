@@ -84,6 +84,14 @@ input::placeholder{color:var(--muted);opacity:.7}
 .view{display:none}
 .view.active{display:block}
 .hint{font-size:12px;margin-top:2px}
+.ac-wrap{position:relative}
+.ac-results{position:absolute;top:100%;left:0;right:0;z-index:50;background:var(--panel-solid);border:1px solid var(--line);border-radius:8px;margin-top:4px;max-height:280px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.3);display:none}
+.ac-results.open{display:block}
+.ac-item{padding:8px 11px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--line)}
+.ac-item:last-child{border-bottom:none}
+.ac-item:hover,.ac-item.sel{background:var(--accent-soft)}
+.ac-item b{color:var(--accent)}
+.ac-item .d{color:var(--muted);font-size:12px}
 </style>
 </head>
 <body>
@@ -93,6 +101,7 @@ input::placeholder{color:var(--muted);opacity:.7}
   <div class="logo">WMS <b>Muestra</b></div>
   <button class="tb-item" data-tab="dashboard" onclick="switchTab('dashboard')">Dashboard</button>
   <button class="tb-item" data-tab="mover" onclick="switchTab('mover')">Movimientos</button>
+  <button class="tb-item" data-tab="carga" onclick="switchTab('carga')">Cargar stock</button>
   <button class="tb-item" data-tab="historial" onclick="switchTab('historial')">Historial</button>
   <button class="tb-item" data-tab="articulos" onclick="switchTab('articulos')">Artículos</button>
   <button class="tb-item" data-tab="ubicaciones" onclick="switchTab('ubicaciones')">Ubicaciones</button>
@@ -123,6 +132,21 @@ input::placeholder{color:var(--muted);opacity:.7}
       <button id="mt-TRANSFERENCIA" onclick="setMovTipo('TRANSFERENCIA')">⇄ Transferencia</button>
     </div>
     <div class="panel" style="max-width:620px" id="mover-form-wrap"></div>
+  </div>
+
+  <!-- ═══ CARGAR STOCK ═══ -->
+  <div class="view" id="v-carga">
+    <h1>Cargar stock por ubicación</h1>
+    <div class="sub">Elegí una posición y cargá los artículos con su cantidad. Podés poner varios artículos en la misma posición.</div>
+    <div class="panel" style="max-width:420px">
+      <div class="field">
+        <label>Ubicación / posición</label>
+        <input list="dl-ubis" id="c-ubi" placeholder="Ej: A-1-10" autocomplete="off" oninput="selectCargaUbi()">
+        <datalist id="dl-ubis"></datalist>
+        <span class="hint muted" id="c-ubi-hint"></span>
+      </div>
+    </div>
+    <div id="carga-detalle"></div>
   </div>
 
   <!-- ═══ HISTORIAL ═══ -->
@@ -220,7 +244,7 @@ function flash(msg,cat){const f=document.getElementById('flash');f.textContent=m
 /* ══════════════ NAVEGACIÓN (switchTab: contrato con el portal) ══════════════ */
 let currentTab='dashboard';
 function switchTab(tab){
-  const valid=['dashboard','mover','historial','articulos','ubicaciones'];
+  const valid=['dashboard','mover','carga','historial','articulos','ubicaciones'];
   if(!valid.includes(tab))tab='dashboard';
   currentTab=tab;
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
@@ -235,6 +259,7 @@ window.switchTab=switchTab;
 function render(){
   if(currentTab==='dashboard')renderDashboard();
   else if(currentTab==='mover')renderMover();
+  else if(currentTab==='carga')renderCarga();
   else if(currentTab==='historial')renderHistorial();
   else if(currentTab==='articulos')renderArticulos();
   else if(currentTab==='ubicaciones')renderUbicaciones();
@@ -330,6 +355,97 @@ async function registrarMov(btn){
     setState(await api('/mover','POST',{tipo:movTipo,articulo_id:a,origen_id:o,destino_id:d,cantidad:cant,usuario:user,nota:nota}));
     flash('Movimiento registrado correctamente.','ok');renderMover();
   }catch(e){flash(e.message,'error');if(btn)btn.disabled=false;}
+}
+
+/* ── CARGAR STOCK POR UBICACIÓN ── */
+let cargaUbiId=null, cargaArtSel=null;
+function renderCarga(){
+  // poblar datalist de ubicaciones (activas)
+  const dl=document.getElementById('dl-ubis');
+  dl.innerHTML=DB.ubicaciones.filter(u=>u.activa).map(u=>`<option value="${esc(u.codigo)}">`).join('');
+  selectCargaUbi();
+}
+function selectCargaUbi(){
+  const val=(document.getElementById('c-ubi').value||'').trim().toUpperCase();
+  const hint=document.getElementById('c-ubi-hint');
+  const u=DB.ubicaciones.find(x=>x.codigo===val);
+  if(!u){ cargaUbiId=null; hint.textContent=val?'Posición no encontrada':''; hint.style.color='var(--red)'; document.getElementById('carga-detalle').innerHTML=''; return; }
+  cargaUbiId=u.id;
+  hint.textContent='✓ '+(u.descripcion||u.codigo); hint.style.color='var(--green)';
+  renderCargaContenido();
+}
+function renderCargaContenido(){
+  const u=ubi(cargaUbiId); if(!u){document.getElementById('carga-detalle').innerHTML='';return;}
+  const cont=[];for(const k in DB.stock){if(k.endsWith(':'+cargaUbiId)&&DB.stock[k]>0){const aid=+k.split(':')[0];cont.push({a:art(aid),c:DB.stock[k]});}}
+  cont.sort((x,y)=>x.a.sku.localeCompare(y.a.sku));
+  document.getElementById('carga-detalle').innerHTML=`
+    <div class="panel" style="max-width:720px">
+      <h2>Agregar artículo a ${esc(u.codigo)}</h2>
+      <div class="ac-wrap" style="margin-bottom:12px">
+        <input id="ca-art" placeholder="Buscá por SKU, Bejerman o nombre…" autocomplete="off" oninput="buscarArtCarga(this.value)" onfocus="buscarArtCarga(this.value)">
+        <div class="ac-results" id="ca-res"></div>
+      </div>
+      <div class="inline" style="margin-bottom:0">
+        <div class="field"><label>Cantidad</label><input id="ca-cant" type="number" step="any" min="0" placeholder="0" style="max-width:140px" onkeydown="if(event.key==='Enter')agregarLineaCarga(this)"></div>
+        <button class="btn" onclick="agregarLineaCarga(this)">Agregar / actualizar</button>
+      </div>
+      <span class="hint muted" id="ca-sel"></span>
+    </div>
+    <div class="panel" style="max-width:720px">
+      <h2>Contenido de ${esc(u.codigo)} — ${cont.length} artículo(s)</h2>
+      ${cont.length?`<table><thead><tr><th>SKU</th><th>Descripción</th><th class="num">Cantidad</th><th></th></tr></thead><tbody>
+        ${cont.map(x=>`<tr>
+          <td><b>${esc(x.a.sku)}</b><br><span class="muted" style="font-size:11px">${esc(x.a.codigo_bejerman)}</span></td>
+          <td>${esc(x.a.descripcion)}</td>
+          <td class="num"><input type="number" step="any" min="0" value="${x.c}" id="ed-${x.a.id}" style="max-width:90px;text-align:right"></td>
+          <td class="num"><button class="btn btn-ghost btn-sm" onclick="guardarLineaCarga(${x.a.id})">Guardar</button>
+              <button class="btn btn-ghost btn-sm" onclick="quitarLineaCarga(${x.a.id})">Quitar</button></td>
+        </tr>`).join('')}
+      </tbody></table>`:'<div class="empty">La posición está vacía. Agregá el primer artículo arriba.</div>'}
+    </div>`;
+  cargaArtSel=null;
+  const inp=document.getElementById('ca-art'); if(inp)inp.focus();
+}
+function buscarArtCarga(q){
+  q=(q||'').trim().toLowerCase();
+  const box=document.getElementById('ca-res'); if(!box)return;
+  if(!q){box.className='ac-results';box.innerHTML='';return;}
+  const res=DB.articulos.filter(a=>a.sku.toLowerCase().includes(q)||(a.codigo_bejerman||'').toLowerCase().includes(q)||(a.descripcion||'').toLowerCase().includes(q)).slice(0,15);
+  if(!res.length){box.className='ac-results open';box.innerHTML='<div class="ac-item muted">Sin resultados</div>';return;}
+  box.className='ac-results open';
+  box.innerHTML=res.map(a=>`<div class="ac-item" onclick="pickArtCarga(${a.id})"><b>${esc(a.sku)}</b> <span class="d">${esc(a.codigo_bejerman)} · ${esc(a.descripcion)}</span></div>`).join('');
+}
+function pickArtCarga(id){
+  const a=art(id); if(!a)return;
+  cargaArtSel=id;
+  document.getElementById('ca-art').value=a.sku+' · '+(a.descripcion||'');
+  document.getElementById('ca-res').className='ac-results';
+  const sel=document.getElementById('ca-sel'); if(sel){sel.textContent='Seleccionado: '+a.sku; sel.style.color='var(--green)';}
+  const c=document.getElementById('ca-cant'); if(c)c.focus();
+}
+async function agregarLineaCarga(btn){
+  if(!cargaUbiId){flash('Elegí una ubicación.','error');return;}
+  if(!cargaArtSel){flash('Buscá y elegí un artículo de la lista.','error');return;}
+  const cant=parseFloat(document.getElementById('ca-cant').value);
+  if(!(cant>0)){flash('Ingresá una cantidad mayor a cero.','error');return;}
+  if(btn)btn.disabled=true;
+  try{
+    setState(await api('/stock/set','POST',{ubicacion_id:cargaUbiId,articulo_id:cargaArtSel,cantidad:cant}));
+    flash('Stock cargado.','ok');renderCargaContenido();
+  }catch(e){flash(e.message,'error');if(btn)btn.disabled=false;}
+}
+async function guardarLineaCarga(aid){
+  const cant=parseFloat(document.getElementById('ed-'+aid).value);
+  try{
+    setState(await api('/stock/set','POST',{ubicacion_id:cargaUbiId,articulo_id:aid,cantidad:isNaN(cant)?0:cant}));
+    flash('Cantidad actualizada.','ok');renderCargaContenido();
+  }catch(e){flash(e.message,'error');}
+}
+async function quitarLineaCarga(aid){
+  try{
+    setState(await api('/stock/set','POST',{ubicacion_id:cargaUbiId,articulo_id:aid,cantidad:0}));
+    flash('Artículo quitado de la posición.','ok');renderCargaContenido();
+  }catch(e){flash(e.message,'error');}
 }
 
 /* ── HISTORIAL ── */
