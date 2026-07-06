@@ -92,6 +92,19 @@ input::placeholder{color:var(--muted);opacity:.7}
 .ac-item:hover,.ac-item.sel{background:var(--accent-soft)}
 .ac-item b{color:var(--accent)}
 .ac-item .d{color:var(--muted);font-size:12px}
+.charts{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px}
+@media(max-width:820px){.charts{grid-template-columns:1fr}}
+.bar-row{display:flex;align-items:center;gap:10px;margin:7px 0;font-size:13px}
+.bar-lbl{width:130px;flex-shrink:0;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bar-track{flex:1;background:var(--inp);border-radius:6px;height:16px;overflow:hidden}
+.bar-fill{height:100%;background:var(--accent);border-radius:6px;min-width:2px}
+.bar-val{width:74px;text-align:right;flex-shrink:0;font-variant-numeric:tabular-nums;font-weight:600}
+.occ{height:22px;background:var(--inp);border-radius:8px;overflow:hidden}
+.occ-fill{height:100%;background:var(--green);border-radius:8px 0 0 8px;min-width:2px}
+.pager{display:flex;gap:10px;align-items:center;margin-top:12px}
+.filters{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-bottom:16px}
+.chip{padding:7px 13px;border-radius:999px;background:var(--panel);border:1px solid var(--line);color:var(--muted);font-size:13px;font-weight:600;cursor:pointer}
+.chip.active{background:var(--accent-soft);color:var(--accent);border-color:var(--accent)}
 </style>
 </head>
 <body>
@@ -115,6 +128,7 @@ input::placeholder{color:var(--muted);opacity:.7}
     <h1>Panel de control</h1>
     <div class="sub">Vista general del depósito</div>
     <div id="repo-alert"></div>
+    <div id="dash-charts"></div>
     <div class="cards" id="dash-cards"></div>
     <div class="row2">
       <div class="panel"><h2>Últimos movimientos</h2><div id="dash-ultimos"></div></div>
@@ -160,6 +174,8 @@ input::placeholder{color:var(--muted);opacity:.7}
           <option value="EGRESO">Egreso</option><option value="TRANSFERENCIA">Transferencia</option>
         </select>
       </div>
+      <div class="field"><label>Desde</label><input id="h-desde" type="date" onchange="renderHistorial()"></div>
+      <div class="field"><label>Hasta</label><input id="h-hasta" type="date" onchange="renderHistorial()"></div>
       <div class="field"><label>Buscar</label><input id="h-q" placeholder="SKU, descripción o nota" oninput="renderHistorial()"></div>
     </form>
     <div class="panel" id="hist-body"></div>
@@ -180,7 +196,17 @@ input::placeholder{color:var(--muted);opacity:.7}
         <button class="btn" type="submit">Agregar</button>
       </form>
     </div>
-    <form class="inline" onsubmit="return false"><div class="field"><label>Buscar</label><input id="a-buscar" placeholder="SKU o descripción" oninput="renderArticulos()"></div></form>
+    <form class="filters" onsubmit="return false">
+      <div class="field" style="flex:1;min-width:220px"><label>Buscar</label><input id="a-buscar" placeholder="SKU, Bejerman o descripción" oninput="artLimit=100;renderArticulos()" style="width:100%"></div>
+      <div class="field"><label>Filtro</label>
+        <select id="a-filtro" onchange="artLimit=100;renderArticulos()">
+          <option value="todos">Todos</option>
+          <option value="con">Con stock</option>
+          <option value="sin">Sin stock</option>
+          <option value="bajo">Bajo mínimo</option>
+        </select>
+      </div>
+    </form>
     <div class="panel" id="art-body"></div>
     <div id="art-detalle"></div>
   </div>
@@ -198,7 +224,23 @@ input::placeholder{color:var(--muted);opacity:.7}
         <button class="btn" type="submit">Agregar</button>
       </form>
     </div>
-    <form class="inline" onsubmit="return false"><div class="field"><label>Buscar</label><input id="u-buscar" placeholder="Código, descripción o zona" oninput="renderUbicaciones()"></div></form>
+    <form class="filters" onsubmit="return false">
+      <div class="field" style="flex:1;min-width:200px"><label>Buscar</label><input id="u-buscar" placeholder="Código, descripción o zona" oninput="renderUbicaciones()" style="width:100%"></div>
+      <div class="field"><label>Pasillo</label>
+        <select id="u-pasillo" onchange="renderUbicaciones()">
+          <option value="">Todos</option>
+          <option>A</option><option>B</option><option>C</option><option>D</option><option>E</option><option>F</option><option>G</option>
+          <option value="SALDOS">SALDOS</option>
+        </select>
+      </div>
+      <div class="field"><label>Estado</label>
+        <select id="u-estado" onchange="renderUbicaciones()">
+          <option value="todas">Todas</option>
+          <option value="con">Con stock</option>
+          <option value="vacias">Vacías</option>
+        </select>
+      </div>
+    </form>
     <div class="panel" id="ubi-body"></div>
     <div id="ubi-detalle"></div>
   </div>
@@ -266,29 +308,57 @@ function render(){
 }
 
 /* ── DASHBOARD ── */
+function barsHTML(items){
+  if(!items.length)return '<div class="empty">Sin datos todavía.</div>';
+  const max=Math.max(...items.map(i=>i.value),1);
+  return items.map(i=>`<div class="bar-row"><span class="bar-lbl" title="${esc(i.label)}">${esc(i.label)}</span><div class="bar-track"><div class="bar-fill" style="width:${Math.max(2,i.value/max*100)}%"></div></div><span class="bar-val">${fmt(i.value)}</span></div>`).join('');
+}
 function renderDashboard(){
   const totalArt=DB.articulos.length;
   const totalUbi=DB.ubicaciones.filter(u=>u.activa).length;
-  let totalUnid=0;for(const k in DB.stock)totalUnid+=DB.stock[k];
+  // precálculo de stock en una sola pasada
+  const unitsByUbi={}, refsByUbi={}, unitsByArt={};
+  let totalUnid=0;
+  for(const k in DB.stock){const c=DB.stock[k]; if(c>0){const p=k.split(':'),aid=p[0],uid=p[1];
+    totalUnid+=c; unitsByUbi[uid]=(unitsByUbi[uid]||0)+c; refsByUbi[uid]=(refsByUbi[uid]||0)+1; unitsByArt[aid]=(unitsByArt[aid]||0)+c;}}
   const hoy=now().slice(0,10);
   const movsHoy=DB.movimientos.filter(m=>m.fecha.slice(0,10)===hoy).length;
+
+  // KPIs
   document.getElementById('dash-cards').innerHTML=`
     <div class="card"><div class="k">Artículos</div><div class="v">${totalArt}</div></div>
     <div class="card"><div class="k">Ubicaciones activas</div><div class="v">${totalUbi}</div></div>
     <div class="card"><div class="k">Unidades en stock</div><div class="v">${fmt(totalUnid)}</div></div>
     <div class="card"><div class="k">Movimientos hoy</div><div class="v">${movsHoy}</div></div>`;
 
+  // GRÁFICOS (primero)
+  const porPasillo={};
+  DB.ubicaciones.forEach(u=>{const p=u.codigo==='SALDOS'?'SALDOS':(u.codigo.split('-')[0]||'?'); porPasillo[p]=(porPasillo[p]||0)+(unitsByUbi[u.id]||0);});
+  const pasilloItems=Object.keys(porPasillo).sort().map(p=>({label:p,value:porPasillo[p]})).filter(i=>i.value>0);
+  const topItems=Object.keys(unitsByArt).map(aid=>({label:(art(+aid)||{}).sku||'?',value:unitsByArt[aid]})).sort((a,b)=>b.value-a.value).slice(0,10);
+  const reales=DB.ubicaciones.filter(u=>u.codigo!=='SALDOS'); const totReal=reales.length;
+  const occ=reales.filter(u=>(unitsByUbi[u.id]||0)>0).length; const pctOcc=totReal?Math.round(occ/totReal*100):0;
+  document.getElementById('dash-charts').innerHTML=`
+    <div class="charts">
+      <div class="panel"><h2>Stock por pasillo</h2>${barsHTML(pasilloItems)}</div>
+      <div class="panel"><h2>Top 10 artículos por stock</h2>${barsHTML(topItems)}</div>
+    </div>
+    <div class="panel"><h2>Ocupación de posiciones (sin contar SALDOS)</h2>
+      <div class="occ"><div class="occ-fill" style="width:${pctOcc}%"></div></div>
+      <div class="muted" style="margin-top:8px;font-size:13px">${occ} de ${totReal} posiciones con stock (${pctOcc}%) · ${totReal-occ} vacías</div>
+    </div>`;
+
   // reposición
-  const repo=DB.articulos.map(a=>({a,total:stockTotal(a.id)})).filter(x=>x.a.stock_minimo>0&&x.total<x.a.stock_minimo)
+  const repo=DB.articulos.map(a=>({a,total:unitsByArt[a.id]||0})).filter(x=>x.a.stock_minimo>0&&x.total<x.a.stock_minimo)
     .sort((x,y)=>(y.a.stock_minimo-y.total)-(x.a.stock_minimo-x.total));
   document.getElementById('repo-alert').innerHTML=repo.length?`
     <div class="panel" style="border-color:rgba(251,191,36,.5);background:rgba(251,191,36,.06)">
       <h2 style="color:var(--amber)">⚠ Reposición sugerida — ${repo.length} artículo(s) bajo el mínimo</h2>
       <table><thead><tr><th>SKU</th><th>Descripción</th><th class="num">Stock</th><th class="num">Mínimo</th><th class="num">Faltante</th></tr></thead><tbody>
-      ${repo.map(x=>`<tr><td><a class="link" onclick="verArticulo(${x.a.id})"><b>${esc(x.a.sku)}</b></a></td>
+      ${repo.slice(0,50).map(x=>`<tr><td><a class="link" onclick="verArticulo(${x.a.id})"><b>${esc(x.a.sku)}</b></a></td>
         <td>${esc(x.a.descripcion)}</td><td class="num" style="color:var(--red)">${fmt(x.total)} ${esc(x.a.unidad)}</td>
         <td class="num">${fmt(x.a.stock_minimo)}</td><td class="num" style="color:var(--amber);font-weight:700">${fmt(x.a.stock_minimo-x.total)}</td></tr>`).join('')}
-      </tbody></table></div>`:'';
+      </tbody></table>${repo.length>50?`<div class="muted" style="margin-top:8px;font-size:12px">Mostrando 50 de ${repo.length}. Filtrá en Artículos → "Bajo mínimo" para ver todos.</div>`:''}</div>`:'';
 
   // últimos movimientos
   const ult=DB.movimientos.slice(0,10);
@@ -297,14 +367,14 @@ function renderDashboard(){
     ${ult.map(m=>rowMov(m)).join('')}</tbody></table>`
     :`<div class="empty">Todavía no hay movimientos. Empezá por un <a class="link" onclick="switchTab('mover')">ingreso</a>.</div>`;
 
-  // ocupación
-  const oc=DB.ubicaciones.filter(u=>u.activa).map(u=>{let un=0,rf=0;for(const k in DB.stock){if(k.endsWith(':'+u.id)&&DB.stock[k]>0){un+=DB.stock[k];rf++;}}return{u,un,rf};})
-    .sort((a,b)=>b.un-a.un).slice(0,10);
+  // ocupación (top 10 por unidades)
+  const oc=DB.ubicaciones.filter(u=>u.activa).map(u=>({u,un:unitsByUbi[u.id]||0,rf:refsByUbi[u.id]||0}))
+    .filter(o=>o.un>0).sort((a,b)=>b.un-a.un).slice(0,10);
   document.getElementById('dash-ocupacion').innerHTML=oc.length?`
     <table><thead><tr><th>Ubicación</th><th class="num">Refs</th><th class="num">Unid.</th></tr></thead><tbody>
     ${oc.map(o=>`<tr><td><b>${esc(o.u.codigo)}</b><br><span class="muted" style="font-size:11px">${esc(o.u.descripcion)}</span></td>
       <td class="num">${o.rf}</td><td class="num">${fmt(o.un)}</td></tr>`).join('')}</tbody></table>`
-    :`<div class="empty">Sin ubicaciones cargadas.</div>`;
+    :`<div class="empty">Sin stock cargado en ubicaciones.</div>`;
 }
 function badge(t){return t==='INGRESO'?'<span class="badge b-ingreso">Ingreso</span>':t==='EGRESO'?'<span class="badge b-egreso">Egreso</span>':'<span class="badge b-transf">Transf.</span>';}
 function rowMov(m){const a=art(m.articulo_id)||{};const o=m.origen_id?ubi(m.origen_id):null;const d=m.destino_id?ubi(m.destino_id):null;
@@ -320,36 +390,40 @@ function renderMover(){
   const w=document.getElementById('mover-form-wrap');
   if(!DB.articulos.length||!DB.ubicaciones.filter(u=>u.activa).length){
     w.innerHTML=`<div class="empty">Necesitás al menos un <a class="link" onclick="switchTab('articulos')">artículo</a> y una <a class="link" onclick="switchTab('ubicaciones')">ubicación</a> activa antes de mover stock.</div>`;return;}
-  const arts=DB.articulos.slice().sort((a,b)=>a.sku.localeCompare(b.sku));
   const ubis=DB.ubicaciones.filter(u=>u.activa).slice().sort((a,b)=>a.codigo.localeCompare(b.codigo));
-  const optA=arts.map(a=>`<option value="${a.id}">${esc(a.sku)} · ${esc(a.descripcion)}</option>`).join('');
-  const optU=ubis.map(u=>`<option value="${u.id}">${esc(u.codigo)} · ${esc(u.descripcion)}</option>`).join('');
+  const optU=ubis.map(u=>`<option value="${esc(u.codigo)}">`).join('');
   const needOrigen=movTipo!=='INGRESO', needDestino=movTipo!=='EGRESO';
   w.innerHTML=`
+    <datalist id="dl-ubis-mover">${optU}</datalist>
     <div class="field" style="margin-bottom:14px"><label>Artículo</label>
-      <select id="m-art" onchange="hintStock()"><option value="">— Elegí un artículo —</option>${optA}</select></div>
+      <div class="ac-wrap"><input id="ac-inp-mover" placeholder="Buscá por SKU, Bejerman o nombre…" autocomplete="off" oninput="acBuscar('mover',this.value)" onfocus="acBuscar('mover',this.value)"><div class="ac-results" id="ac-res-mover"></div></div></div>
     ${needOrigen?`<div class="field" style="margin-bottom:14px"><label>Ubicación de origen${movTipo==='TRANSFERENCIA'?' (de dónde sale)':''}</label>
-      <select id="m-ori" onchange="hintStock()"><option value="">— Elegí origen —</option>${optU}</select>
+      <input list="dl-ubis-mover" id="m-ori-inp" placeholder="Ej: A-1-10" autocomplete="off" oninput="hintStock()">
       <span class="muted hint" id="m-hint"></span></div>`:''}
     ${needDestino?`<div class="field" style="margin-bottom:14px"><label>Ubicación de destino${movTipo==='TRANSFERENCIA'?' (a dónde va)':''}</label>
-      <select id="m-dest"><option value="">— Elegí destino —</option>${optU}</select></div>`:''}
+      <input list="dl-ubis-mover" id="m-dest-inp" placeholder="Ej: A-1-10" autocomplete="off"></div>`:''}
     <div class="field" style="margin-bottom:14px"><label>Cantidad</label><input id="m-cant" type="number" step="any" min="0" placeholder="0" style="max-width:200px"></div>
     <div class="field" style="margin-bottom:14px"><label>Usuario / operario (opcional)</label><input id="m-user" placeholder="Nombre"></div>
     <div class="field" style="margin-bottom:18px"><label>Nota (opcional)</label><input id="m-nota" placeholder="Remito, OC, observación…"></div>
     <button class="btn" onclick="registrarMov(this)">Registrar ${movTipo.toLowerCase()}</button>`;
+  artSelCtx.mover=null;
 }
+function ubiIdByCodigo(v){v=(v||'').trim().toUpperCase();const u=DB.ubicaciones.find(x=>x.codigo===v);return u?u.id:null;}
 function hintStock(){const h=document.getElementById('m-hint');if(!h)return;
-  const a=+document.getElementById('m-art').value, o=+document.getElementById('m-ori').value;
+  const a=artSelCtx.mover, oEl=document.getElementById('m-ori-inp'); const o=oEl?ubiIdByCodigo(oEl.value):null;
   if(!a||!o){h.textContent='';return;}
   const s=getStock(a,o);h.textContent='Disponible en origen: '+fmt(s);h.style.color=s>0?'var(--green)':'var(--red)';}
 async function registrarMov(btn){
-  const a=+document.getElementById('m-art').value;
+  const a=artSelCtx.mover;
   const cant=parseFloat(document.getElementById('m-cant').value);
-  const oEl=document.getElementById('m-ori'), dEl=document.getElementById('m-dest');
-  const o=oEl?+oEl.value:null, d=dEl?+dEl.value:null;
+  const oEl=document.getElementById('m-ori-inp'), dEl=document.getElementById('m-dest-inp');
+  const o=oEl?ubiIdByCodigo(oEl.value):null, d=dEl?ubiIdByCodigo(dEl.value):null;
   const user=(document.getElementById('m-user').value||'').trim();
   const nota=(document.getElementById('m-nota').value||'').trim();
-  if(!a||!(cant>0)){flash('Completá artículo y cantidad válida.','error');return;}
+  if(!a){flash('Buscá y elegí un artículo de la lista.','error');return;}
+  if(!(cant>0)){flash('Ingresá una cantidad mayor a cero.','error');return;}
+  if(oEl&&oEl.value.trim()&&!o){flash('La ubicación de origen no existe.','error');return;}
+  if(dEl&&dEl.value.trim()&&!d){flash('La ubicación de destino no existe.','error');return;}
   if(btn)btn.disabled=true;
   try{
     setState(await api('/mover','POST',{tipo:movTipo,articulo_id:a,origen_id:o,destino_id:d,cantidad:cant,usuario:user,nota:nota}));
@@ -357,10 +431,28 @@ async function registrarMov(btn){
   }catch(e){flash(e.message,'error');if(btn)btn.disabled=false;}
 }
 
+/* ── AUTOCOMPLETADO DE ARTÍCULOS (reusable: carga / mover) ── */
+let artSelCtx={carga:null, mover:null};
+function acBuscar(ctx,q){
+  const box=document.getElementById('ac-res-'+ctx); if(!box)return;
+  q=(q||'').trim().toLowerCase();
+  if(!q){box.className='ac-results';box.innerHTML='';artSelCtx[ctx]=null;return;}
+  const res=DB.articulos.filter(a=>a.sku.toLowerCase().includes(q)||(a.codigo_bejerman||'').toLowerCase().includes(q)||(a.descripcion||'').toLowerCase().includes(q)).slice(0,15);
+  box.className='ac-results open';
+  box.innerHTML=res.length?res.map(a=>`<div class="ac-item" onclick="acPick('${ctx}',${a.id})"><b>${esc(a.sku)}</b> <span class="d">${esc(a.codigo_bejerman)} · ${esc(a.descripcion)}</span></div>`).join(''):'<div class="ac-item muted">Sin resultados</div>';
+}
+function acPick(ctx,id){
+  const a=art(id); if(!a)return;
+  artSelCtx[ctx]=id;
+  document.getElementById('ac-inp-'+ctx).value=a.sku+' · '+(a.descripcion||'');
+  document.getElementById('ac-res-'+ctx).className='ac-results';
+  if(ctx==='carga'){const c=document.getElementById('ca-cant');if(c)c.focus();}
+  else if(ctx==='mover'){hintStock();const c=document.getElementById('m-cant');if(c)c.focus();}
+}
+
 /* ── CARGAR STOCK POR UBICACIÓN ── */
-let cargaUbiId=null, cargaArtSel=null;
+let cargaUbiId=null;
 function renderCarga(){
-  // poblar datalist de ubicaciones (activas)
   const dl=document.getElementById('dl-ubis');
   dl.innerHTML=DB.ubicaciones.filter(u=>u.activa).map(u=>`<option value="${esc(u.codigo)}">`).join('');
   selectCargaUbi();
@@ -382,14 +474,13 @@ function renderCargaContenido(){
     <div class="panel" style="max-width:720px">
       <h2>Agregar artículo a ${esc(u.codigo)}</h2>
       <div class="ac-wrap" style="margin-bottom:12px">
-        <input id="ca-art" placeholder="Buscá por SKU, Bejerman o nombre…" autocomplete="off" oninput="buscarArtCarga(this.value)" onfocus="buscarArtCarga(this.value)">
-        <div class="ac-results" id="ca-res"></div>
+        <input id="ac-inp-carga" placeholder="Buscá por SKU, Bejerman o nombre…" autocomplete="off" oninput="acBuscar('carga',this.value)" onfocus="acBuscar('carga',this.value)">
+        <div class="ac-results" id="ac-res-carga"></div>
       </div>
       <div class="inline" style="margin-bottom:0">
         <div class="field"><label>Cantidad</label><input id="ca-cant" type="number" step="any" min="0" placeholder="0" style="max-width:140px" onkeydown="if(event.key==='Enter')agregarLineaCarga(this)"></div>
         <button class="btn" onclick="agregarLineaCarga(this)">Agregar / actualizar</button>
       </div>
-      <span class="hint muted" id="ca-sel"></span>
     </div>
     <div class="panel" style="max-width:720px">
       <h2>Contenido de ${esc(u.codigo)} — ${cont.length} artículo(s)</h2>
@@ -403,34 +494,17 @@ function renderCargaContenido(){
         </tr>`).join('')}
       </tbody></table>`:'<div class="empty">La posición está vacía. Agregá el primer artículo arriba.</div>'}
     </div>`;
-  cargaArtSel=null;
-  const inp=document.getElementById('ca-art'); if(inp)inp.focus();
-}
-function buscarArtCarga(q){
-  q=(q||'').trim().toLowerCase();
-  const box=document.getElementById('ca-res'); if(!box)return;
-  if(!q){box.className='ac-results';box.innerHTML='';return;}
-  const res=DB.articulos.filter(a=>a.sku.toLowerCase().includes(q)||(a.codigo_bejerman||'').toLowerCase().includes(q)||(a.descripcion||'').toLowerCase().includes(q)).slice(0,15);
-  if(!res.length){box.className='ac-results open';box.innerHTML='<div class="ac-item muted">Sin resultados</div>';return;}
-  box.className='ac-results open';
-  box.innerHTML=res.map(a=>`<div class="ac-item" onclick="pickArtCarga(${a.id})"><b>${esc(a.sku)}</b> <span class="d">${esc(a.codigo_bejerman)} · ${esc(a.descripcion)}</span></div>`).join('');
-}
-function pickArtCarga(id){
-  const a=art(id); if(!a)return;
-  cargaArtSel=id;
-  document.getElementById('ca-art').value=a.sku+' · '+(a.descripcion||'');
-  document.getElementById('ca-res').className='ac-results';
-  const sel=document.getElementById('ca-sel'); if(sel){sel.textContent='Seleccionado: '+a.sku; sel.style.color='var(--green)';}
-  const c=document.getElementById('ca-cant'); if(c)c.focus();
+  artSelCtx.carga=null;
+  const inp=document.getElementById('ac-inp-carga'); if(inp)inp.focus();
 }
 async function agregarLineaCarga(btn){
   if(!cargaUbiId){flash('Elegí una ubicación.','error');return;}
-  if(!cargaArtSel){flash('Buscá y elegí un artículo de la lista.','error');return;}
+  if(!artSelCtx.carga){flash('Buscá y elegí un artículo de la lista.','error');return;}
   const cant=parseFloat(document.getElementById('ca-cant').value);
   if(!(cant>0)){flash('Ingresá una cantidad mayor a cero.','error');return;}
   if(btn)btn.disabled=true;
   try{
-    setState(await api('/stock/set','POST',{ubicacion_id:cargaUbiId,articulo_id:cargaArtSel,cantidad:cant}));
+    setState(await api('/stock/set','POST',{ubicacion_id:cargaUbiId,articulo_id:artSelCtx.carga,cantidad:cant}));
     flash('Stock cargado.','ok');renderCargaContenido();
   }catch(e){flash(e.message,'error');if(btn)btn.disabled=false;}
 }
@@ -452,8 +526,11 @@ async function quitarLineaCarga(aid){
 function renderHistorial(){
   const tipo=document.getElementById('h-tipo').value;
   const q=(document.getElementById('h-q').value||'').toLowerCase();
+  const desde=document.getElementById('h-desde').value, hasta=document.getElementById('h-hasta').value;
   let ms=[...DB.movimientos];
   if(tipo)ms=ms.filter(m=>m.tipo===tipo);
+  if(desde)ms=ms.filter(m=>m.fecha.slice(0,10)>=desde);
+  if(hasta)ms=ms.filter(m=>m.fecha.slice(0,10)<=hasta);
   if(q)ms=ms.filter(m=>{const a=art(m.articulo_id)||{};return (a.sku||'').toLowerCase().includes(q)||(a.descripcion||'').toLowerCase().includes(q)||(m.nota||'').toLowerCase().includes(q);});
   ms=ms.slice(0,300);
   document.getElementById('hist-body').innerHTML=ms.length?`
@@ -477,18 +554,29 @@ async function crearArticulo(){
     flash('Artículo '+sku+' creado.','ok');renderArticulos();
   }catch(e){flash(e.message,'error');}
 }
+let artLimit=100;
 function renderArticulos(){
   const q=(document.getElementById('a-buscar').value||'').toLowerCase();
+  const filtro=(document.getElementById('a-filtro')||{}).value||'todos';
+  // stock por artículo en una pasada
+  const uByArt={}, rByArt={};
+  for(const k in DB.stock){const c=DB.stock[k]; if(c>0){const aid=k.split(':')[0]; uByArt[aid]=(uByArt[aid]||0)+c; rByArt[aid]=(rByArt[aid]||0)+1;}}
   let as=DB.articulos.slice().sort((a,b)=>a.sku.localeCompare(b.sku));
   if(q)as=as.filter(a=>a.sku.toLowerCase().includes(q)||(a.codigo_bejerman||'').toLowerCase().includes(q)||(a.descripcion||'').toLowerCase().includes(q));
-  document.getElementById('art-body').innerHTML=as.length?`
+  if(filtro==='con')as=as.filter(a=>(uByArt[a.id]||0)>0);
+  else if(filtro==='sin')as=as.filter(a=>!(uByArt[a.id]>0));
+  else if(filtro==='bajo')as=as.filter(a=>a.stock_minimo>0&&(uByArt[a.id]||0)<a.stock_minimo);
+  const total=as.length, shown=as.slice(0,artLimit);
+  document.getElementById('art-body').innerHTML=total?`
     <table><thead><tr><th>SKU</th><th>Cód. Bejerman</th><th>Descripción</th><th>Unidad</th><th class="num">Ubic.</th><th class="num">Stock total</th><th class="num">Mínimo</th></tr></thead><tbody>
-    ${as.map(a=>{const tot=stockTotal(a.id);const bajo=a.stock_minimo>0&&tot<a.stock_minimo;
+    ${shown.map(a=>{const tot=uByArt[a.id]||0;const bajo=a.stock_minimo>0&&tot<a.stock_minimo;
       return `<tr><td><a class="link" onclick="verArticulo(${a.id})"><b>${esc(a.sku)}</b></a></td>
-      <td class="muted">${esc(a.codigo_bejerman)}</td><td>${esc(a.descripcion)}</td><td class="muted">${esc(a.unidad)}</td><td class="num">${ubisConStock(a.id)}</td>
+      <td class="muted">${esc(a.codigo_bejerman)}</td><td>${esc(a.descripcion)}</td><td class="muted">${esc(a.unidad)}</td><td class="num">${rByArt[a.id]||0}</td>
       <td class="num" ${bajo?'style="color:var(--red);font-weight:700"':''}>${fmt(tot)}${bajo?' <span class="badge b-egreso" style="margin-left:6px">bajo mín.</span>':''}</td>
       <td class="num muted">${a.stock_minimo?fmt(a.stock_minimo):'—'}</td></tr>`;}).join('')}
-    </tbody></table>`:`<div class="empty">No hay artículos cargados todavía.</div>`;
+    </tbody></table>
+    <div class="pager"><span class="muted">Mostrando ${Math.min(artLimit,total)} de ${total}</span>${total>artLimit?`<button class="btn btn-ghost btn-sm" onclick="artLimit+=200;renderArticulos()">Ver más</button>`:''}</div>`
+    :`<div class="empty">No hay artículos que coincidan con el filtro.</div>`;
   document.getElementById('art-detalle').innerHTML='';
 }
 function verArticulo(id){
@@ -534,16 +622,24 @@ async function crearUbicacion(){
 }
 function renderUbicaciones(){
   const q=(document.getElementById('u-buscar').value||'').toLowerCase();
+  const pas=(document.getElementById('u-pasillo')||{}).value||'';
+  const est=(document.getElementById('u-estado')||{}).value||'todas';
+  const uByUbi={}, rByUbi={};
+  for(const k in DB.stock){const c=DB.stock[k]; if(c>0){const uid=k.split(':')[1]; uByUbi[uid]=(uByUbi[uid]||0)+c; rByUbi[uid]=(rByUbi[uid]||0)+1;}}
   let us=DB.ubicaciones.slice().sort((a,b)=>a.codigo.localeCompare(b.codigo));
   if(q)us=us.filter(u=>u.codigo.toLowerCase().includes(q)||(u.descripcion||'').toLowerCase().includes(q)||(u.zona||'').toLowerCase().includes(q));
+  if(pas)us=us.filter(u=>pas==='SALDOS'?u.codigo==='SALDOS':(u.codigo.split('-')[0]===pas));
+  if(est==='con')us=us.filter(u=>(uByUbi[u.id]||0)>0);
+  else if(est==='vacias')us=us.filter(u=>!(uByUbi[u.id]>0));
   document.getElementById('ubi-body').innerHTML=us.length?`
     <table><thead><tr><th>Código</th><th>Descripción</th><th>Zona</th><th class="num">Refs</th><th class="num">Unid.</th><th>Estado</th><th></th></tr></thead><tbody>
-    ${us.map(u=>{let un=0,rf=0;for(const k in DB.stock){if(k.endsWith(':'+u.id)&&DB.stock[k]>0){un+=DB.stock[k];rf++;}}
+    ${us.map(u=>{const un=uByUbi[u.id]||0,rf=rByUbi[u.id]||0;
       return `<tr><td><a class="link" onclick="verUbicacion(${u.id})"><b>${esc(u.codigo)}</b></a></td>
       <td>${esc(u.descripcion)}</td><td class="muted">${esc(u.zona||'—')}</td><td class="num">${rf}</td><td class="num">${fmt(un)}</td>
       <td>${u.activa?'<span class="badge b-on">Activa</span>':'<span class="badge b-off">Inactiva</span>'}</td>
       <td class="num"><button class="btn btn-ghost btn-sm" onclick="toggleUbi(${u.id})">${u.activa?'Desactivar':'Activar'}</button></td></tr>`;}).join('')}
-    </tbody></table>`:`<div class="empty">No hay ubicaciones cargadas todavía.</div>`;
+    </tbody></table>
+    <div class="pager"><span class="muted">${us.length} ubicación(es)</span></div>`:`<div class="empty">No hay ubicaciones que coincidan con el filtro.</div>`;
   document.getElementById('ubi-detalle').innerHTML='';
 }
 async function toggleUbi(id){try{setState(await api('/ubicaciones/toggle','POST',{id}));renderUbicaciones();}catch(e){flash(e.message,'error');}}

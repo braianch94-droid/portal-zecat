@@ -165,6 +165,11 @@ export async function onRequest(context) {
     if (seg[0] === 'stock' && seg[1] === 'set' && method === 'POST') {
       const uid = +body.ubicacion_id, aid = +body.articulo_id;
       if (!uid || !aid) return json({error: 'Faltan ubicación o artículo.'}, 400);
+      const [okA, okU] = await Promise.all([
+        DB.prepare('SELECT 1 FROM articulos WHERE id = ?').bind(aid).first(),
+        DB.prepare('SELECT 1 FROM ubicaciones WHERE id = ?').bind(uid).first(),
+      ]);
+      if (!okA || !okU) return json({error: 'Artículo o ubicación inexistente.'}, 400);
       let c = parseFloat(body.cantidad);
       if (isNaN(c) || c < 0) c = 0;
       if (c <= 0) {
@@ -189,6 +194,14 @@ export async function onRequest(context) {
       const nota = (body.nota || '').trim();
 
       if (!art || !(cant > 0)) return json({error: 'Completá artículo y cantidad válida.'}, 400);
+
+      // Validar existencia de artículo y de las ubicaciones referenciadas (evita stock huérfano)
+      if (!(await DB.prepare('SELECT 1 FROM articulos WHERE id = ?').bind(art).first()))
+        return json({error: 'Artículo inexistente.'}, 400);
+      for (const u of [ori, dest]) {
+        if (u && !(await DB.prepare('SELECT 1 FROM ubicaciones WHERE id = ?').bind(u).first()))
+          return json({error: 'Ubicación inexistente.'}, 400);
+      }
 
       // Baja de stock en origen (atómica: solo si hay suficiente)
       async function bajarOrigen(uid) {
@@ -233,6 +246,6 @@ export async function onRequest(context) {
 
     return json({error: 'Not found'}, 404);
   } catch (e) {
-    return json({error: 'Internal error', detail: String(e)}, 500);
+    return json({error: 'Error interno'}, 500);
   }
 }
