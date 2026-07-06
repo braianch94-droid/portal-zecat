@@ -595,6 +595,22 @@ iframe { width: 100%; height: 100%; border: none; display: block; }
         </div>
       </div>
 
+      <!-- Muestra Simple (WMS) -->
+      <div class="section">
+        <div class="sec-header" onclick="onSectionClick(this)" title="Muestra Simple">
+          <svg class="sec-ico" viewBox="0 0 24 24"><path d="M20 8l-8-4-8 4v8l8 4 8-4V8zm-8-1.8L17.5 9 12 11.8 6.5 9 12 6.2zM5 10.3l6 3v5.4l-6-3v-5.4zm14 0v5.4l-6 3v-5.4l6-3z"/></svg>
+          <span class="sec-label">Muestra Simple</span>
+          <span class="chevron">›</span>
+        </div>
+        <div class="sec-items">
+          <div class="nav-item" data-module="muestrawms" data-tab="dashboard" onclick="navigate(this)"><span class="nav-dot"></span>Dashboard</div>
+          <div class="nav-item" data-module="muestrawms" data-tab="mover" onclick="navigate(this)"><span class="nav-dot"></span>Movimientos</div>
+          <div class="nav-item" data-module="muestrawms" data-tab="historial" onclick="navigate(this)"><span class="nav-dot"></span>Historial</div>
+          <div class="nav-item" data-module="muestrawms" data-tab="articulos" onclick="navigate(this)"><span class="nav-dot"></span>Artículos</div>
+          <div class="nav-item" data-module="muestrawms" data-tab="ubicaciones" onclick="navigate(this)"><span class="nav-dot"></span>Ubicaciones</div>
+        </div>
+      </div>
+
     </div><!-- /country-body ARG -->
   </div><!-- /country-group ARG -->
 
@@ -767,6 +783,18 @@ iframe { width: 100%; height: 100%; border: none; display: block; }
     </iframe>
   </div>
 
+  <!-- Muestra Simple (WMS) frame -->
+  <div class="frame-wrap" id="fw-muestrawms">
+    <div class="splash" id="splash-muestrawms">
+      <div class="splash-icon">Z</div>
+      <span class="splash-label">Cargando Muestra Simple…</span>
+    </div>
+    <iframe id="ifr-muestrawms"
+      data-src="./muestra-simple-wms/index.html"
+      onload="onLoad('muestrawms')">
+    </iframe>
+  </div>
+
 </div>
 
 <script>
@@ -818,7 +846,7 @@ let isSidebarCollapsed = localStorage.getItem('zecat-portal-sb') === '1';
 if (isSidebarCollapsed) document.getElementById('sidebar').classList.add('collapsed');
 document.getElementById('theme-ico').textContent = isDark ? '🌙' : '☀️';
 document.getElementById('theme-lbl').textContent  = isDark ? 'Modo oscuro' : 'Modo claro';
-const loaded = { productividad: false, ciclico: false, transporte: false, personal: false, productividadchile: false, ciclicochile: false, evaluaciones: false };
+const loaded = { productividad: false, ciclico: false, transporte: false, personal: false, productividadchile: false, ciclicochile: false, evaluaciones: false, muestrawms: false };
 const pending = {};
 
 function revealModule(module) {
@@ -990,7 +1018,8 @@ const MODULOS_LIST = [
   {key:'personal',label:'Personal ARG/CL'},
   {key:'evaluaciones',label:'Evaluaciones'},
   {key:'productividadchile',label:'Productividad CL'},
-  {key:'ciclicochile',label:'Cíclico Chile'}
+  {key:'ciclicochile',label:'Cíclico Chile'},
+  {key:'muestrawms',label:'Muestra Simple WMS ARG'}
 ];
 let authUser = null;
 let nuModulos = new Set();
