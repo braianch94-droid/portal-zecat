@@ -132,7 +132,7 @@ async function api(request, env, url) {
   if (seg[1] === "evaluaciones" && seg[2] && method === "GET") {
     const id = Number(seg[2]);
     const ev = await db.prepare(`
-      SELECT ev.*, e.nombre, e.apellido, e.sector, e.area, e.tecnica, e.turno
+      SELECT ev.*, e.nombre, e.apellido, e.sector, e.area, e.tecnica, e.turno, e.categoria
       FROM evaluaciones ev JOIN empleados e ON e.id = ev.empleado_id WHERE ev.id=?`).bind(id).first();
     if (!ev) return bad("Evaluación no encontrada", 404);
     const puntajes = (await db.prepare(

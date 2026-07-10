@@ -459,7 +459,7 @@ async function verEmpleado(id){
     <div class="small muted" style="margin-bottom:14px">${esc(e.sector)} · ${sectorLinea(e)} · Turno ${esc(e.turno)} · ${esc(e.categoria||"")}</div>
     ${e.evaluaciones.length?`<table><thead><tr><th>Período</th><th>Fecha</th><th>Evaluador</th><th class="right">Prom.</th><th></th></tr></thead><tbody>
       ${e.evaluaciones.map(v=>`<tr><td>${esc(v.periodo)}</td><td>${esc(v.fecha)}</td><td>${esc(v.evaluador)}</td><td class="right">${badge(v.promedio)}</td>
-        <td class="right"><button class="btn ghost" onclick="verEval(${v.id})">Ver</button></td></tr>`).join("")}
+        <td class="right"><button class="btn ghost" onclick="verEval(${v.id})">Ver</button> <button class="btn ghost" onclick="imprimirEval(${v.id})" title="Imprimir / PDF">🖨</button></td></tr>`).join("")}
     </tbody></table>`:'<div class="empty">Sin evaluaciones aún. <button class="btn" onclick="closeModal();evaluarA('+id+')">Evaluar ahora</button></div>'}`);
 }
 
@@ -472,7 +472,7 @@ async function loadHistorial(){
     <div class="card" style="padding:0"><table><thead><tr><th>Empleado</th><th>Sector</th><th>Período</th><th>Fecha</th><th>Evaluador</th><th class="right">Prom.</th><th></th></tr></thead><tbody>
     ${rows.map(r=>`<tr><td><b>${esc(r.apellido)}, ${esc(r.nombre)}</b></td><td>${esc(r.sector)}</td><td>${esc(r.periodo)}</td><td>${esc(r.fecha)}</td><td>${esc(r.evaluador)}</td>
       <td class="right">${badge(r.promedio)}</td>
-      <td class="right"><button class="btn ghost" onclick="verEval(${r.id})">Ver</button> <button class="btn ghost" onclick="editEval(${r.id})">✏</button> <button class="btn ghost" style="color:var(--bad)" onclick="delEval(${r.id})">🗑</button></td></tr>`).join("")}
+      <td class="right"><button class="btn ghost" onclick="verEval(${r.id})">Ver</button> <button class="btn ghost" onclick="imprimirEval(${r.id})" title="Imprimir / PDF">🖨</button> <button class="btn ghost" onclick="editEval(${r.id})">✏</button> <button class="btn ghost" style="color:var(--bad)" onclick="delEval(${r.id})">🗑</button></td></tr>`).join("")}
     </tbody></table></div>`;
 }
 async function verEval(id){
@@ -485,7 +485,46 @@ async function verEval(id){
     ${ev.aspectos_mejorar?`<p><b>Aspectos a mejorar:</b> ${esc(ev.aspectos_mejorar)}</p>`:""}
     ${ev.comentarios_evaluador?`<p><b>Comentarios del evaluador:</b> ${esc(ev.comentarios_evaluador)}</p>`:""}
     ${ev.comentarios_evaluado?`<p><b>Comentarios del evaluado:</b> ${esc(ev.comentarios_evaluado)}</p>`:""}
-    <div class="right"><button class="btn sec" onclick="closeModal();editEval(${id})">✏ Editar</button></div>`);
+    <div class="right"><button class="btn sec" onclick="imprimirEval(${id})">🖨 Imprimir / PDF</button> <button class="btn sec" onclick="closeModal();editEval(${id})">✏ Editar</button></div>`);
+}
+async function imprimirEval(id){
+  const ev=await jget("/evaluaciones/"+id);
+  const escala={1:"No Cumple",2:"Cumple Parcialmente",3:"Cumple",4:"Supera",5:"Excede"};
+  const punt=(ev.puntajes||[]).slice().sort((a,b)=>(a.orden||0)-(b.orden||0));
+  const filas=punt.map(p=>`<tr><td>${p.orden}. ${esc(p.nombre)}</td><td class="pt">${p.puntaje}</td><td>${escala[p.puntaje]||""}</td></tr>`).join("");
+  const box=(t,v)=>`<div class="box"><div class="box-t">${t}</div><div class="box-v">${v&&String(v).trim()?esc(v):"<span class='vac'>—</span>"}</div></div>`;
+  const promColor=ev.promedio<2.5?"#dc2626":ev.promedio<3.5?"#d97706":"#16a34a";
+  const html=`<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Evaluacion ${esc(ev.apellido)} ${esc(ev.nombre)} - ${esc(ev.periodo)}</title>
+  <style>@page{size:A4;margin:15mm}*{box-sizing:border-box;font-family:Arial,Helvetica,sans-serif}body{margin:0;color:#0f172a;font-size:12px}
+  .hd{display:flex;align-items:center;gap:10px;border-bottom:3px solid #E1251B;padding-bottom:10px;margin-bottom:14px}
+  .logo{width:34px;height:34px;border-radius:8px;background:#E1251B;color:#fff;font-weight:700;font-size:22px;display:flex;align-items:center;justify-content:center}
+  .hd h1{font-size:16px;margin:0}.hd .sub{font-size:11px;color:#64748b}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:5px 24px;margin-bottom:14px}.grid b{color:#334155}
+  table{width:100%;border-collapse:collapse;margin-bottom:4px}th,td{border:1px solid #e2e8f0;padding:5px 8px;text-align:left;font-size:12px}
+  th{background:#f1f5f9;font-size:10px;text-transform:uppercase;letter-spacing:.3px}td.pt{text-align:center;font-weight:700;width:60px}
+  .esc{font-size:10px;color:#94a3b8;margin-bottom:8px}.prom{text-align:right;font-size:13px;margin:0 0 14px}.prom b{font-size:18px;color:${promColor}}
+  .box{border:1px solid #e2e8f0;border-radius:6px;padding:8px 10px;margin-bottom:9px}
+  .box-t{font-size:10px;text-transform:uppercase;letter-spacing:.4px;color:#64748b;font-weight:700;margin-bottom:4px}
+  .box-v{font-size:12px;min-height:26px;white-space:pre-wrap}.vac{color:#cbd5e1}
+  .firmas{display:flex;gap:44px;margin-top:38px}.firma{flex:1;text-align:center;border-top:1px solid #334155;padding-top:6px;font-size:11px;color:#334155}</style></head><body>
+  <div class="hd"><div class="logo">z</div><div><h1>Evaluación de Desempeño</h1><div class="sub">Artículos Promocionales SA · ZECAT</div></div></div>
+  <div class="grid">
+    <div><b>Empleado:</b> ${esc(ev.apellido)}, ${esc(ev.nombre)}</div><div><b>Período:</b> ${esc(ev.periodo)}</div>
+    <div><b>Sector:</b> ${esc(ev.sector||"")} · ${esc(ev.area||ev.tecnica||"")}</div><div><b>Fecha:</b> ${esc(ev.fecha)}</div>
+    <div><b>Turno:</b> ${esc(ev.turno||"")}${ev.categoria?" · "+esc(ev.categoria):""}</div><div><b>Evaluador:</b> ${esc(ev.evaluador||"")}</div>
+    <div><b>Posición desempeñada:</b> ${esc(ev.posicion_desempenada||"—")}</div><div><b>Posición del evaluador:</b> ${esc(ev.posicion_evaluador||"—")}</div>
+  </div>
+  <table><thead><tr><th>Objetivo</th><th style="text-align:center">Puntaje</th><th>Valoración</th></tr></thead><tbody>${filas}</tbody></table>
+  <div class="esc">Escala: 1 No Cumple · 2 Cumple Parcialmente · 3 Cumple · 4 Supera · 5 Excede</div>
+  <div class="prom">Promedio general: <b>${fmt(ev.promedio)}</b> / 5</div>
+  ${box("Aspectos a mejorar",ev.aspectos_mejorar)}
+  ${box("Comentarios del evaluador",ev.comentarios_evaluador)}
+  ${box("Comentarios del evaluado",ev.comentarios_evaluado)}
+  <div class="firmas"><div class="firma">Firma del evaluado</div><div class="firma">Firma del evaluador</div></div>
+  <scr`+`ipt>window.onload=function(){setTimeout(function(){window.print();},300);};</scr`+`ipt></body></html>`;
+  const w=window.open("","_blank");
+  if(!w){toast("Permití las ventanas emergentes para poder imprimir/descargar",true);return;}
+  w.document.open(); w.document.write(html); w.document.close();
 }
 async function editEval(id){
   const ev=await jget("/evaluaciones/"+id);
