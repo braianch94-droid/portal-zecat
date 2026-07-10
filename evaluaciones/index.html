@@ -216,8 +216,10 @@ function barChart(rows,max){
 }
 function rankTable(rows){
   if(!rows.length)return'<div class="muted small">Sin datos</div>';
-  return `<table><thead><tr><th>#</th><th>Empleado</th><th>Sector</th><th class="right">Prom.</th></tr></thead><tbody>
-    ${rows.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.apellido)}, ${esc(r.nombre)}</td><td class="small muted">${esc(r.area||r.sector||"")}</td><td class="right">${badge(r.prom)}</td></tr>`).join("")}
+  return `<table><thead><tr><th>#</th><th>Empleado</th><th>Sector</th><th class="right">Prom.</th><th></th></tr></thead><tbody>
+    ${rows.map((r,i)=>`<tr style="cursor:pointer" onclick="verEmpleado(${r.id})" title="Ver / descargar sus evaluaciones">
+      <td>${i+1}</td><td><b>${esc(r.apellido)}, ${esc(r.nombre)}</b></td><td class="small muted">${esc(r.area||r.sector||"")}</td>
+      <td class="right">${badge(r.prom)}</td><td class="right"><span class="btn ghost" style="padding:2px 8px" onclick="event.stopPropagation();verEmpleado(${r.id})">👁 🖨</span></td></tr>`).join("")}
   </tbody></table>`;
 }
 function goEvaluar(){$$('nav button').find(b=>b.dataset.tab==="evaluar").click();}
@@ -394,7 +396,7 @@ async function renderEmpleados(){
       <td><b>${nombre(e)}</b><div class="small muted">${esc(e.categoria||"")}</div></td>
       <td>${esc(e.sector)}</td><td>${sectorLinea(e)}</td><td>${esc(e.turno)}</td>
       <td>${e.activo?'<span class="pill badge-ok">Activo</span>':'<span class="pill badge-none">Inactivo</span>'}</td>
-      <td class="right">${e.n_eval||0}</td>
+      <td class="right">${e.n_eval?`<button class="btn ghost" style="padding:2px 9px;font-weight:700" onclick="verEmpleado(${e.id})" title="Ver / descargar evaluaciones">${e.n_eval} 📄</button>`:'<span class="muted">0</span>'}</td>
       <td class="right">${badge(e.ult_promedio)}${e.ult_periodo?`<div class="small muted">${esc(e.ult_periodo)}</div>`:""}</td>
       <td class="right">
         ${e.activo?`<button class="btn ghost" onclick="evaluarA(${e.id})">📝 Evaluar</button> <button class="btn ghost" onclick="verEmpleado(${e.id})">👁 Ver</button>`:""}
