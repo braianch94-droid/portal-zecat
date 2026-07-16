@@ -19,7 +19,7 @@ $NOW     = Get-Date
 # Operarios excluidos del cálculo de PRODUCTIVIDAD del equipo (extras, no-pickers regulares)
 # Usar fragmentos del nombre, sin distinguir mayúsculas. Ej: "AIRALA" matchea "AIRALA CESAR".
 # Agregar más separados por coma. "Falta definir" se excluye siempre.
-$ExcludeFromProd = @("AIRALA","Falta definir","Pie de Maquina","MAQUINA","Muestra Simple","LEZCANO")
+$ExcludeFromProd = @("AIRALA","Falta definir","Pie de Maquina","MAQUINA","Muestra Simple","LEZCANO","PRODUCCION","SISTEMA WMS","BEJERMAN")
 
 # Normalizacion de nombres de picker con variantes en el Excel (APELLIDO NOMBRE canónico)
 $PickerNameMap = @{
@@ -135,11 +135,16 @@ function AF($ws,$r,$c1,$c2){
 }
 
 Write-Host "[$($NOW.ToString('HH:mm:ss'))] Leyendo datos desde Picking (fuente primaria)..."
+# Copiar a TEMP local antes de abrir con Excel COM: abrir directo desde OneDrive
+# a veces falla con "Excel no puede obtener acceso al archivo" por interaccion
+# OneDrive+COM aunque el archivo no este realmente bloqueado.
+$SourceLocal = Join-Path $env:TEMP ("productividad_srcread_{0}.xlsx" -f (Get-Random))
+Copy-Item -LiteralPath $Source -Destination $SourceLocal -Force
 $xl = New-Object -ComObject Excel.Application
 $xl.Visible=$false; $xl.DisplayAlerts=$false
 
 try {
-    $srcWb = $xl.Workbooks.Open($Source,$false,$true)
+    $srcWb = $xl.Workbooks.Open($SourceLocal,$false,$true)
 
     # ===========================================================
     # LEER PICKING (FUENTE PRIMARIA v5)
@@ -263,6 +268,9 @@ try {
     $rRows = $rArr.GetUpperBound(0)
     $recOpMes=@{}; $recByCat=@{}; $recByFam=@{}; $recByMes=@{}; $recByPik=@{}; $lezcanoRecMes=@{}
     $recDataByMonth=@{}   # key=YM → {Cnt,ByOp={op:cnt},ByCat={cat:cnt}}
+    # Reclamos que realmente aplican al bono (col17 Aplica Pickeador / col18 Aplica Control = "Si Aplica")
+    # Estructura separada de recDataByMonth para no alterar la pestaña general de Reclamos.
+    $recBonoByMonth=@{}   # key=YM → {ByOpPick,ByOpCatPick,ByOpCtrl,ByOpCatCtrl}
 
     for($r=2; $r -le $rRows; $r++){
         # Nueva estructura Reclamos: col4=fecha reclamo(OA), col9=qty reclam., col12=familia, col13=categoría, col15=Pickeador
@@ -272,6 +280,7 @@ try {
         $ym="$($dtRec.Year)-$('{0:00}' -f $dtRec.Month)"
         $rpkRaw=$rArr[$r,15]
         $rpk=if(-not $rpkRaw -or ($rpkRaw -is [double] -and $rpkRaw -lt 0)){"Falta definir pickeador"}else{"$rpkRaw".Trim()}  # #N/A → etiqueta
+        if($PickerNameMap[$rpk]){ $rpk=$PickerNameMap[$rpk] }  # normalizar variantes de nombre igual que en Picking
         $qty=[double]($rArr[$r,9] -as [double])
         $cat=$rArr[$r,13]; $fam=$rArr[$r,12]
         $isLez=($rpk -like "*$LezFilter*")
@@ -283,14 +292,46 @@ try {
         if(-not $recDataByMonth[$ym]){$recDataByMonth[$ym]=@{Cnt=0;ByOp=@{};ByCat=@{};ByOpCat=@{}}}
         $recDataByMonth[$ym].Cnt++
         $opKey=if($isLez){"LEZCANO AGUSTIN"}else{$rpk}
-        if(-not $recDataByMonth[$ym].ByOp[$opKey]){$recDataByMonth[$ym].ByOp[$opKey]=0}
-        $recDataByMonth[$ym].ByOp[$opKey]++
+        $opKeyExcl=(-not $isLez) -and (IsExcludedFromProd $opKey)
+        if(-not $opKeyExcl){
+            if(-not $recDataByMonth[$ym].ByOp[$opKey]){$recDataByMonth[$ym].ByOp[$opKey]=0}
+            $recDataByMonth[$ym].ByOp[$opKey]++
+        }
         if($cat){
             if(-not $recDataByMonth[$ym].ByCat[$cat]){$recDataByMonth[$ym].ByCat[$cat]=0}
             $recDataByMonth[$ym].ByCat[$cat]++
-            if(-not $recDataByMonth[$ym].ByOpCat[$opKey]){$recDataByMonth[$ym].ByOpCat[$opKey]=@{}}
-            if(-not $recDataByMonth[$ym].ByOpCat[$opKey][$cat]){$recDataByMonth[$ym].ByOpCat[$opKey][$cat]=0}
-            $recDataByMonth[$ym].ByOpCat[$opKey][$cat]++
+            if(-not $opKeyExcl){
+                if(-not $recDataByMonth[$ym].ByOpCat[$opKey]){$recDataByMonth[$ym].ByOpCat[$opKey]=@{}}
+                if(-not $recDataByMonth[$ym].ByOpCat[$opKey][$cat]){$recDataByMonth[$ym].ByOpCat[$opKey][$cat]=0}
+                $recDataByMonth[$ym].ByOpCat[$opKey][$cat]++
+            }
+        }
+
+        # --- Reclamos que aplican al BONO (col17/col18) ---
+        $aplicaPick = "$($rArr[$r,17])".Trim()
+        $aplicaCtrl = "$($rArr[$r,18])".Trim()
+        # Mayusculas: la hoja Control/CtrlEmailMap usa "ROMERO MELANIE", pero en Reclamos
+        # se suele tipear a mano "Romero Melanie" — sin normalizar, nunca matcheaban.
+        $ctrlName = "$($rArr[$r,16])".Trim().ToUpper()
+        if(-not $recBonoByMonth[$ym]){$recBonoByMonth[$ym]=@{ByOpPick=@{};ByOpCatPick=@{};ByOpCtrl=@{};ByOpCatCtrl=@{}}}
+        if($aplicaPick -eq "Si Aplica" -and -not $opKeyExcl){
+            if(-not $recBonoByMonth[$ym].ByOpPick[$opKey]){$recBonoByMonth[$ym].ByOpPick[$opKey]=0}
+            $recBonoByMonth[$ym].ByOpPick[$opKey]++
+            if($cat){
+                if(-not $recBonoByMonth[$ym].ByOpCatPick[$opKey]){$recBonoByMonth[$ym].ByOpCatPick[$opKey]=@{}}
+                if(-not $recBonoByMonth[$ym].ByOpCatPick[$opKey][$cat]){$recBonoByMonth[$ym].ByOpCatPick[$opKey][$cat]=0}
+                $recBonoByMonth[$ym].ByOpCatPick[$opKey][$cat]++
+            }
+        }
+        if($aplicaCtrl -eq "Si Aplica" -and $ctrlName -and -not (IsExcludedFromProd $ctrlName)){
+            $ctrlKey = if($PickerNameMap[$ctrlName]){$PickerNameMap[$ctrlName]}else{$ctrlName}
+            if(-not $recBonoByMonth[$ym].ByOpCtrl[$ctrlKey]){$recBonoByMonth[$ym].ByOpCtrl[$ctrlKey]=0}
+            $recBonoByMonth[$ym].ByOpCtrl[$ctrlKey]++
+            if($cat){
+                if(-not $recBonoByMonth[$ym].ByOpCatCtrl[$ctrlKey]){$recBonoByMonth[$ym].ByOpCatCtrl[$ctrlKey]=@{}}
+                if(-not $recBonoByMonth[$ym].ByOpCatCtrl[$ctrlKey][$cat]){$recBonoByMonth[$ym].ByOpCatCtrl[$ctrlKey][$cat]=0}
+                $recBonoByMonth[$ym].ByOpCatCtrl[$ctrlKey][$cat]++
+            }
         }
         if($isLez){
             if(-not $lezcanoRecMes[$ym]){$lezcanoRecMes[$ym]=@{Cnt=0;Qty=0}}
@@ -1495,7 +1536,13 @@ try {
     }
 
     # ---- monthlyData JS: datos completos por mes para KPIs y ranking dinamico ----
+    $sortedMonArr = @($sortedMon)
     foreach($mon in $sortedMon){
+        $monIdx = [array]::IndexOf($sortedMonArr, $mon)
+        $prevMon = if($monIdx -gt 0){ $sortedMonArr[$monIdx-1] }else{ $null }
+        $mTeamDelta = if($prevMon -and $teamAvgByMonth[$mon] -ne $null -and $teamAvgByMonth[$prevMon] -ne $null){
+            [Math]::Round($teamAvgByMonth[$mon] - $teamAvgByMonth[$prevMon], 1)
+        }else{ "null" }
         $mRows=@($sumRows|Where-Object{$_.YM -eq $mon}|Sort-Object LineasDia -Descending)
         $mTotL=0;$mTotU=0;$mTotRC=0;$mTotOlas=0
         foreach($op in $mRows){$mTotL+=$op.Lineas;$mTotU+=$op.Unidades;$mTotRC+=$op.RecCnt;$mTotOlas+=$op.Olas}
@@ -1520,7 +1567,7 @@ try {
             $pickerParts.Add("{resp:'$rn',dias:$($op.Dias),olas:$($op.Olas),lineas:$($op.Lineas),ld:$($op.LineasDia.ToString($IC)),cumpl:$($op.Cumplim.ToString($IC)),unidades:$($op.Unidades),recCnt:$($op.RecCnt),trend:'$tr'}")
         }
         $pickersArr="["+($pickerParts -join ",")+"]"
-        $jsMonthlyDataParts.Add("'$mon':{totOps:$mTotOps,pickeadores:$mPickOficial,avgLD:$($mAvgLD.ToString($IC)),cumAv:$($mCumAv.ToString($IC)),totL:$mTotL,totU:$mTotU,totRC:$mTotRC,rateG:$($mRateG.ToString($IC)),totOlas:$mTotOlas,staffNec:$($mStaffNec.ToString($IC)),staffAct:$($mStaffAct.ToString($IC)),pickers:$pickersArr}")
+        $jsMonthlyDataParts.Add("'$mon':{totOps:$mTotOps,pickeadores:$mPickOficial,avgLD:$($mAvgLD.ToString($IC)),cumAv:$($mCumAv.ToString($IC)),totL:$mTotL,totU:$mTotU,totRC:$mTotRC,rateG:$($mRateG.ToString($IC)),totOlas:$mTotOlas,staffNec:$($mStaffNec.ToString($IC)),staffAct:$($mStaffAct.ToString($IC)),teamDelta:$mTeamDelta,pickers:$pickersArr}")
     }
     $jsMonthlyData = "{" + ($jsMonthlyDataParts -join ",") + "}"
 
@@ -1553,6 +1600,7 @@ try {
     $ctrlByYM=@{}
     foreach($key in $ctrlMes.Keys){
         $pts=$key.Split("|"); $nm=$pts[0]; $ym=$pts[1]
+        if(IsExcludedFromProd $nm){ continue }
         if(-not $ctrlByYM[$ym]){$ctrlByYM[$ym]=[System.Collections.Generic.List[string]]::new()}
         $mc=$ctrlMes[$key]; $dias=$mc.Days.Count
         $ctrlByYM[$ym].Add("{nm:'$nm',und:$([int]$mc.Und),ord:$([int]$mc.Ord),dias:$dias}")
@@ -1568,6 +1616,7 @@ try {
     $maqByYM=@{}
     foreach($key in $maqMes.Keys){
         $pts=$key.Split("|"); $nm=$pts[0]; $ym=$pts[1]
+        if(IsExcludedFromProd $nm){ continue }
         if(-not $maqByYM[$ym]){$maqByYM[$ym]=[System.Collections.Generic.List[string]]::new()}
         $mm=$maqMes[$key]; $dias=$mm.Days.Count
         $maqByYM[$ym].Add("{nm:'$nm',mov:$([int]$mm.Mov),und:$([int]$mm.Und),dias:$dias,pa02:$([int]$mm.Pa02),rec:$([int]$mm.Rec),rl01:$([int]$mm.Rl01),pallet:$([int]$mm.Pallet),flow:$([int]$mm.Flow)}")
@@ -1637,7 +1686,9 @@ try {
         $d=$recDataByMonth[$mon]
         if($d){
             $opParts=[System.Collections.Generic.List[string]]::new()
+            $sinIdCnt=0
             foreach($op in ($d.ByOp.Keys|Sort-Object)){
+                if($op -eq "Falta definir pickeador"){ $sinIdCnt+=$d.ByOp[$op]; continue }
                 $opEsc=$op -replace "'","" -replace '"',""
                 $opParts.Add("'$opEsc':$($d.ByOp[$op])")
             }
@@ -1650,6 +1701,7 @@ try {
             $byCatStr ="{"+($catParts -join ",")+"}"
             $byOpCatParts=[System.Collections.Generic.List[string]]::new()
             foreach($op2 in ($d.ByOpCat.Keys|Sort-Object)){
+                if($op2 -eq "Falta definir pickeador"){ continue }
                 $op2Esc=$op2 -replace "'","" -replace '"',""
                 $catSubParts=[System.Collections.Generic.List[string]]::new()
                 foreach($cat2 in ($d.ByOpCat[$op2].Keys|Sort-Object)){
@@ -1659,12 +1711,44 @@ try {
                 $byOpCatParts.Add("'$op2Esc':{"+($catSubParts -join ",")+"}")
             }
             $byOpCatStr="{"+($byOpCatParts -join ",")+"}"
-            $jsRecMonParts.Add("'$mon':{cnt:$($d.Cnt),byOp:$byOpStr,byCat:$byCatStr,byOpCat:$byOpCatStr}")
+            $jsRecMonParts.Add("'$mon':{cnt:$($d.Cnt),sinId:$sinIdCnt,byOp:$byOpStr,byCat:$byCatStr,byOpCat:$byOpCatStr}")
         } else {
             $jsRecMonParts.Add("'$mon':null")
         }
     }
     $jsRecMonthly="{"+($jsRecMonParts -join ",")+"}"
+
+    # --- Serializar recBonoByMonth (reclamos que aplican al bono, filtrados por Aplica Pickeador/Control) ---
+    function SerializeOpMap($map){
+        $parts=[System.Collections.Generic.List[string]]::new()
+        foreach($k in ($map.Keys|Sort-Object)){
+            $kEsc=$k -replace "'","" -replace '"',""
+            $parts.Add("'$kEsc':$($map[$k])")
+        }
+        return "{"+($parts -join ",")+"}"
+    }
+    function SerializeOpCatMap($map){
+        $parts=[System.Collections.Generic.List[string]]::new()
+        foreach($k in ($map.Keys|Sort-Object)){
+            $kEsc=$k -replace "'","" -replace '"',""
+            $parts.Add("'$kEsc':"+(SerializeOpMap $map[$k]))
+        }
+        return "{"+($parts -join ",")+"}"
+    }
+    $jsRecBonoParts=[System.Collections.Generic.List[string]]::new()
+    foreach($mon in $sortedMon){
+        $bd=$recBonoByMonth[$mon]
+        if($bd){
+            $byOpPick=SerializeOpMap $bd.ByOpPick
+            $byOpCatPick=SerializeOpCatMap $bd.ByOpCatPick
+            $byOpCtrl=SerializeOpMap $bd.ByOpCtrl
+            $byOpCatCtrl=SerializeOpCatMap $bd.ByOpCatCtrl
+            $jsRecBonoParts.Add("'$mon':{byOpPick:$byOpPick,byOpCatPick:$byOpCatPick,byOpCtrl:$byOpCtrl,byOpCatCtrl:$byOpCatCtrl}")
+        } else {
+            $jsRecBonoParts.Add("'$mon':null")
+        }
+    }
+    $jsRecBonoMonthly="{"+($jsRecBonoParts -join ",")+"}"
 
     # --- Serializar datos para HTML: tabla 7 dias y grafico evolucion 30 dias ---
     $jsDay7Parts=[System.Collections.Generic.List[string]]::new()
@@ -1922,6 +2006,7 @@ body.dark .grp-btn.active{background:#2563eb;border-color:#2563eb;color:white}
 <div class="table-card">
   <div class="rank-title" id="rankTitle">Ranking &mdash; Picking Regular</div>
   <div class="rank-sub">Ordenado por lineas/d&iacute;a &nbsp;|&nbsp; MERMA y PIE DE MAQUINA en sus tabs propios</div>
+  <div id="rankTeamCtx" style="font-size:12px;color:#64748b;margin:2px 0 6px 0;min-height:18px"></div>
   <table>
     <thead><tr><th>#</th><th>Operario</th><th style="text-align:right">D&iacute;as</th><th style="text-align:right">Olas</th><th style="text-align:right">Lineas</th><th style="text-align:center">Lin/D&iacute;a</th><th style="text-align:center">Cumpl%</th><th style="text-align:right">Unidades</th><th style="text-align:center">Reclamos</th><th style="text-align:center">Tasa Rec/1000</th><th style="text-align:center">Tendencia</th></tr></thead>
     <tbody id="rankBody"></tbody>
@@ -2085,10 +2170,15 @@ body.dark .grp-btn.active{background:#2563eb;border-color:#2563eb;color:white}
 <!-- ===== SECCION: BONOS ===== -->
 <div id="sec-eficiencia" class="sec">
 <div class="grp-btns" style="margin-bottom:16px">
-  <button class="grp-btn active" id="bonBtn-pick" onclick="bonSetSub('pick')">Pickeadores</button>
+  <button class="grp-btn active" id="bonBtn-gen" onclick="bonSetSub('gen')">General</button>
+  <button class="grp-btn" id="bonBtn-pick" onclick="bonSetSub('pick')">Pickeadores</button>
   <button class="grp-btn" id="bonBtn-maq" onclick="bonSetSub('maq')">Maquinistas</button>
   <button class="grp-btn" id="bonBtn-ctrl" onclick="bonSetSub('ctrl')">Control</button>
   <button class="grp-btn" id="bonBtn-pie" onclick="bonSetSub('pie')">Pie de M&aacute;quina</button>
+  <button class="grp-btn" id="bonBtn-pres" onclick="bonSetSub('pres')">Presentismo</button>
+  <button class="grp-btn" id="bonBtn-ms" onclick="bonSetSub('ms')">Muestra Simple</button>
+  <button class="grp-btn" id="bonBtn-db" onclick="bonSetSub('db')">Despacho</button>
+  <button class="grp-btn" id="bonBtn-prod" onclick="bonSetSub('prod')">Producci&oacute;n</button>
 </div>
 <div id="bonGrupalWrap" style="margin-bottom:12px"></div>
 <div id="bonContent"></div>
@@ -2103,6 +2193,7 @@ Chart.defaults.font.size=12;
 
 const TARGET=$TARGET;
 const TARGET_WARN=$TARGET_WARN;
+const LATEST_YM='$latestYM';
 const allMonKeys=[$jsAllMons];
 const monLabels=[$jsMonLabels];
 const teamLD=[$jsTeamLD];
@@ -2118,6 +2209,23 @@ const lezMonthly=$jsLezMonthly;
 const merma1L=[$jsMerma1L];
 const merma2L=[$jsMerma2L];
 const recMonthly=$jsRecMonthly;
+const recBonoMonthly=$jsRecBonoMonthly;
+// Personas que por ahora solo cobran Presentismo (5%) todos los meses — sin N1/N2/Grupal.
+const BONO_SOLO_PRESENTISMO=['Flavio Malagrino','Maria Ledesma','Adrian Romero'];
+// Muestra Simple, Despacho y Pie de Maquina: 5% presentismo + N1(2.5%) si <=1 error + N2(4.5%) si 0 errores + 3% grupal.
+const BONO_MUESTRA_SIMPLE=['Agustin Lezcano'];
+const BONO_DESPACHO=['Pato Cotugno','Fabricio Vargas','Agustin Kapp','Maxi Coria'];
+const BONO_PIE_MAQUINA=['Jose Penida','Brian Ocampo'];
+// Produccion: sector separado de Logistica/Deposito (fuente: Evaluacion de Desempeño, sector=Produccion).
+// Bono escalonado, maximo 15%: 5% Presentismo + N1(5%, MAG>80% Y PBI+20% programado, excluyente)
+// + N2(5%, reclamos<1% del total de pedidos Y mermas<=0.05%, excluyente). Sin Bono Grupal.
+const BONO_PRODUCCION=['Julian Agostinelli','Evelyn Aguilar','David Agüero','Yamila Barreto','Sofia Barrios',
+  'Lara Bello','Gisela Britez','Gabriel Cabello','Mariano Camerano','Gloria Chequere','Federico Decapua',
+  'Jeremias Delgado','Lucas Diaz','Fiorela Dominici','Sofia Escobar','Mariela Espindola','Araceli Farias',
+  'Vanesa Flores','Omar Fortunato','Ariel Galarza','Leandro Galarza','Agustina Gomez','Alejandro Gomez',
+  'Candela Gomez','Luz Gomez','Martina Gomez','Laura Herrera','Noelia Lopez','Diego Lopez Arizmendi',
+  'Monica Maciel','Brenda Martinez','Flavia Martinez','Florencia Montenegro','Marcelo Perez','Nancy Ramirez',
+  'Alan Resquin','Franco Resquin','Florencia Robledo','Lucila Roldan','Estefania Romero','Angela Sanchez','Mayra Seco'];
 const MES=['','Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 const day7Rows=$jsDay7Rows;
 const evol30Labels=$jsEvol30Labels;
@@ -2287,30 +2395,109 @@ function buildResumen(){
 // ===========================================================
 // BONOS
 // ===========================================================
-var _bonSub='pick';
-var _bonGrupal=true;
+var _bonSub='gen';
+var _bonGrupal=false;
 var _bonPres={};
 var _bonCtrlRec={};
-var _bonPieErr=0;
-try{var _bg=localStorage.getItem('zecat-bon-grupal');if(_bg!==null)_bonGrupal=_bg==='1';}catch(e){}
-try{var _bp=localStorage.getItem('zecat-bon-pres');if(_bp)_bonPres=JSON.parse(_bp);}catch(e){}
-try{var _bc=localStorage.getItem('zecat-bon-ctrl');if(_bc)_bonCtrlRec=JSON.parse(_bc);}catch(e){}
+var _bonRecExpanded={};
+var _bonMsErr={};   // Muestra Simple - errores, por persona
+var _bonDbErr={};   // Despacho - errores al despachar/entregar pedidos, por persona
+var _bonPieErrMap={}; // Pie de Maquina - errores, por persona
+var _bonProdChecks={}; // Produccion - MAG/PBI/reclamos/mermas, por persona y condicion
+var _bonActivo={};     // Activo/Inactivo en el tablero de bono, por persona (default: activo)
+var _bonMostrarInactivos={}; // por pestaña: mostrar los inactivos ocultos
+// --- Persistencia de datos manuales POR MES ---
+// Cada mes guarda su propia carga (presentismo, errores, checks de produccion,
+// bono grupal). Al cambiar de mes se lee la del mes elegido; si ese mes no tiene
+// nada cargado (ej. un mes recien habilitado) aparece EN BLANCO, sin arrastrar
+// lo que se habia cargado en el mes anterior.
+function _bonPeriodKey(){
+  var a=document.getElementById('selAnio'), m=document.getElementById('selMes');
+  var anio=a?a.value:'all', mes=m?m.value:'all';
+  if(anio!=='all'&&mes!=='all') return anio+'-'+(parseInt(mes)<10?'0':'')+mes;
+  if(anio!=='all') return anio;
+  return 'all';
+}
+function _bonKey(base){ return 'zecat-bon-'+base+'::'+_bonPeriodKey(); }
+function _bonLoadPeriod(){
+  function ld(base){try{var v=localStorage.getItem('zecat-bon-'+base+'::'+_bonPeriodKey());return v?JSON.parse(v):{};}catch(e){return {};}}
+  _bonPres=ld('pres'); _bonCtrlRec=ld('ctrl'); _bonMsErr=ld('ms-err');
+  _bonDbErr=ld('db-err'); _bonPieErrMap=ld('pie-err'); _bonProdChecks=ld('prod');
+  try{_bonGrupal=(localStorage.getItem('zecat-bon-grupal::'+_bonPeriodKey())==='1');}catch(e){_bonGrupal=false;}
+}
+// Migracion una sola vez: lo que ya estaba cargado (sin mes) pasa a pertenecer
+// al ultimo mes con datos, para no perder lo que el usuario ya habia ingresado.
+(function(){try{
+  if(localStorage.getItem('zecat-bon-migrado-x-mes')) return;
+  var LM='$latestYM';
+  ['ms-err','db-err','pie-err','prod','pres','ctrl'].forEach(function(base){
+    var old=localStorage.getItem('zecat-bon-'+base);
+    if(old!==null && localStorage.getItem('zecat-bon-'+base+'::'+LM)===null) localStorage.setItem('zecat-bon-'+base+'::'+LM,old);
+  });
+  var og=localStorage.getItem('zecat-bon-grupal');
+  if(og!==null && localStorage.getItem('zecat-bon-grupal::'+LM)===null) localStorage.setItem('zecat-bon-grupal::'+LM,og);
+  localStorage.setItem('zecat-bon-migrado-x-mes','1');
+}catch(e){}})();
+// Activo/Inactivo es a nivel roster (NO por mes): si desactivas a alguien queda
+// desactivado en todos los meses hasta que lo reactives.
+try{var _bac=localStorage.getItem('zecat-bon-activo');if(_bac)_bonActivo=JSON.parse(_bac);}catch(e){}
+function isActivoBono(key){ return _bonActivo[key]!==false; }
+function bonToggleActivo(key){
+  var el=document.getElementById('bonActivo-'+key);
+  _bonActivo[key]=el?el.checked:true;
+  try{localStorage.setItem('zecat-bon-activo',JSON.stringify(_bonActivo));}catch(e){}
+  _bonRenderContent();
+}
+function activoCheckbox(key){
+  var val=isActivoBono(key);
+  return '<input type="checkbox" id="bonActivo-'+key+'" '+(val?'checked':'')+' onchange="bonToggleActivo(\''+key+'\')" title="Activo en el tablero de bono" style="width:15px;height:15px;cursor:pointer">';
+}
+function bonToggleMostrarInactivos(sub){
+  _bonMostrarInactivos[sub]=!_bonMostrarInactivos[sub];
+  _bonRenderContent();
+}
+function bonInactivosBanner(sub,ocultos){
+  if(!ocultos.length) return '';
+  var mostrando=!!_bonMostrarInactivos[sub];
+  return '<div style="font-size:12px;color:#888;margin-bottom:10px">'
+    +'<a href="#" onclick="bonToggleMostrarInactivos(\''+sub+'\');return false" style="color:#2563eb;text-decoration:underline">'
+    +(mostrando?'Ocultar':'Mostrar')+' '+ocultos.length+' persona'+(ocultos.length!==1?'s':'')+' inactiva'+(ocultos.length!==1?'s':'')
+    +'</a> en el tablero de bono &mdash; no se les calcula el bono mientras est&eacute;n inactivas.</div>';
+}
+function bonToggleProd(key,field){
+  var el=document.getElementById('bonProd-'+key+'-'+field);
+  _bonProdChecks[key+'_'+field]=el?el.checked:false;
+  try{localStorage.setItem(_bonKey('prod'),JSON.stringify(_bonProdChecks));}catch(e){}
+  _bonRenderContent();
+}
+function bonSetErr(store,key,val){
+  var map = store==='ms'?_bonMsErr:store==='db'?_bonDbErr:_bonPieErrMap;
+  map[key]=parseInt(val)||0;
+  try{localStorage.setItem(_bonKey(store==='ms'?'ms-err':store==='db'?'db-err':'pie-err'),JSON.stringify(map));}catch(e){}
+  _bonRenderContent();
+}
+function bonToggleRecView(key){
+  var el=document.getElementById('bonRecChk-'+key);
+  _bonRecExpanded[key]=el?el.checked:false;
+  _bonRenderContent();
+}
+// (grupal / presentismo / ctrl se cargan por mes via _bonLoadPeriod)
 
 function bonSetSub(sub){
   _bonSub=sub;
-  ['pick','maq','ctrl','pie'].forEach(function(s){var b=document.getElementById('bonBtn-'+s);if(b)b.classList.toggle('active',s===sub);});
+  ['gen','pick','maq','ctrl','pie','pres','ms','db','prod'].forEach(function(s){var b=document.getElementById('bonBtn-'+s);if(b)b.classList.toggle('active',s===sub);});
   _bonRenderContent();
 }
 function bonToggleGrupal(){
   var el=document.getElementById('bonGrupalChk');
   if(el)_bonGrupal=el.checked;
-  try{localStorage.setItem('zecat-bon-grupal',_bonGrupal?'1':'0');}catch(e){}
+  try{localStorage.setItem(_bonKey('grupal'),_bonGrupal?'1':'0');}catch(e){}
   _bonRenderContent();
 }
 function bonTogglePres(key){
   var el=document.getElementById('bonPres-'+key);
   if(el)_bonPres[key]=el.checked;
-  try{localStorage.setItem('zecat-bon-pres',JSON.stringify(_bonPres));}catch(e){}
+  try{localStorage.setItem(_bonKey('pres'),JSON.stringify(_bonPres));}catch(e){}
   _bonRenderContent();
 }
 function _bonCalc(pres,n1,n2,grupal){
@@ -2321,6 +2508,7 @@ function _bonBadge(pct){
   return '<span style="font-weight:800;font-size:15px;color:'+c+'">'+pct+'%</span>';
 }
 function buildEficiencia(){
+  _bonLoadPeriod(); // carga los datos manuales del mes seleccionado (o en blanco si no hay)
   var isDark=document.body.classList.contains('dark');
   var thBg=isDark?'#1e293b':'#f8fafc';var brd=isDark?'#334155':'#e5e7eb';
   var gw=document.getElementById('bonGrupalWrap');
@@ -2334,76 +2522,326 @@ function _bonRenderContent(){
   var html='';
   function boolIcon(v){return v?'<span style="color:#16a34a;font-weight:700">&#10003;</span>':'<span style="color:#dc2626">&#8212;</span>';}
   function presCheck(key){var chk=(_bonPres[key]!==undefined)?_bonPres[key]:true;return '<input type="checkbox" data-key="'+key+'" '+(chk?'checked':'')+' onchange="bonTogglePres(this.dataset.key)" id="bonPres-'+key+'" style="width:15px;height:15px;cursor:pointer">';}
-  function tblHdr(extra){return '<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:'+thBg+'"><th style="padding:8px 12px;text-align:left;border-bottom:2px solid '+brd+'">Operario</th>'+extra+'<th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Presentismo<br><span style="font-size:10px;font-weight:400">5%</span></th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">N1<br><span style="font-size:10px;font-weight:400">+2.5%</span></th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">N2<br><span style="font-size:10px;font-weight:400">+4.5%</span></th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Grupal<br><span style="font-size:10px;font-weight:400">+3%</span></th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">TOTAL</th></tr></thead><tbody>';}
-  if(_bonSub==='pick'){
+  function tblHdr(extra){return '<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:'+thBg+'"><th style="padding:8px 12px;text-align:left;border-bottom:2px solid '+brd+'">Operario</th>'+extra+'<th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Presentismo<br><span style="font-size:10px;font-weight:400">5%</span></th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">N1<br><span style="font-size:10px;font-weight:400">+2.5%</span></th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">N2<br><span style="font-size:10px;font-weight:400">+4.5%</span></th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Grupal<br><span style="font-size:10px;font-weight:400">+3%</span></th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">TOTAL</th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Activo</th></tr></thead><tbody>';}
+  if(_bonSub==='gen'){
+    var idxG=getFilteredIndices();
+    var selKeysG=idxG.map(function(i){return allMonKeys[i];});
+    var allPeople=[];
+    // Pickeadores
+    var opsMapG={};
+    selKeysG.forEach(function(k){var d=monthlyData[k];if(!d)return;d.pickers.forEach(function(pk){if(!opsMapG[pk.resp])opsMapG[pk.resp]={dias:0,lineas:0};opsMapG[pk.resp].dias+=pk.dias;opsMapG[pk.resp].lineas+=pk.lineas;});});
+    var recByOpSelG={};
+    selKeysG.forEach(function(k){var bd=recBonoMonthly[k];if(!bd)return;Object.keys(bd.byOpPick||{}).forEach(function(op){recByOpSelG[op]=(recByOpSelG[op]||0)+bd.byOpPick[op];});});
+    Object.entries(opsMapG).forEach(function(e){
+      var resp=e[0],p=e[1];var ld=p.dias?Math.round(p.lineas/p.dias*10)/10:0;var cumpl=Math.round(ld/TARGET*1000)/10;
+      var recG=recByOpSelG[resp]||0;
+      var key='pk'+resp.replace(/[^A-Za-z0-9]/g,'_');
+      var t=_bonCalc((_bonPres[key]!==undefined?_bonPres[key]:true),ld>=TARGET&&recG<=1,ld>=100&&recG===0,_bonGrupal);
+      allPeople.push({nm:resp,cat:'Pickeador',total:t,key:key});
+    });
+    // Maquinistas
+    var maqMsG=_bonFiltMon(Object.keys(maqDetailData).sort());
+    var opsMapMG={};
+    maqMsG.forEach(function(ym){(maqDetailData[ym]||{ops:[]}).ops.forEach(function(op){if(!opsMapMG[op.nm])opsMapMG[op.nm]={mov:0,dias:0};opsMapMG[op.nm].mov+=op.mov;opsMapMG[op.nm].dias+=op.dias;});});
+    Object.entries(opsMapMG).forEach(function(e){
+      var nm=e[0],o=e[1];var mpd=o.dias?Math.round(o.mov/o.dias):0;
+      var key='mq'+nm.replace(/[^A-Za-z0-9]/g,'_');
+      var t=_bonCalc((_bonPres[key]!==undefined?_bonPres[key]:true),mpd>=100,mpd>=120,_bonGrupal);
+      allPeople.push({nm:nm,cat:'Maquinista',total:t,key:key});
+    });
+    // Control
+    var ctrlMsG=_bonFiltMon(Object.keys(ctrlExcelData).sort());
+    var opsMapCG={};
+    ctrlMsG.forEach(function(ym){(ctrlExcelData[ym]||[]).forEach(function(op){if(!opsMapCG[op.nm])opsMapCG[op.nm]={und:0,dias:0};opsMapCG[op.nm].und+=op.und;opsMapCG[op.nm].dias+=op.dias;});});
+    var recByCtrlSelG={};
+    ctrlMsG.forEach(function(k){var bd=recBonoMonthly[k];if(!bd)return;Object.keys(bd.byOpCtrl||{}).forEach(function(op){recByCtrlSelG[op]=(recByCtrlSelG[op]||0)+bd.byOpCtrl[op];});});
+    Object.entries(opsMapCG).forEach(function(e){
+      var nm=e[0],o=e[1];var upd=o.dias?Math.round(o.und/o.dias):0;
+      var key='ct'+nm.replace(/[^A-Za-z0-9]/g,'_');
+      var rec=recByCtrlSelG[nm]||0;
+      var n1=upd>3000&&rec<=1, n2=upd>3500&&rec===0;
+      var t=_bonCalc((_bonPres[key]!==undefined?_bonPres[key]:true),n1,n2,_bonGrupal);
+      allPeople.push({nm:nm,cat:'Control',total:t,key:key});
+    });
+    // Personas que por ahora solo cobran Presentismo (sin N1/N2/Grupal)
+    BONO_SOLO_PRESENTISMO.forEach(function(nm){
+      var key='ps'+nm.replace(/[^A-Za-z0-9]/g,'_');
+      var pres=(_bonPres[key]!==undefined)?_bonPres[key]:true;
+      var t=_bonCalc(pres,false,false,false);
+      allPeople.push({nm:nm,cat:'Presentismo',total:t,key:key});
+    });
+    // Muestra Simple, Despacho y Pie de Maquina (presentismo + N1/N2 por errores + grupal)
+    [['ms',BONO_MUESTRA_SIMPLE,'Muestra Simple'],['db',BONO_DESPACHO,'Despacho'],['pie',BONO_PIE_MAQUINA,'Pie de Máquina']].forEach(function(grp){
+      var storeKey=grp[0],personas=grp[1],catNm=grp[2];
+      var errMap=storeKey==='ms'?_bonMsErr:storeKey==='db'?_bonDbErr:_bonPieErrMap;
+      personas.forEach(function(nm){
+        var key=storeKey+nm.replace(/[^A-Za-z0-9]/g,'_');
+        var err=errMap[key]!==undefined?errMap[key]:0;
+        var pres=(_bonPres[key]!==undefined)?_bonPres[key]:true;
+        var t=_bonCalc(pres,err<=1,err===0,_bonGrupal);
+        allPeople.push({nm:nm,cat:catNm,total:t,key:key});
+      });
+    });
+    // Produccion (escalonado, sin grupal)
+    BONO_PRODUCCION.forEach(function(nm){
+      var key='pr'+nm.replace(/[^A-Za-z0-9]/g,'_');
+      var pres=(_bonPres[key]!==undefined)?_bonPres[key]:true;
+      var n1=!!_bonProdChecks[key+'_mag']&&!!_bonProdChecks[key+'_pbi'];
+      var n2=!!_bonProdChecks[key+'_rec']&&!!_bonProdChecks[key+'_mer'];
+      var t=Math.min((pres?5:0)+(n1?5:0)+(n2?5:0),15);
+      allPeople.push({nm:nm,cat:'Producción',total:t,key:key});
+    });
+
+    allPeople.sort(function(a,b){return b.total-a.total;});
+    var inactivosG=allPeople.filter(function(p){return !isActivoBono(p.key);});
+    var mostrarG=!!_bonMostrarInactivos['gen'];
+    var visiblesG=mostrarG?allPeople:allPeople.filter(function(p){return isActivoBono(p.key);});
+    html+=bonInactivosBanner('gen',inactivosG);
+    html+='<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:'+thBg+'"><th style="padding:8px 12px;text-align:left;border-bottom:2px solid '+brd+'">Operario</th><th style="padding:8px 12px;text-align:left;border-bottom:2px solid '+brd+'">Categor&iacute;a</th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Activo</th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Bono Total</th></tr></thead><tbody>';
+    var altG=false;
+    visiblesG.forEach(function(p){
+      var bg=altG?rowEven:rowOdd;altG=!altG;
+      var inactivo=!isActivoBono(p.key);
+      html+='<tr style="background:'+bg+';'+(inactivo?'opacity:.5':'')+'"><td style="padding:8px 12px;font-weight:600">'+p.nm+'</td><td style="padding:8px 12px;color:#888">'+p.cat+'</td><td style="text-align:center;padding:8px 12px">'+activoCheckbox(p.key)+'</td><td style="text-align:center;padding:8px 12px">'+(inactivo?'<span style="color:#888">inactivo</span>':_bonBadge(p.total))+'</td></tr>';
+    });
+    if(!visiblesG.length)html+='<tr><td colspan="4" style="text-align:center;padding:20px;color:#888">Sin datos para el per&iacute;odo seleccionado</td></tr>';
+    html+='</tbody></table>';
+  }
+  else if(_bonSub==='pick'){
     var idx=getFilteredIndices();
     var selKeys=idx.map(function(i){return allMonKeys[i];});
     var opsMap={};
     selKeys.forEach(function(k){var d=monthlyData[k];if(!d)return;d.pickers.forEach(function(pk){if(!opsMap[pk.resp])opsMap[pk.resp]={dias:0,lineas:0};opsMap[pk.resp].dias+=pk.dias;opsMap[pk.resp].lineas+=pk.lineas;});});
-    var pickers=Object.entries(opsMap).map(function(e){var resp=e[0],p=e[1];var ld=p.dias?Math.round(p.lineas/p.dias*10)/10:0;var cumpl=Math.round(ld/TARGET*1000)/10;return{nm:resp,ld:ld,cumpl:cumpl,n1:cumpl>=100,n2:cumpl>=120};}).sort(function(a,b){return b.ld-a.ld;});
-    html+=tblHdr('<th style="padding:8px 12px;text-align:right;border-bottom:2px solid '+brd+'">Lin/D&iacute;a</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid '+brd+'">Cumpl%</th>');
-    var alt=false;
-    pickers.forEach(function(p){
-      var key='pk'+p.nm.replace(/[^A-Za-z0-9]/g,'_');
-      var bg=alt?rowEven:rowOdd;alt=!alt;
-      var cumplC=p.cumpl>=100?'#16a34a':p.cumpl>=83?'#d97706':'#dc2626';
-      var t=_bonCalc((_bonPres[key]!==undefined?_bonPres[key]:true),p.n1,p.n2,_bonGrupal);
-      html+='<tr style="background:'+bg+'"><td style="padding:8px 12px;font-weight:600">'+p.nm+'</td><td style="text-align:right;padding:8px 12px;font-weight:700;color:'+cumplC+'">'+p.ld+'</td><td style="text-align:right;padding:8px 12px;color:'+cumplC+'">'+p.cumpl+'%</td><td style="text-align:center;padding:8px 12px">'+presCheck(key)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(p.n1)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(p.n2)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(_bonGrupal)+'</td><td style="text-align:center;padding:8px 12px">'+_bonBadge(t)+'</td></tr>';
+    // Reclamos que APLICAN al bono del pickeador (recBonoMonthly.byOpPick, filtrado por "Aplica Pickeador"="Si Aplica")
+    var recByOpSel={},recByOpCatSel={},recTotalSel=0;
+    selKeys.forEach(function(k){
+      var bd=recBonoMonthly[k];if(!bd)return;
+      Object.keys(bd.byOpPick||{}).forEach(function(op){recByOpSel[op]=(recByOpSel[op]||0)+bd.byOpPick[op];recTotalSel+=bd.byOpPick[op];});
+      Object.keys(bd.byOpCatPick||{}).forEach(function(op){
+        if(!recByOpCatSel[op])recByOpCatSel[op]={};
+        Object.keys(bd.byOpCatPick[op]).forEach(function(cat){recByOpCatSel[op][cat]=(recByOpCatSel[op][cat]||0)+bd.byOpCatPick[op][cat];});
+      });
     });
-    if(!pickers.length)html+='<tr><td colspan="8" style="text-align:center;padding:20px;color:#888">Sin datos para el per&iacute;odo seleccionado</td></tr>';
+    var pickers=Object.entries(opsMap).map(function(e){
+      var resp=e[0],p=e[1];
+      var ld=p.dias?Math.round(p.lineas/p.dias*10)/10:0;
+      var cumpl=Math.round(ld/TARGET*1000)/10;
+      var rec=recByOpSel[resp]||0;
+      // N1: >=84 lin/dia y maximo 1 reclamo que aplique. N2: >=100 lin/dia y 0 reclamos.
+      var n1=ld>=TARGET&&rec<=1, n2=ld>=100&&rec===0;
+      var key='pk'+resp.replace(/[^A-Za-z0-9]/g,'_');
+      return{nm:resp,ld:ld,cumpl:cumpl,n1:n1,n2:n2,rec:rec,key:key};
+    }).sort(function(a,b){return b.ld-a.ld;});
+    var inactivosPk=pickers.filter(function(p){return !isActivoBono(p.key);});
+    var mostrarPk=!!_bonMostrarInactivos['pick'];
+    var pickersVis=mostrarPk?pickers:pickers.filter(function(p){return isActivoBono(p.key);});
+    html+='<div style="display:flex;align-items:center;gap:8px;padding:8px 14px;margin-bottom:10px;font-size:13px;color:'+(isDark?'#94a3b8':'#64748b')+'">&#128683; Reclamos que aplican al bono (per&iacute;odo, todo el equipo): <strong style="color:'+(recTotalSel===0?'#16a34a':recTotalSel<=5?'#d97706':'#dc2626')+';font-size:15px">'+recTotalSel+'</strong> <span style="font-size:11px;color:#888">&mdash; solo reclamos marcados &quot;Aplica Pickeador&quot;. N1 requiere &ge;84 lin/d&iacute;a y &le;1 reclamo, N2 requiere &ge;100 lin/d&iacute;a y 0 reclamos</span></div>';
+    html+=bonInactivosBanner('pick',inactivosPk);
+    html+=tblHdr('<th style="padding:8px 12px;text-align:right;border-bottom:2px solid '+brd+'">Lin/D&iacute;a</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid '+brd+'">Cumpl%</th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Reclamos</th>');
+    var alt=false;
+    pickersVis.forEach(function(p){
+      var key=p.key;
+      var bg=alt?rowEven:rowOdd;alt=!alt;
+      var inactivo=!isActivoBono(key);
+      var cumplC=p.cumpl>=100?'#16a34a':p.cumpl>=83?'#d97706':'#dc2626';
+      var recC=p.rec===0?'#16a34a':p.rec<=2?'#d97706':'#dc2626';
+      var t=_bonCalc((_bonPres[key]!==undefined?_bonPres[key]:true),p.n1,p.n2,_bonGrupal);
+      var expanded=!!_bonRecExpanded[key];
+      var recCell='<span style="font-weight:700;color:'+recC+'">'+p.rec+'</span>';
+      if(p.rec>0){
+        recCell+=' <label style="cursor:pointer;font-size:11px;color:#2563eb;margin-left:4px" title="Ver detalle"><input type="checkbox" id="bonRecChk-'+key+'" '+(expanded?'checked':'')+' onchange="bonToggleRecView(\''+key+'\')" style="vertical-align:middle;cursor:pointer"> Ver</label>';
+      }
+      html+='<tr style="background:'+bg+';'+(inactivo?'opacity:.5':'')+'"><td style="padding:8px 12px;font-weight:600">'+p.nm+'</td><td style="text-align:right;padding:8px 12px;font-weight:700;color:'+cumplC+'">'+p.ld+'</td><td style="text-align:right;padding:8px 12px;color:'+cumplC+'">'+p.cumpl+'%</td><td style="text-align:center;padding:8px 12px">'+recCell+'</td><td style="text-align:center;padding:8px 12px">'+presCheck(key)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(p.n1)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(p.n2)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(_bonGrupal)+'</td><td style="text-align:center;padding:8px 12px">'+(inactivo?'<span style="color:#888">inactivo</span>':_bonBadge(t))+'</td><td style="text-align:center;padding:8px 12px">'+activoCheckbox(key)+'</td></tr>';
+      if(expanded){
+        var cats=recByOpCatSel[p.nm]||{};
+        var catList=Object.keys(cats).sort(function(a,b){return cats[b]-cats[a];}).map(function(c){return '<span style="display:inline-block;margin:2px 6px 2px 0;padding:3px 10px;border-radius:12px;background:'+(isDark?'#334155':'#f1f5f9')+';font-size:12px">'+c+': <strong>'+cats[c]+'</strong></span>';}).join('');
+        if(!catList)catList='<span style="color:#888;font-size:12px">Sin categor&iacute;a registrada</span>';
+        html+='<tr style="background:'+bg+'"><td colspan="10" style="padding:4px 12px 12px 28px">'+catList+'</td></tr>';
+      }
+    });
+    if(!pickersVis.length)html+='<tr><td colspan="10" style="text-align:center;padding:20px;color:#888">Sin datos para el per&iacute;odo seleccionado</td></tr>';
     html+='</tbody></table>';
   }
   else if(_bonSub==='maq'){
     var maqMs=_bonFiltMon(Object.keys(maqDetailData).sort());
     var opsMapM={};
     maqMs.forEach(function(ym){(maqDetailData[ym]||{ops:[]}).ops.forEach(function(op){if(!opsMapM[op.nm])opsMapM[op.nm]={mov:0,dias:0};opsMapM[op.nm].mov+=op.mov;opsMapM[op.nm].dias+=op.dias;});});
-    var maqOps=Object.entries(opsMapM).map(function(e){var nm=e[0],o=e[1];var mpd=o.dias?Math.round(o.mov/o.dias):0;return{nm:nm,mpd:mpd,n1:mpd>=100,n2:mpd>=120};}).sort(function(a,b){return b.mpd-a.mpd;});
+    var maqOps=Object.entries(opsMapM).map(function(e){var nm=e[0],o=e[1];var mpd=o.dias?Math.round(o.mov/o.dias):0;var key='mq'+nm.replace(/[^A-Za-z0-9]/g,'_');return{nm:nm,mpd:mpd,n1:mpd>=100,n2:mpd>=120,key:key};}).sort(function(a,b){return b.mpd-a.mpd;});
+    var inactivosMq=maqOps.filter(function(p){return !isActivoBono(p.key);});
+    var mostrarMq=!!_bonMostrarInactivos['maq'];
+    var maqOpsVis=mostrarMq?maqOps:maqOps.filter(function(p){return isActivoBono(p.key);});
+    html+=bonInactivosBanner('maq',inactivosMq);
     html+=tblHdr('<th style="padding:8px 12px;text-align:right;border-bottom:2px solid '+brd+'">MOV/D&iacute;a</th>');
     var alt=false;
-    maqOps.forEach(function(p){
-      var key='mq'+p.nm.replace(/[^A-Za-z0-9]/g,'_');
+    maqOpsVis.forEach(function(p){
+      var key=p.key;
       var bg=alt?rowEven:rowOdd;alt=!alt;
+      var inactivo=!isActivoBono(key);
       var mpdC=p.mpd>=100?'#16a34a':p.mpd>=50?'#d97706':'#dc2626';
       var t=_bonCalc((_bonPres[key]!==undefined?_bonPres[key]:true),p.n1,p.n2,_bonGrupal);
-      html+='<tr style="background:'+bg+'"><td style="padding:8px 12px;font-weight:600">'+p.nm+'</td><td style="text-align:right;padding:8px 12px;font-weight:700;color:'+mpdC+'">'+p.mpd+'</td><td style="text-align:center;padding:8px 12px">'+presCheck(key)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(p.n1)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(p.n2)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(_bonGrupal)+'</td><td style="text-align:center;padding:8px 12px">'+_bonBadge(t)+'</td></tr>';
+      html+='<tr style="background:'+bg+';'+(inactivo?'opacity:.5':'')+'"><td style="padding:8px 12px;font-weight:600">'+p.nm+'</td><td style="text-align:right;padding:8px 12px;font-weight:700;color:'+mpdC+'">'+p.mpd+'</td><td style="text-align:center;padding:8px 12px">'+presCheck(key)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(p.n1)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(p.n2)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(_bonGrupal)+'</td><td style="text-align:center;padding:8px 12px">'+(inactivo?'<span style="color:#888">inactivo</span>':_bonBadge(t))+'</td><td style="text-align:center;padding:8px 12px">'+activoCheckbox(key)+'</td></tr>';
     });
-    if(!maqOps.length)html+='<tr><td colspan="7" style="text-align:center;padding:20px;color:#888">Sin datos para el per&iacute;odo seleccionado</td></tr>';
+    if(!maqOpsVis.length)html+='<tr><td colspan="8" style="text-align:center;padding:20px;color:#888">Sin datos para el per&iacute;odo seleccionado</td></tr>';
     html+='</tbody></table>';
   }
   else if(_bonSub==='ctrl'){
     var ctrlMs=_bonFiltMon(Object.keys(ctrlExcelData).sort());
     var opsMapC={};
     ctrlMs.forEach(function(ym){(ctrlExcelData[ym]||[]).forEach(function(op){if(!opsMapC[op.nm])opsMapC[op.nm]={und:0,dias:0};opsMapC[op.nm].und+=op.und;opsMapC[op.nm].dias+=op.dias;});});
-    var ctrlOps=Object.entries(opsMapC).map(function(e){var nm=e[0],o=e[1];var upd=o.dias?Math.round(o.und/o.dias):0;return{nm:nm,upd:upd};}).sort(function(a,b){return b.upd-a.upd;});
-    html+='<div style="background:#fef9c3;border:1px solid #fde047;border-radius:8px;padding:10px 14px;font-size:12px;color:#713f12;margin-bottom:12px">&#9888; Ingresá los reclamos por operario para calcular N1 y N2.</div>';
+    // Reclamos que APLICAN al bono del controlador (recBonoMonthly.byOpCtrl, filtrado por "Aplica Control"="Si Aplica")
+    var recByCtrlSel={},recByCtrlCatSel={};
+    ctrlMs.forEach(function(k){
+      var bd=recBonoMonthly[k];if(!bd)return;
+      Object.keys(bd.byOpCtrl||{}).forEach(function(op){recByCtrlSel[op]=(recByCtrlSel[op]||0)+bd.byOpCtrl[op];});
+      Object.keys(bd.byOpCatCtrl||{}).forEach(function(op){
+        if(!recByCtrlCatSel[op])recByCtrlCatSel[op]={};
+        Object.keys(bd.byOpCatCtrl[op]).forEach(function(cat){recByCtrlCatSel[op][cat]=(recByCtrlCatSel[op][cat]||0)+bd.byOpCatCtrl[op][cat];});
+      });
+    });
+    var ctrlOps=Object.entries(opsMapC).map(function(e){var nm=e[0],o=e[1];var upd=o.dias?Math.round(o.und/o.dias):0;var key='ct'+nm.replace(/[^A-Za-z0-9]/g,'_');return{nm:nm,upd:upd,rec:recByCtrlSel[nm]||0,key:key};}).sort(function(a,b){return b.upd-a.upd;});
+    var inactivosCt=ctrlOps.filter(function(p){return !isActivoBono(p.key);});
+    var mostrarCt=!!_bonMostrarInactivos['ctrl'];
+    var ctrlOpsVis=mostrarCt?ctrlOps:ctrlOps.filter(function(p){return isActivoBono(p.key);});
+    html+='<div style="font-size:12px;color:'+(isDark?'#94a3b8':'#64748b')+';margin-bottom:12px">&#128683; Reclamos que aplican al bono &mdash; solo reclamos marcados &quot;Aplica Control&quot; en la hoja Reclamos.</div>';
+    html+=bonInactivosBanner('ctrl',inactivosCt);
     html+=tblHdr('<th style="padding:8px 12px;text-align:right;border-bottom:2px solid '+brd+'">UND/D&iacute;a</th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Reclamos</th>');
     var alt=false;
-    ctrlOps.forEach(function(p){
-      var key='ct'+p.nm.replace(/[^A-Za-z0-9]/g,'_');
-      var rec=(_bonCtrlRec[key]!==undefined)?_bonCtrlRec[key]:0;
+    ctrlOpsVis.forEach(function(p){
+      var key=p.key;
+      var inactivo=!isActivoBono(key);
+      var rec=p.rec;
       var n1=p.upd>3000&&rec<=1;
       var n2=p.upd>3500&&rec===0;
       var bg=alt?rowEven:rowOdd;alt=!alt;
       var updC=p.upd>3500?'#16a34a':p.upd>3000?'#2563eb':p.upd>1500?'#d97706':'#dc2626';
+      var recC=rec===0?'#16a34a':rec<=2?'#d97706':'#dc2626';
+      var expanded=!!_bonRecExpanded[key];
+      var recCell='<span style="font-weight:700;color:'+recC+'">'+rec+'</span>';
+      if(rec>0){
+        recCell+=' <label style="cursor:pointer;font-size:11px;color:#2563eb;margin-left:4px" title="Ver detalle"><input type="checkbox" id="bonRecChk-'+key+'" '+(expanded?'checked':'')+' onchange="bonToggleRecView(\''+key+'\')" style="vertical-align:middle;cursor:pointer"> Ver</label>';
+      }
       var t=_bonCalc((_bonPres[key]!==undefined?_bonPres[key]:true),n1,n2,_bonGrupal);
-      html+='<tr style="background:'+bg+'"><td style="padding:8px 12px;font-weight:600">'+p.nm+'</td><td style="text-align:right;padding:8px 12px;font-weight:700;color:'+updC+'">'+p.upd.toLocaleString('es-AR')+'</td><td style="text-align:center;padding:8px 12px"><input type="number" min="0" max="99" value="'+rec+'" data-key="'+key+'" onchange="_bonCtrlRec[this.dataset.key]=parseInt(this.value)||0;try{localStorage.setItem("zecat-bon-ctrl",JSON.stringify(_bonCtrlRec));}catch(e){};_bonRenderContent();" style="width:60px;text-align:center;border:1px solid '+brd+';border-radius:4px;padding:2px 4px;font-size:13px;background:'+rowOdd+'"></td><td style="text-align:center;padding:8px 12px">'+presCheck(key)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(n1)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(n2)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(_bonGrupal)+'</td><td style="text-align:center;padding:8px 12px">'+_bonBadge(t)+'</td></tr>';
+      html+='<tr style="background:'+bg+';'+(inactivo?'opacity:.5':'')+'"><td style="padding:8px 12px;font-weight:600">'+p.nm+'</td><td style="text-align:right;padding:8px 12px;font-weight:700;color:'+updC+'">'+p.upd.toLocaleString('es-AR')+'</td><td style="text-align:center;padding:8px 12px">'+recCell+'</td><td style="text-align:center;padding:8px 12px">'+presCheck(key)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(n1)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(n2)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(_bonGrupal)+'</td><td style="text-align:center;padding:8px 12px">'+(inactivo?'<span style="color:#888">inactivo</span>':_bonBadge(t))+'</td><td style="text-align:center;padding:8px 12px">'+activoCheckbox(key)+'</td></tr>';
+      if(expanded){
+        var cats=recByCtrlCatSel[p.nm]||{};
+        var catList=Object.keys(cats).sort(function(a,b){return cats[b]-cats[a];}).map(function(c){return '<span style="display:inline-block;margin:2px 6px 2px 0;padding:3px 10px;border-radius:12px;background:'+(isDark?'#334155':'#f1f5f9')+';font-size:12px">'+c+': <strong>'+cats[c]+'</strong></span>';}).join('');
+        if(!catList)catList='<span style="color:#888;font-size:12px">Sin categor&iacute;a registrada</span>';
+        html+='<tr style="background:'+bg+'"><td colspan="9" style="padding:4px 12px 12px 28px">'+catList+'</td></tr>';
+      }
     });
-    if(!ctrlOps.length)html+='<tr><td colspan="8" style="text-align:center;padding:20px;color:#888">Sin datos para el per&iacute;odo seleccionado</td></tr>';
+    if(!ctrlOpsVis.length)html+='<tr><td colspan="9" style="text-align:center;padding:20px;color:#888">Sin datos para el per&iacute;odo seleccionado</td></tr>';
     html+='</tbody></table>';
   }
   else if(_bonSub==='pie'){
-    var n1Pie=_bonPieErr<=1;var n2Pie=_bonPieErr===0;
-    var tPie=_bonCalc(true,n1Pie,n2Pie,_bonGrupal);
-    var tC=tPie>=12?'#16a34a':tPie>=7.5?'#2563eb':tPie>=5?'#d97706':'#888';
-    html+='<div class="chart-card" style="padding:20px;max-width:520px"><div class="rank-title" style="margin-bottom:16px">&#9881;&#65039; Pie de M&aacute;quina &mdash; Datos Manuales</div>';
-    html+='<div style="margin-bottom:20px"><label style="display:block;font-weight:600;margin-bottom:8px">N&uacute;mero de errores en el per&iacute;odo:</label><input type="number" min="0" max="99" value="'+_bonPieErr+'" onchange="_bonPieErr=parseInt(this.value)||0;_bonRenderContent();" style="font-size:20px;padding:8px 16px;border:2px solid '+brd+';border-radius:8px;width:130px;text-align:center"></div>';
-    html+='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">';
-    html+='<div style="padding:14px;border-radius:8px;border:1px solid '+brd+';text-align:center;border-top:3px solid '+(n2Pie?'#16a34a':'#e5e7eb')+'"><div style="font-size:11px;color:#888;text-transform:uppercase;margin-bottom:6px">N2 &mdash; 0 errores</div><div style="font-size:24px;font-weight:800;color:'+(n2Pie?'#16a34a':'#888')+'">'+(n2Pie?'&#10003;':'&#8212;')+'</div><div style="font-size:11px;color:#888">+4.5%</div></div>';
-    html+='<div style="padding:14px;border-radius:8px;border:1px solid '+brd+';text-align:center;border-top:3px solid '+(n1Pie?'#2563eb':'#e5e7eb')+'"><div style="font-size:11px;color:#888;text-transform:uppercase;margin-bottom:6px">N1 &mdash; &le;1 error</div><div style="font-size:24px;font-weight:800;color:'+(n1Pie?'#2563eb':'#888')+'">'+(n1Pie?'&#10003;':'&#8212;')+'</div><div style="font-size:11px;color:#888">+2.5%</div></div>';
-    html+='<div style="padding:14px;border-radius:8px;border:1px solid '+brd+';text-align:center;border-top:3px solid '+tC+'"><div style="font-size:11px;color:#888;text-transform:uppercase;margin-bottom:6px">Total Bono</div><div style="font-size:28px;font-weight:900;color:'+tC+'">'+tPie+'%</div><div style="font-size:11px;color:#888">m&aacute;x 15%</div></div>';
-    html+='</div><div style="margin-top:14px;font-size:12px;color:#888;padding:10px;background:'+rowEven+';border-radius:6px">Presentismo (5%) incluido. Grupal '+(_bonGrupal?'activado &#10003;':'desactivado &#8212;')+'.</div></div>';
+    html+=_bonRenderErrorArea(BONO_PIE_MAQUINA,'pie','trabajar en Pie de M&aacute;quina',thBg,brd,rowEven,rowOdd);
+  }
+  else if(_bonSub==='pres'){
+    var inactivosPs=BONO_SOLO_PRESENTISMO.filter(function(nm){return !isActivoBono('ps'+nm.replace(/[^A-Za-z0-9]/g,'_'));});
+    var mostrarPs=!!_bonMostrarInactivos['pres'];
+    var presVis=mostrarPs?BONO_SOLO_PRESENTISMO:BONO_SOLO_PRESENTISMO.filter(function(nm){return isActivoBono('ps'+nm.replace(/[^A-Za-z0-9]/g,'_'));});
+    html+='<div style="font-size:12px;color:'+(isDark?'#94a3b8':'#64748b')+';margin-bottom:12px">Por ahora estas personas solo cobran Presentismo (5%), todos los meses &mdash; sin N1/N2/Grupal.</div>';
+    html+=bonInactivosBanner('pres',inactivosPs);
+    html+='<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:'+thBg+'"><th style="padding:8px 12px;text-align:left;border-bottom:2px solid '+brd+'">Operario</th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Presentismo<br><span style="font-size:10px;font-weight:400">5%</span></th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">TOTAL</th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Activo</th></tr></thead><tbody>';
+    var altP=false;
+    presVis.forEach(function(nm){
+      var key='ps'+nm.replace(/[^A-Za-z0-9]/g,'_');
+      var bg=altP?rowEven:rowOdd;altP=!altP;
+      var inactivo=!isActivoBono(key);
+      var pres=(_bonPres[key]!==undefined)?_bonPres[key]:true;
+      var t=_bonCalc(pres,false,false,false);
+      html+='<tr style="background:'+bg+';'+(inactivo?'opacity:.5':'')+'"><td style="padding:8px 12px;font-weight:600">'+nm+'</td><td style="text-align:center;padding:8px 12px">'+presCheck(key)+'</td><td style="text-align:center;padding:8px 12px">'+(inactivo?'<span style="color:#888">inactivo</span>':_bonBadge(t))+'</td><td style="text-align:center;padding:8px 12px">'+activoCheckbox(key)+'</td></tr>';
+    });
+    html+='</tbody></table>';
+  }
+  else if(_bonSub==='ms'||_bonSub==='db'){
+    html+=_bonRenderErrorArea(_bonSub==='ms'?BONO_MUESTRA_SIMPLE:BONO_DESPACHO,_bonSub,
+      _bonSub==='ms'?'pasar mercader&iacute;a a producci&oacute;n':'despachar/entregar pedidos',
+      thBg,brd,rowEven,rowOdd);
+  }
+  else if(_bonSub==='prod'){
+    html+=_bonRenderProduccion(thBg,brd,rowEven,rowOdd);
   }
   document.getElementById('bonContent').innerHTML=html;
+}
+
+// Produccion: bono escalonado (no usa Bono Grupal). 5% Presentismo + N1(5%, MAG>80% Y PBI+20%
+// programado) + N2(5%, reclamos<1% del total de pedidos Y mermas<=0.05%). Ambas partes son
+// excluyentes: si falla una sola de las 2 condiciones de la parte, no suma esa parte.
+// Ninguna de las 4 metricas vive en productividad.xlsx todavia, se cargan a mano por persona.
+function _bonRenderProduccion(thBg,brd,rowEven,rowOdd){
+  function boolIcon(v){return v?'<span style="color:#16a34a;font-weight:700">&#10003;</span>':'<span style="color:#dc2626">&#8212;</span>';}
+  function presCheck(key){var chk=(_bonPres[key]!==undefined)?_bonPres[key]:true;return '<input type="checkbox" data-key="'+key+'" '+(chk?'checked':'')+' onchange="bonTogglePres(this.dataset.key)" id="bonPres-'+key+'" style="width:15px;height:15px;cursor:pointer">';}
+  function prodChk(key,field){var val=!!_bonProdChecks[key+'_'+field];return '<input type="checkbox" id="bonProd-'+key+'-'+field+'" '+(val?'checked':'')+' onchange="bonToggleProd(\''+key+'\',\''+field+'\')" style="width:15px;height:15px;cursor:pointer">';}
+  var inactivosPr=BONO_PRODUCCION.filter(function(nm){return !isActivoBono('pr'+nm.replace(/[^A-Za-z0-9]/g,'_'));});
+  var mostrarPr=!!_bonMostrarInactivos['prod'];
+  var prodVis=mostrarPr?BONO_PRODUCCION:BONO_PRODUCCION.filter(function(nm){return isActivoBono('pr'+nm.replace(/[^A-Za-z0-9]/g,'_'));});
+  var html='<div style="font-size:12px;color:#888;margin-bottom:12px">Bono escalonado, sin Bono Grupal, m&aacute;ximo 15%. N1: carga MAG&gt;80% <strong>y</strong> productividad PBI +20% sobre lo programado (si falla una de las 2, no suma). N2: reclamos&lt;1% del total de pedidos <strong>y</strong> mermas&le;0,05% (si falla una de las 2, no suma).</div>';
+  html+=bonInactivosBanner('prod',inactivosPr);
+  html+='<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:'+thBg+'">'
+    +'<th style="padding:8px 12px;text-align:left;border-bottom:2px solid '+brd+'">Operario</th>'
+    +'<th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Presentismo<br><span style="font-size:10px;font-weight:400">5%</span></th>'
+    +'<th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">MAG&gt;80%</th>'
+    +'<th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">PBI +20%</th>'
+    +'<th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">N1<br><span style="font-size:10px;font-weight:400">+5%</span></th>'
+    +'<th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Reclamos&lt;1%</th>'
+    +'<th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Mermas&le;0,05%</th>'
+    +'<th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">N2<br><span style="font-size:10px;font-weight:400">+5%</span></th>'
+    +'<th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">TOTAL</th>'
+    +'<th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Activo</th>'
+    +'</tr></thead><tbody>';
+  var alt=false;
+  prodVis.forEach(function(nm){
+    var key='pr'+nm.replace(/[^A-Za-z0-9]/g,'_');
+    var inactivo=!isActivoBono(key);
+    var pres=(_bonPres[key]!==undefined)?_bonPres[key]:true;
+    var mag=!!_bonProdChecks[key+'_mag'], pbi=!!_bonProdChecks[key+'_pbi'];
+    var rec=!!_bonProdChecks[key+'_rec'], mer=!!_bonProdChecks[key+'_mer'];
+    var n1=mag&&pbi, n2=rec&&mer;
+    var t=Math.min((pres?5:0)+(n1?5:0)+(n2?5:0),15);
+    var bg=alt?rowEven:rowOdd;alt=!alt;
+    html+='<tr style="background:'+bg+';'+(inactivo?'opacity:.5':'')+'">'
+      +'<td style="padding:8px 12px;font-weight:600">'+nm+'</td>'
+      +'<td style="text-align:center;padding:8px 12px">'+presCheck(key)+'</td>'
+      +'<td style="text-align:center;padding:8px 12px">'+prodChk(key,'mag')+'</td>'
+      +'<td style="text-align:center;padding:8px 12px">'+prodChk(key,'pbi')+'</td>'
+      +'<td style="text-align:center;padding:8px 12px">'+boolIcon(n1)+'</td>'
+      +'<td style="text-align:center;padding:8px 12px">'+prodChk(key,'rec')+'</td>'
+      +'<td style="text-align:center;padding:8px 12px">'+prodChk(key,'mer')+'</td>'
+      +'<td style="text-align:center;padding:8px 12px">'+boolIcon(n2)+'</td>'
+      +'<td style="text-align:center;padding:8px 12px">'+(inactivo?'<span style="color:#888">inactivo</span>':_bonBadge(t))+'</td>'
+      +'<td style="text-align:center;padding:8px 12px">'+activoCheckbox(key)+'</td>'
+      +'</tr>';
+  });
+  html+='</tbody></table>';
+  return html;
+}
+
+// Muestra Simple y Despacho comparten la misma regla: 5% presentismo + N1(2.5%) si <=1 error +
+// N2(4.5%) si 0 errores + 3% grupal. El error se carga a mano (no hay dato automatico por persona).
+function _bonRenderErrorArea(personas,store,errLabel,thBg,brd,rowEven,rowOdd){
+  var errMap = store==='ms'?_bonMsErr:store==='db'?_bonDbErr:_bonPieErrMap;
+  var storeAttr = store;
+  function boolIcon(v){return v?'<span style="color:#16a34a;font-weight:700">&#10003;</span>':'<span style="color:#dc2626">&#8212;</span>';}
+  function presCheck(key){var chk=(_bonPres[key]!==undefined)?_bonPres[key]:true;return '<input type="checkbox" data-key="'+key+'" '+(chk?'checked':'')+' onchange="bonTogglePres(this.dataset.key)" id="bonPres-'+key+'" style="width:15px;height:15px;cursor:pointer">';}
+  var inactivos=personas.filter(function(nm){return !isActivoBono(store+nm.replace(/[^A-Za-z0-9]/g,'_'));});
+  var mostrar=!!_bonMostrarInactivos[store];
+  var personasVis=mostrar?personas:personas.filter(function(nm){return isActivoBono(store+nm.replace(/[^A-Za-z0-9]/g,'_'));});
+  var html='<div style="font-size:12px;color:#888;margin-bottom:12px">Errores al '+errLabel+', por persona. N1 si &le;1 error, N2 si 0 errores.</div>';
+  html+=bonInactivosBanner(store,inactivos);
+  html+='<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr style="background:'+thBg+'"><th style="padding:8px 12px;text-align:left;border-bottom:2px solid '+brd+'">Operario</th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Errores</th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Presentismo<br><span style="font-size:10px;font-weight:400">5%</span></th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">N1<br><span style="font-size:10px;font-weight:400">+2.5%</span></th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">N2<br><span style="font-size:10px;font-weight:400">+4.5%</span></th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Grupal<br><span style="font-size:10px;font-weight:400">+3%</span></th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">TOTAL</th><th style="padding:8px 12px;text-align:center;border-bottom:2px solid '+brd+'">Activo</th></tr></thead><tbody>';
+  var alt=false;
+  personasVis.forEach(function(nm){
+    var key=store+nm.replace(/[^A-Za-z0-9]/g,'_');
+    var inactivo=!isActivoBono(key);
+    var err=errMap[key]!==undefined?errMap[key]:0;
+    var n1=err<=1, n2=err===0;
+    var pres=(_bonPres[key]!==undefined)?_bonPres[key]:true;
+    var t=_bonCalc(pres,n1,n2,_bonGrupal);
+    var bg=alt?rowEven:rowOdd;alt=!alt;
+    html+='<tr style="background:'+bg+';'+(inactivo?'opacity:.5':'')+'"><td style="padding:8px 12px;font-weight:600">'+nm+'</td><td style="text-align:center;padding:8px 12px"><input type="number" min="0" max="99" value="'+err+'" data-key="'+key+'" onchange="bonSetErr(\''+storeAttr+'\',this.dataset.key,this.value)" style="width:60px;text-align:center;border:1px solid '+brd+';border-radius:4px;padding:2px 4px;font-size:13px;background:'+rowOdd+'"></td><td style="text-align:center;padding:8px 12px">'+presCheck(key)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(n1)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(n2)+'</td><td style="text-align:center;padding:8px 12px">'+boolIcon(_bonGrupal)+'</td><td style="text-align:center;padding:8px 12px">'+(inactivo?'<span style="color:#888">inactivo</span>':_bonBadge(t))+'</td><td style="text-align:center;padding:8px 12px">'+activoCheckbox(key)+'</td></tr>';
+  });
+  html+='</tbody></table>';
+  return html;
 }
 
 // Tab navigation
@@ -2451,6 +2889,25 @@ function getFilteredIndices(){
 }
 
 function applyFilter(){
+  // El badge se actualiza siempre, sin importar que pestaña este activa —
+  // antes quedaba pegado con el ultimo valor de Picking porque las otras
+  // pestañas (Bonos/Control/Maquinistas/Resumen) cortaban con return antes de llegar aca.
+  (function(){
+    var anioB=document.getElementById('selAnio').value;
+    var mesB=document.getElementById('selMes').value;
+    var selOpElB=document.getElementById('selOp');
+    var selOpB=selOpElB?selOpElB.value:'all';
+    var idxB=getFilteredIndices();
+    var badge='Mostrando: todos los datos';
+    if(anioB!=='all'||mesB!=='all'||selOpB!=='all'){
+      var bp=[];
+      if(anioB!=='all') bp.push(anioB);
+      if(mesB!=='all') bp.push(MES[parseInt(mesB)]);
+      if(selOpB!=='all') bp.push(selOpB);
+      badge='Filtro: '+bp.join(' / ')+' ('+idxB.length+' mes'+(idxB.length!==1?'es':'')+')';
+    }
+    document.getElementById('filterBadge').textContent=badge;
+  })();
   var _s=document.querySelector('.sec.active');var _id=_s?_s.id:'';
   if(_id==='sec-control'){buildControl();return;}
   if(_id==='sec-maquinistas'){buildMaquinistas();return;}
@@ -2531,6 +2988,8 @@ function applyFilter(){
   document.getElementById('kpiCum').textContent=mCumAv+'%';
   document.getElementById('kpiCum').style.color=mCumAv>=100?'#16a34a':mCumAv>=83?'#d97706':'#dc2626';
   document.getElementById('kpiCumSub').textContent='Total lineas: '+aggL.toLocaleString('es-AR');
+  if(selAnio!=='all'&&selMes!=='all'){var selYM=selAnio+'-'+(parseInt(selMes)<10?'0':'')+selMes;if(selYM===LATEST_YM){document.getElementById('kpiCumSub').textContent+=' — datos al $($NOW.ToString('dd/MM'))';}}
+
   document.getElementById('kpiRC').textContent=aggRC;
   document.getElementById('kpiRC').style.color=perfColorRec(aggRC);
   document.getElementById('kpiRate').textContent=mRateG;
@@ -2549,6 +3008,16 @@ function applyFilter(){
   else periodoLabel=MES[parseInt(mes)]+' '+anio;
   document.getElementById('rankTitle').textContent='Ranking '+periodoLabel+' — Picking Regular (SIN/CON LOGO)';
   document.getElementById('rankChartTitle').textContent='Lineas/Dia por Operario — '+periodoLabel;
+  var rankCtxEl=document.getElementById('rankTeamCtx');
+  if(rankCtxEl){
+    var mTeamDelta=selKeys.length===1?(monthlyData[selKeys[0]]||{}).teamDelta:null;
+    if(mTeamDelta!=null){
+      var sign=mTeamDelta>0?'+':'';
+      var arrow=mTeamDelta>3?'▲':mTeamDelta<-3?'▼':'→';
+      var col=mTeamDelta>3?'#16a34a':mTeamDelta<-3?'#dc2626':'#64748b';
+      rankCtxEl.innerHTML='<span style="background:#f1f5f9;border-radius:4px;padding:2px 8px">Contexto equipo: <strong style="color:'+col+'">'+arrow+' '+sign+mTeamDelta+' lin/d&iacute;a vs mes anterior</strong> &mdash; la tendencia individual se lee sobre este fondo</span>';
+    } else { rankCtxEl.textContent=''; }
+  }
 
   // Ranking table
   var pickers=Object.entries(rankMap).map(function(e){
@@ -2711,7 +3180,7 @@ function applyFilter(){
   selKeys.forEach(function(k){
     var d=recMonthly[k];
     if(!d) return;
-    recSinIdTotal+=(d.byOp['Sin identificar']||0);
+    recSinIdTotal+=(d.sinId||0);
     if(selOp!=='all'){
       var opCnt=d.byOp[selOp]||0;
       recAggTotal+=opCnt;
@@ -3046,6 +3515,26 @@ window.addEventListener('message',function(e){
 });
 try{window.parent.postMessage({type:'zecat-theme-ready'},'*');}catch(e){}
 
+// Frescura de datos: comparar ultima fecha de picking regular vs hoy
+function checkDataFreshness(){
+  try{
+    if(!evol30Labels || !evol30Labels.length) return;
+    var lastStr=evol30Labels[evol30Labels.length-1]; // 'DD/MM'
+    var parts=lastStr.split('/'); var d=parseInt(parts[0]),m=parseInt(parts[1]);
+    var today=new Date(); today.setHours(0,0,0,0);
+    var year=today.getFullYear();
+    var last=new Date(year,m-1,d);
+    if(last>today) last=new Date(year-1,m-1,d); // fin de año
+    var diffDays=Math.round((today-last)/86400000);
+    if(diffDays>=2){
+      var banner=document.createElement('div');
+      banner.style.cssText='position:sticky;top:0;z-index:999;padding:10px 16px;text-align:center;font-weight:700;font-size:13px;'
+        +(diffDays>=4?'background:#fecaca;color:#991b1b':'background:#fde68a;color:#92400e');
+      banner.textContent=(diffDays>=4?'\u{1F534} ':'⚠️ ')+'Datos de picking hasta el '+lastStr+' — hace '+diffDays+' días. Revisar la descarga automática.';
+      document.body.insertBefore(banner,document.body.firstChild);
+    }
+  }catch(e){}
+}
 // Inicializar tab y filtro al ultimo mes disponible
 try {
   switchTab('picking');
@@ -3054,6 +3543,7 @@ try {
   applyFilter();
   // Poblar tabla 7 dias (datos estaticos, filtrable por grupo)
   _build7dTable();
+  checkDataFreshness();
   // Si ya hay dark mode guardado, aplicar colores a los charts recién creados
   if(document.body.classList.contains('dark')) updateChartColors(true);
 } catch(err) {
@@ -3101,4 +3591,5 @@ try {
     try{$xl.Quit()}catch{}
     [System.Runtime.InteropServices.Marshal]::ReleaseComObject($xl)|Out-Null
     [System.GC]::Collect()
+    if($SourceLocal -and (Test-Path $SourceLocal)){ Remove-Item $SourceLocal -Force -ErrorAction SilentlyContinue }
 }
