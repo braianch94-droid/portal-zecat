@@ -2414,7 +2414,9 @@ var _bonMostrarInactivos={}; // por pestaña: mostrar los inactivos ocultos
 function _bonPeriodKey(){
   var a=document.getElementById('selAnio'), m=document.getElementById('selMes');
   var anio=a?a.value:'all', mes=m?m.value:'all';
-  if(anio!=='all'&&mes!=='all') return anio+'-'+(parseInt(mes)<10?'0':'')+mes;
+  var mm=(mes!=='all')?((parseInt(mes)<10?'0':'')+mes):'';
+  if(anio!=='all'&&mes!=='all') return anio+'-'+mm;
+  if(anio==='all'&&mes!=='all') return 'todos-'+mm; // mes puntual en Todos-los-años: bucket propio, no choca con 'all'
   if(anio!=='all') return anio;
   return 'all';
 }
@@ -2428,15 +2430,18 @@ function _bonLoadPeriod(){
 // Migracion una sola vez: lo que ya estaba cargado (sin mes) pasa a pertenecer
 // al ultimo mes con datos, para no perder lo que el usuario ya habia ingresado.
 (function(){try{
-  if(localStorage.getItem('zecat-bon-migrado-x-mes')) return;
-  var LM='$latestYM';
-  ['ms-err','db-err','pie-err','prod','pres','ctrl'].forEach(function(base){
-    var old=localStorage.getItem('zecat-bon-'+base);
-    if(old!==null && localStorage.getItem('zecat-bon-'+base+'::'+LM)===null) localStorage.setItem('zecat-bon-'+base+'::'+LM,old);
-  });
-  var og=localStorage.getItem('zecat-bon-grupal');
-  if(og!==null && localStorage.getItem('zecat-bon-grupal::'+LM)===null) localStorage.setItem('zecat-bon-grupal::'+LM,og);
-  localStorage.setItem('zecat-bon-migrado-x-mes','1');
+  if(!localStorage.getItem('zecat-bon-migrado-x-mes')){
+    var LM='$latestYM';
+    ['ms-err','db-err','pie-err','prod','pres','ctrl'].forEach(function(base){
+      var old=localStorage.getItem('zecat-bon-'+base);
+      if(old!==null && localStorage.getItem('zecat-bon-'+base+'::'+LM)===null) localStorage.setItem('zecat-bon-'+base+'::'+LM,old);
+    });
+    var og=localStorage.getItem('zecat-bon-grupal');
+    if(og!==null && localStorage.getItem('zecat-bon-grupal::'+LM)===null) localStorage.setItem('zecat-bon-grupal::'+LM,og);
+    localStorage.setItem('zecat-bon-migrado-x-mes','1');
+  }
+  // Limpieza de claves viejas sin mes (ya migradas, no se leen mas): correr siempre.
+  ['ms-err','db-err','pie-err','prod','pres','ctrl','grupal'].forEach(function(base){ localStorage.removeItem('zecat-bon-'+base); });
 }catch(e){}})();
 // Activo/Inactivo es a nivel roster (NO por mes): si desactivas a alguien queda
 // desactivado en todos los meses hasta que lo reactives.
