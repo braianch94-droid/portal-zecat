@@ -1005,6 +1005,12 @@ function fmtU(n) { return 'U$ '+(+(n||0)).toLocaleString('es-CL',{maximumFractio
 function exactitudColor(pct) { return (+(pct||0))>=90?'text-green':(+(pct||0))>=75?'text-orange':'text-red'; }
 function swColor(n) { n=+(n||0); if(n<=10)return'text-red'; if(n<=50)return'text-yellow'; return'text-green'; }
 function tierBadge(t) { const m={1:['text-red','T1'],2:['text-yellow','T2'],3:['text-orange','T3'],4:['text-green','T4']}; const[c,l]=m[t]||['text-muted','—']; return`<span class="${c}" style="font-size:11px;font-weight:700;">${l}</span>`; }
+function difBadge(d) {
+  if (d==='Sin Dif')      return '<span class="badge badge-green">Sin Dif</span>';
+  if (d==='Dif Positiva') return '<span class="badge badge-orange">Dif +</span>';
+  if (d==='Dif Negativa') return '<span class="badge badge-red">Dif −</span>';
+  return '<span class="badge badge-gray">'+(d||'—')+'</span>';
+}
 function esLaborable(s) { const d=new Date(s+'T12:00:00'),dow=d.getDay(); return dow!==0&&dow!==6&&!FERIADOS_SET.has(s); }
 function diaLaborableAnterior(s) {
   let d=new Date(s+'T12:00:00'); d.setDate(d.getDate()-1);
