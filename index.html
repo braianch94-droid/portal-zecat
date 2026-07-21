@@ -858,6 +858,13 @@ function revealModule(module) {
   }
 }
 
+// Cache-busting de iframes: token fijo por carga del portal. Evita que quede
+// pegada una version vieja del dashboard embebido (ej. "difBadge is not defined"
+// por una copia cacheada). Cambiar de pestaña NO recarga (el src se setea una
+// sola vez); recargar el portal trae la ultima version publicada.
+const PORTAL_V = String(Date.now());
+function _ifrSrc(u){ return u + (u.indexOf('?') >= 0 ? '&' : '?') + 'v=' + PORTAL_V; }
+
 function onLoad(module) {
   loaded[module] = true;
   try {
@@ -948,7 +955,7 @@ function navigate(item) {
   // Lazy load: iniciar carga del iframe la primera vez que se visita
   const ifr = document.getElementById('ifr-' + module);
   if (ifr && !ifr.getAttribute('src') && ifr.dataset.src) {
-    ifr.src = ifr.dataset.src;
+    ifr.src = _ifrSrc(ifr.dataset.src);
   }
   // Fallback: revelar iframe después de 6s aunque no haya cargado del todo
   setTimeout(() => revealModule(module), 6000);
@@ -1410,7 +1417,7 @@ checkAuth();
 function _preloadEvaluaciones() {
   try {
     const ifr = document.getElementById('ifr-evaluaciones');
-    if (ifr && !ifr.getAttribute('src') && ifr.dataset.src) ifr.src = ifr.dataset.src;
+    if (ifr && !ifr.getAttribute('src') && ifr.dataset.src) ifr.src = _ifrSrc(ifr.dataset.src);
   } catch(e) {}
 }
 if (document.readyState === 'complete') setTimeout(_preloadEvaluaciones, 1200);
