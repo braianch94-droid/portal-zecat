@@ -2178,6 +2178,7 @@ body.dark .grp-btn.active{background:#2563eb;border-color:#2563eb;color:white}
   <button class="grp-btn" id="bonBtn-pres" onclick="bonSetSub('pres')">Presentismo</button>
   <button class="grp-btn" id="bonBtn-ms" onclick="bonSetSub('ms')">Muestra Simple</button>
   <button class="grp-btn" id="bonBtn-db" onclick="bonSetSub('db')">Despacho</button>
+  <button class="grp-btn" id="bonBtn-mant" onclick="bonSetSub('mant')">Mantenimiento</button>
   <button class="grp-btn" id="bonBtn-prod" onclick="bonSetSub('prod')">Producci&oacute;n</button>
 </div>
 <div id="bonGrupalWrap" style="margin-bottom:12px"></div>
@@ -2216,6 +2217,8 @@ const BONO_SOLO_PRESENTISMO=['Flavio Malagrino','Maria Ledesma','Adrian Romero']
 const BONO_MUESTRA_SIMPLE=['Agustin Lezcano'];
 const BONO_DESPACHO=['Pato Cotugno','Fabricio Vargas','Agustin Kapp','Maxi Coria'];
 const BONO_PIE_MAQUINA=['Jose Penida','Brian Ocampo'];
+// Mantenimiento: 5% presentismo + N1(2.5%, <=1 error) + N2(4.5%, 0 errores) + Grupal(3%) = "5% + 10% el resto".
+const BONO_MANTENIMIENTO=['Cristian Wierna','Alejandro Lezcano'];
 // Produccion: sector separado de Logistica/Deposito (fuente: Evaluacion de Desempeño, sector=Produccion).
 // Bono escalonado, maximo 15%: 5% Presentismo + N1(5%, MAG>80% Y PBI+20% programado, excluyente)
 // + N2(5%, reclamos<1% del total de pedidos Y mermas<=0.05%, excluyente). Sin Bono Grupal.
@@ -2403,6 +2406,7 @@ var _bonRecExpanded={};
 var _bonMsErr={};   // Muestra Simple - errores, por persona
 var _bonDbErr={};   // Despacho - errores al despachar/entregar pedidos, por persona
 var _bonPieErrMap={}; // Pie de Maquina - errores, por persona
+var _bonMantErr={};   // Mantenimiento - errores, por persona
 var _bonProdChecks={}; // Produccion - MAG/PBI/reclamos/mermas, por persona y condicion
 var _bonActivo={};     // Activo/Inactivo en el tablero de bono, por persona (default: activo)
 var _bonMostrarInactivos={}; // por pestaña: mostrar los inactivos ocultos
@@ -2425,6 +2429,7 @@ function _bonLoadPeriod(){
   function ld(base){try{var v=localStorage.getItem('zecat-bon-'+base+'::'+_bonPeriodKey());return v?JSON.parse(v):{};}catch(e){return {};}}
   _bonPres=ld('pres'); _bonCtrlRec=ld('ctrl'); _bonMsErr=ld('ms-err');
   _bonDbErr=ld('db-err'); _bonPieErrMap=ld('pie-err'); _bonProdChecks=ld('prod');
+  _bonMantErr=ld('mant-err');
   try{_bonGrupal=(localStorage.getItem('zecat-bon-grupal::'+_bonPeriodKey())==='1');}catch(e){_bonGrupal=false;}
 }
 // Migracion una sola vez: lo que ya estaba cargado (sin mes) pasa a pertenecer
@@ -2476,9 +2481,9 @@ function bonToggleProd(key,field){
   _bonRenderContent();
 }
 function bonSetErr(store,key,val){
-  var map = store==='ms'?_bonMsErr:store==='db'?_bonDbErr:_bonPieErrMap;
+  var map = store==='ms'?_bonMsErr:store==='db'?_bonDbErr:store==='mant'?_bonMantErr:_bonPieErrMap;
   map[key]=parseInt(val)||0;
-  try{localStorage.setItem(_bonKey(store==='ms'?'ms-err':store==='db'?'db-err':'pie-err'),JSON.stringify(map));}catch(e){}
+  try{localStorage.setItem(_bonKey(store==='ms'?'ms-err':store==='db'?'db-err':store==='mant'?'mant-err':'pie-err'),JSON.stringify(map));}catch(e){}
   _bonRenderContent();
 }
 function bonToggleRecView(key){
@@ -2490,7 +2495,7 @@ function bonToggleRecView(key){
 
 function bonSetSub(sub){
   _bonSub=sub;
-  ['gen','pick','maq','ctrl','pie','pres','ms','db','prod'].forEach(function(s){var b=document.getElementById('bonBtn-'+s);if(b)b.classList.toggle('active',s===sub);});
+  ['gen','pick','maq','ctrl','pie','pres','ms','db','mant','prod'].forEach(function(s){var b=document.getElementById('bonBtn-'+s);if(b)b.classList.toggle('active',s===sub);});
   _bonRenderContent();
 }
 function bonToggleGrupal(){
@@ -2576,9 +2581,9 @@ function _bonRenderContent(){
       allPeople.push({nm:nm,cat:'Presentismo',total:t,key:key});
     });
     // Muestra Simple, Despacho y Pie de Maquina (presentismo + N1/N2 por errores + grupal)
-    [['ms',BONO_MUESTRA_SIMPLE,'Muestra Simple'],['db',BONO_DESPACHO,'Despacho'],['pie',BONO_PIE_MAQUINA,'Pie de Máquina']].forEach(function(grp){
+    [['ms',BONO_MUESTRA_SIMPLE,'Muestra Simple'],['db',BONO_DESPACHO,'Despacho'],['pie',BONO_PIE_MAQUINA,'Pie de Máquina'],['mant',BONO_MANTENIMIENTO,'Mantenimiento']].forEach(function(grp){
       var storeKey=grp[0],personas=grp[1],catNm=grp[2];
-      var errMap=storeKey==='ms'?_bonMsErr:storeKey==='db'?_bonDbErr:_bonPieErrMap;
+      var errMap=storeKey==='ms'?_bonMsErr:storeKey==='db'?_bonDbErr:storeKey==='mant'?_bonMantErr:_bonPieErrMap;
       personas.forEach(function(nm){
         var key=storeKey+nm.replace(/[^A-Za-z0-9]/g,'_');
         var err=errMap[key]!==undefined?errMap[key]:0;
@@ -2740,6 +2745,9 @@ function _bonRenderContent(){
   else if(_bonSub==='pie'){
     html+=_bonRenderErrorArea(BONO_PIE_MAQUINA,'pie','trabajar en Pie de M&aacute;quina',thBg,brd,rowEven,rowOdd);
   }
+  else if(_bonSub==='mant'){
+    html+=_bonRenderErrorArea(BONO_MANTENIMIENTO,'mant','trabajar en Mantenimiento',thBg,brd,rowEven,rowOdd);
+  }
   else if(_bonSub==='pres'){
     var inactivosPs=BONO_SOLO_PRESENTISMO.filter(function(nm){return !isActivoBono('ps'+nm.replace(/[^A-Za-z0-9]/g,'_'));});
     var mostrarPs=!!_bonMostrarInactivos['pres'];
@@ -2824,7 +2832,7 @@ function _bonRenderProduccion(thBg,brd,rowEven,rowOdd){
 // Muestra Simple y Despacho comparten la misma regla: 5% presentismo + N1(2.5%) si <=1 error +
 // N2(4.5%) si 0 errores + 3% grupal. El error se carga a mano (no hay dato automatico por persona).
 function _bonRenderErrorArea(personas,store,errLabel,thBg,brd,rowEven,rowOdd){
-  var errMap = store==='ms'?_bonMsErr:store==='db'?_bonDbErr:_bonPieErrMap;
+  var errMap = store==='ms'?_bonMsErr:store==='db'?_bonDbErr:store==='mant'?_bonMantErr:_bonPieErrMap;
   var storeAttr = store;
   function boolIcon(v){return v?'<span style="color:#16a34a;font-weight:700">&#10003;</span>':'<span style="color:#dc2626">&#8212;</span>';}
   function presCheck(key){var chk=(_bonPres[key]!==undefined)?_bonPres[key]:true;return '<input type="checkbox" data-key="'+key+'" '+(chk?'checked':'')+' onchange="bonTogglePres(this.dataset.key)" id="bonPres-'+key+'" style="width:15px;height:15px;cursor:pointer">';}
