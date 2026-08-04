@@ -597,14 +597,15 @@ function rTarifario(){
   CEDOL_MESES.forEach(function(ym,idx){
     var mine=CEDOL_MINE[ym], usr=over[ym], eff=effArr[idx], prev=idx>0?effArr[idx-1]:null;
     var mnth=(eff!=null&&prev!=null&&prev!==0)?(eff/prev-1)*100:null;
+    var raro=(mnth!=null&&Math.abs(mnth)>50); // variación imposible en un mes -> probable error de tipeo
     var acum=(eff!=null&&base)?(eff/base-1)*100:null;
     var isCheck=(idx>0&&idx%4===0), cuatri='';
     if(isCheck){var inc=(eff!=null&&prevCheck)?(eff/prevCheck-1)*100:null;cuatri='<span style="color:#F97171;font-weight:700">Aumento '+tPct(inc)+'</span>';if(eff!=null)prevCheck=eff;}
     var isBase=(ym===TARIFA_BASE_MES);
     h+='<tr'+(isCheck?' style="background:rgba(249,113,113,.08)"':'')+'><td><b>'+tMesLbl(ym)+'</b>'+(isBase?' <span style="color:#888;font-size:10px">(base)</span>':'')+'</td>'
       +'<td style="text-align:right;color:#888">'+(mine!=null?mine.toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2}):'—')+'</td>'
-      +'<td style="text-align:right"><input type="text" value="'+(usr!=null?usr.toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2}):'')+'" placeholder="'+(mine!=null?'(usa mi dato)':'cargar')+'" onchange="cedolSetUser(\''+ym+'\',this.value)" style="width:118px;text-align:right;font-family:var(--font);font-size:12px;border:1px solid var(--border);border-radius:5px;padding:3px 6px;background:var(--bg);color:var(--text)"></td>'
-      +'<td style="text-align:right">'+tPct(mnth)+'</td><td style="text-align:right;font-weight:600">'+tPct(acum)+'</td><td>'+cuatri+'</td></tr>';
+      +'<td style="text-align:right"><input type="text" value="'+(usr!=null?usr.toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2}):'')+'" placeholder="'+(mine!=null?'(usa mi dato)':'cargar')+'"'+(raro&&usr!=null?' title="Este valor genera una variación fuera de lo normal — revisá que esté bien cargado"':'')+' onchange="cedolSetUser(\''+ym+'\',this.value)" style="width:118px;text-align:right;font-family:var(--font);font-size:12px;border:1px solid '+(raro&&usr!=null?'#dc2626':'var(--border)')+';border-radius:5px;padding:3px 6px;background:var(--bg);color:var(--text)"></td>'
+      +'<td style="text-align:right'+(raro?';color:#dc2626;font-weight:700':'')+'"'+(raro?' title="Variación imposible en un mes — probable error en el valor cargado"':'')+'>'+tPct(mnth)+(raro?' ⚠':'')+'</td><td style="text-align:right;font-weight:600">'+tPct(acum)+'</td><td>'+cuatri+'</td></tr>';
   });
   var ec=document.getElementById('tb-cedol'); if(ec)ec.innerHTML=h+'</tbody>';
   // Panel 3 — tarifas ajustadas
