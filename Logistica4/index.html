@@ -568,8 +568,8 @@ const TARIFA_BASE=[
   {cat:'Liviano 6 plt',    v:[191971,263960,311472]},
   {cat:'Chasis h/12',      v:[250762,341948,403498]}
 ];
-// Índice CEDOL "Costos Logísticos sin acompañante" — datos verificados (fuente cedol.org.ar). VERIFICAR contra informe oficial.
-const CEDOL_MINE={'2026-05':431414.53,'2026-06':446801.36};
+// Índice CEDOL "Costos Logísticos sin acompañante" (base dic-2001=100) — fuente cedol.org.ar. VERIFICAR contra informe oficial.
+const CEDOL_MINE={'2026-05':12591.92,'2026-06':12850.96,'2026-07':13309.03,'2026-08':13560.50};
 const CEDOL_MESES=(function(){var a=[],y=2026,m=5;for(var i=0;i<20;i++){a.push(y+'-'+(m<10?'0':'')+m);if(++m>12){m=1;y++;}}return a;})();
 const CEDOL_MES_LBL=['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 function cedolLoad(){try{var v=localStorage.getItem('logistica4-cedol-idx');return v?JSON.parse(v):{};}catch(e){return {};}}
