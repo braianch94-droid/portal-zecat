@@ -198,6 +198,10 @@ tr:last-child td{border-bottom:none}tr:hover td{background:#F8FAFD}
     <div class="nav-item" onclick="go('tarifas',this)" id="ni-tar">
       <svg viewBox="0 0 24 24"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>
       <span>Tarifas</span>
+    </div>
+    <div class="nav-item" onclick="go('tarifario',this)" id="ni-tarifario">
+      <svg viewBox="0 0 24 24"><path d="M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5l-8-3zm-1 14-4-4 1.4-1.4L11 13.2l4.6-4.6L17 10l-6 6z"/></svg>
+      <span>Tarifario</span>
     </div><div class="nav-section">Inteligencia</div>
 <div class="nav-item" onclick="go('zonas',this)" id="ni-zonas">
         <svg viewBox="0 0 24 24"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 010-5 2.5 2.5 0 010 5z"/></svg>
@@ -382,6 +386,24 @@ tr:last-child td{border-bottom:none}tr:hover td{background:#F8FAFD}
       <div class="tc"><div class="th"><span class="tt">Calendario: unidades por empresa por día</span><span class="tn">💚 C = Completa · 🟡 M = Media · Hover para conductores</span></div><div style="padding:12px 14px;overflow-x:auto" id="tar-cal"></div></div>
     </div>
 
+    <!-- ═══ TARIFARIO ═══ -->
+    <div class="page" id="p-tarifario">
+      <div class="ph"><h2>💲 Tarifario</h2><p>Tarifas vigentes (base <b>may-26</b>) y evolución del índice <b>CEDOL — Distribución Urbana sin acompañante</b>. Los aumentos se aplican de forma <b>cuatrimestral</b> (cada 4 meses desde may-26).</p></div>
+
+      <div class="tc"><div class="th"><span class="tt">📋 Tarifario base — may-26</span></div>
+        <div class="tw"><table id="tb-tarifa-base"></table></div>
+      </div>
+
+      <div class="tc"><div class="th"><span class="tt">📈 CEDOL sin acompañante — evolución mensual</span></div>
+        <div style="padding:8px 14px;font-size:12px;color:var(--muted)">Cargá el valor del índice oficial de cada mes en <b>"Tu dato"</b> (podés escribirlo con puntos, ej. 446.801,36). Al lado ves <b>mi dato verificado</b> (fuente cedol.org.ar — conviene chequearlo contra tu informe). El acumulado y el aumento de cada corte cuatrimestral se calculan solos. Si no cargás "Tu dato", se usa el mío.</div>
+        <div class="tw"><table id="tb-cedol"></table></div>
+      </div>
+
+      <div class="tc"><div class="th"><span class="tt">💰 Tarifas ajustadas por CEDOL</span><span class="tn">Mes:&nbsp;<select id="sel-mes-ajuste" onchange="rTarifario()" style="font-size:12px;padding:3px 8px;border:1px solid var(--border);border-radius:6px;background:var(--bg);color:var(--text)"></select>&nbsp;·&nbsp;acum. <b id="aj-acum">—</b></span></div>
+        <div class="tw"><table id="tb-tarifa-aj"></table></div>
+      </div>
+    </div>
+
     <!-- ═══ MEJORAS ═══ -->
     <div class="page" id="p-mejoras">
       <div class="ph"><h2>⚡ Oportunidades de mejora</h2><p>Análisis por dirección y cliente real. Las visitas internas de Zecat están en <b>Autoabastecimiento</b> (Oficina Zecat, Planta Zecat, Artículos Promocionales, Planta Pacheco).</p></div>
@@ -521,8 +543,8 @@ function sortFechas(arr){return arr.sort((a,b)=>{const pa=a.split('/'),pb=b.spli
 function tarBx(t){if(t==='Completa')return'<span class="tar-c">Completa</span>';if(t==='Media')return'<span class="tar-m">Media</span>';return'<span class="tar-s">Sin datos</span>';}
 
 // ════════════ NAV ════════════
-const TITLES={upload:'Cargar archivos',zonas:'Análisis por zona',zonas:'Análisis por zona',resumen:'Resumen ejecutivo',empresas:'Empresas de transporte',conductores:'Conductores',viajes:'Viajes / Rutas',visitas:'Visitas / Entregas',tarifas:'Liquidación de tarifas',mejoras:'Oportunidades de mejora'};
-const SUBS={upload:'Subí los archivos Excel para comenzar',zonas:'Distribución de entregas, carga, atrasos y efectividad por zona, barrio y dirección',operadores:'Entregas vía operadores logísticos — destinos al interior del país por provincia y frecuencia',zonas:'Dónde entregamos, qué zonas cubrimos y dónde están los problemas',resumen:'Vista consolidada del período',empresas:'Rendimiento por empresa de transporte',conductores:'Detalle por conductor individual',viajes:'Cada viaje con horarios, KMs y tarifas',visitas:'Calidad de entrega dentro de cada viaje',tarifas:'Tarifa completa vs media por conductor',mejoras:'Análisis de clientes y eficiencia operativa'};
+const TITLES={upload:'Cargar archivos',zonas:'Análisis por zona',zonas:'Análisis por zona',resumen:'Resumen ejecutivo',empresas:'Empresas de transporte',conductores:'Conductores',viajes:'Viajes / Rutas',visitas:'Visitas / Entregas',tarifas:'Liquidación de tarifas',tarifario:'Tarifario',mejoras:'Oportunidades de mejora'};
+const SUBS={upload:'Subí los archivos Excel para comenzar',zonas:'Distribución de entregas, carga, atrasos y efectividad por zona, barrio y dirección',operadores:'Entregas vía operadores logísticos — destinos al interior del país por provincia y frecuencia',zonas:'Dónde entregamos, qué zonas cubrimos y dónde están los problemas',resumen:'Vista consolidada del período',empresas:'Rendimiento por empresa de transporte',conductores:'Detalle por conductor individual',viajes:'Cada viaje con horarios, KMs y tarifas',visitas:'Calidad de entrega dentro de cada viaje',tarifas:'Tarifa completa vs media por conductor',tarifario:'Tarifas vigentes y evolución del índice CEDOL sin acompañante',mejoras:'Análisis de clientes y eficiencia operativa'};
 
 function go(p,el){
   document.querySelectorAll('.page').forEach(e=>e.classList.remove('active'));
@@ -531,9 +553,73 @@ function go(p,el){
   if(el)el.classList.add('active');
   document.getElementById('topbar-title').textContent=TITLES[p]||p;
   document.getElementById('topbar-sub').textContent=SUBS[p]||'';
+  if(p==='tarifario'){rTarifario();return;} // no depende de los datos subidos
   if(!S.ready)return;
   const fn={resumen:rRes,empresas:rEmp,conductores:rCond,viajes:rVj,visitas:rVis,tarifas:rTarFull,mejoras:rMejoras,zonas:rZonas};
   if(fn[p])fn[p]();
+}
+
+// ════════════ TARIFARIO + CEDOL (Distribución Urbana sin acompañante) ════════════
+const TARIFA_BASE_MES='2026-05';
+const TARIFA_COLS=['½ día (después de 13hs)','Viaje hasta 120 km / 8 hs','de 120 hasta 150 km'];
+const TARIFA_BASE=[
+  {cat:'Utilitario chico', v:[113983,155976,184052]},
+  {cat:'Utilitario grande',v:[157176,215967,254841]},
+  {cat:'Liviano 6 plt',    v:[191971,263960,311472]},
+  {cat:'Chasis h/12',      v:[250762,341948,403498]}
+];
+// Índice CEDOL "Costos Logísticos sin acompañante" — datos verificados (fuente cedol.org.ar). VERIFICAR contra informe oficial.
+const CEDOL_MINE={'2026-05':431414.53,'2026-06':446801.36};
+const CEDOL_MESES=(function(){var a=[],y=2026,m=5;for(var i=0;i<20;i++){a.push(y+'-'+(m<10?'0':'')+m);if(++m>12){m=1;y++;}}return a;})();
+const CEDOL_MES_LBL=['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+function cedolLoad(){try{var v=localStorage.getItem('logistica4-cedol-idx');return v?JSON.parse(v):{};}catch(e){return {};}}
+function cedolSave(o){try{localStorage.setItem('logistica4-cedol-idx',JSON.stringify(o));}catch(e){}}
+function tMoney(n){return (n==null||isNaN(n))?'—':'$ '+Math.round(n).toLocaleString('es-AR');}
+function tPct(n){return (n==null||isNaN(n))?'—':(n>=0?'+':'')+n.toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2})+'%';}
+function tMesLbl(ym){var p=ym.split('-');return CEDOL_MES_LBL[+p[1]]+'-'+p[0].slice(2);}
+function tEff(ym,over){return (over[ym]!=null)?over[ym]:(CEDOL_MINE[ym]!=null?CEDOL_MINE[ym]:null);}
+function cedolSetUser(ym,val){
+  var o=cedolLoad(), num=parseFloat(String(val).replace(/\./g,'').replace(',','.'));
+  if(val===''||isNaN(num)){delete o[ym];}else{o[ym]=num;}
+  cedolSave(o); rTarifario();
+}
+function rTarifario(){
+  var over=cedolLoad();
+  var effArr=CEDOL_MESES.map(function(ym){return tEff(ym,over);});
+  var base=effArr[0];
+  // Panel 1 — base
+  var b='<thead><tr><th>Tipo de vehículo</th>'+TARIFA_COLS.map(function(c){return '<th style="text-align:right">'+c+'</th>';}).join('')+'</tr></thead><tbody>';
+  TARIFA_BASE.forEach(function(r){b+='<tr><td><b>'+r.cat+'</b></td>'+r.v.map(function(x){return '<td style="text-align:right">'+tMoney(x)+'</td>';}).join('')+'</tr>';});
+  var eb=document.getElementById('tb-tarifa-base'); if(eb)eb.innerHTML=b+'</tbody>';
+  // Panel 2 — evolución CEDOL
+  var h='<thead><tr><th>Mes</th><th style="text-align:right">Índice (mi dato)</th><th style="text-align:right">Índice (tu dato)</th><th style="text-align:right">Var. mensual</th><th style="text-align:right">Acum. desde may-26</th><th>Cuatrimestre</th></tr></thead><tbody>';
+  var prevCheck=base;
+  CEDOL_MESES.forEach(function(ym,idx){
+    var mine=CEDOL_MINE[ym], usr=over[ym], eff=effArr[idx], prev=idx>0?effArr[idx-1]:null;
+    var mnth=(eff!=null&&prev!=null&&prev!==0)?(eff/prev-1)*100:null;
+    var acum=(eff!=null&&base)?(eff/base-1)*100:null;
+    var isCheck=(idx>0&&idx%4===0), cuatri='';
+    if(isCheck){var inc=(eff!=null&&prevCheck)?(eff/prevCheck-1)*100:null;cuatri='<span style="color:#F97171;font-weight:700">Aumento '+tPct(inc)+'</span>';if(eff!=null)prevCheck=eff;}
+    var isBase=(ym===TARIFA_BASE_MES);
+    h+='<tr'+(isCheck?' style="background:rgba(249,113,113,.08)"':'')+'><td><b>'+tMesLbl(ym)+'</b>'+(isBase?' <span style="color:#888;font-size:10px">(base)</span>':'')+'</td>'
+      +'<td style="text-align:right;color:#888">'+(mine!=null?mine.toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2}):'—')+'</td>'
+      +'<td style="text-align:right"><input type="text" value="'+(usr!=null?usr.toLocaleString('es-AR',{minimumFractionDigits:2,maximumFractionDigits:2}):'')+'" placeholder="'+(mine!=null?'(usa mi dato)':'cargar')+'" onchange="cedolSetUser(\''+ym+'\',this.value)" style="width:118px;text-align:right;font-family:var(--font);font-size:12px;border:1px solid var(--border);border-radius:5px;padding:3px 6px;background:var(--bg);color:var(--text)"></td>'
+      +'<td style="text-align:right">'+tPct(mnth)+'</td><td style="text-align:right;font-weight:600">'+tPct(acum)+'</td><td>'+cuatri+'</td></tr>';
+  });
+  var ec=document.getElementById('tb-cedol'); if(ec)ec.innerHTML=h+'</tbody>';
+  // Panel 3 — tarifas ajustadas
+  var sel=document.getElementById('sel-mes-ajuste');
+  if(sel){
+    var withData=CEDOL_MESES.filter(function(ym){return tEff(ym,over)!=null;}), cur=sel.value;
+    sel.innerHTML=withData.map(function(ym){return '<option value="'+ym+'">'+tMesLbl(ym)+'</option>';}).join('');
+    if(withData.indexOf(cur)>=0)sel.value=cur; else if(withData.length)sel.value=withData[withData.length-1];
+  }
+  var selMes=(sel&&sel.value)?sel.value:TARIFA_BASE_MES;
+  var effSel=tEff(selMes,over), factor=(effSel!=null&&base)?effSel/base:1;
+  var lbl=document.getElementById('aj-acum'); if(lbl)lbl.textContent=tPct((factor-1)*100);
+  var aj='<thead><tr><th>Tipo de vehículo</th>'+TARIFA_COLS.map(function(c){return '<th style="text-align:right">'+c+'</th>';}).join('')+'</tr></thead><tbody>';
+  TARIFA_BASE.forEach(function(r){aj+='<tr><td><b>'+r.cat+'</b></td>'+r.v.map(function(x){var nv=Math.round(x*factor);return '<td style="text-align:right">'+tMoney(nv)+'<br><span style="color:#888;font-size:10px">'+(nv-x>=0?'+':'')+tMoney(nv-x)+'</span></td>';}).join('')+'</tr>';});
+  var ea=document.getElementById('tb-tarifa-aj'); if(ea)ea.innerHTML=aj+'</tbody>';
 }
 
 // ════════════ FILE UPLOAD ════════════
