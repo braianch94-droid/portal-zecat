@@ -502,9 +502,11 @@ iframe { width: 100%; height: 100%; border: none; display: block; }
 .um-msg{font-size:12px;margin-top:8px;min-height:16px;}
 .um-msg.ok{color:#4ade80;}
 .um-msg.err{color:#f87171;}
-/* Inventario Cíclico ARG + Chile ocultados a pedido (para volver a mostrar, borrar esta regla) */
-.section:has(.nav-item[data-module="ciclico"]),
-.section:has(.nav-item[data-module="ciclicochile"]){ display:none !important; }
+/* Ocultados a pedido (para volver a mostrar, borrar estas reglas) */
+/* Inventario Cíclico ARG */
+.section:has(.nav-item[data-module="ciclico"]){ display:none !important; }
+/* Zecat Chile completo (incluye su Inventario Cíclico, Productividad, etc.) */
+.country-group:has(.country-hdr[title="Zecat Chile"]){ display:none !important; }
 </style>
 </head>
 <body>
