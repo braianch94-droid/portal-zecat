@@ -595,6 +595,7 @@ iframe { width: 100%; height: 100%; border: none; display: block; }
           <div class="nav-item" data-module="transporte" data-page="viajes" onclick="navigate(this)"><span class="nav-dot"></span>Viajes / Rutas</div>
           <div class="nav-item" data-module="transporte" data-page="visitas" onclick="navigate(this)"><span class="nav-dot"></span>Visitas / Entregas</div>
           <div class="nav-item" data-module="transporte" data-page="tarifas" onclick="navigate(this)"><span class="nav-dot"></span>Tarifas</div>
+          <div class="nav-item" data-module="transporte" data-page="tarifario" onclick="navigate(this)"><span class="nav-dot"></span>Tarifario</div>
           <div class="nav-item" data-module="transporte" data-page="zonas" onclick="navigate(this)"><span class="nav-dot"></span>Zonas</div>
           <div class="nav-item" data-module="transporte" data-page="mejoras" onclick="navigate(this)"><span class="nav-dot"></span>Mejoras</div>
         </div>
@@ -840,7 +841,7 @@ const INJECT = {
 const PAGE_ID = {
   upload: 'ni-upload', resumen: 'ni-resumen', empresas: 'ni-emp',
   conductores: 'ni-cond', viajes: 'ni-vj', visitas: 'ni-vis',
-  tarifas: 'ni-tar', zonas: 'ni-zonas', mejoras: 'ni-mej'
+  tarifas: 'ni-tar', tarifario: 'ni-tarifario', zonas: 'ni-zonas', mejoras: 'ni-mej'
 };
 
 let currentModule = localStorage.getItem('zecat-portal-module') || 'productividad';
