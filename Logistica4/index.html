@@ -388,7 +388,7 @@ tr:last-child td{border-bottom:none}tr:hover td{background:#F8FAFD}
 
     <!-- ═══ TARIFARIO ═══ -->
     <div class="page" id="p-tarifario">
-      <div class="ph"><h2>💲 Tarifario</h2><p>Tarifas vigentes (base <b>abr-26</b>) y evolución del índice <b>CEDOL — Distribución Urbana sin acompañante</b>. Los aumentos se aplican de forma <b>cuatrimestral</b>: el corte de un mes acumula los <b>4 meses anteriores</b> (sep-26 = may+jun+jul+ago, ene-27 = sep+oct+nov+dic, y así).</p></div>
+      <div class="ph"><h2>💲 Tarifario</h2><p>Tarifas vigentes (base <b>abr-26</b>) y evolución del índice <b>CEDOL — Distribución Urbana sin acompañante</b>. Los aumentos se aplican de forma <b>cuatrimestral</b>: el corte de un mes <b>suma las variaciones de los 4 meses anteriores</b> (sep-26 = may+jun+jul+ago, ene-27 = sep+oct+nov+dic, y así).</p></div>
 
       <div class="tc"><div class="th"><span class="tt">📋 Tarifario base — abr-26</span></div>
         <div class="tw"><table id="tb-tarifa-base"></table></div>
@@ -575,7 +575,7 @@ const TARIFA_BASE=[
 // (abr 15,80% -> jul 26,06%) descontando jun y jul. Cierra exacto contra el acumulado de ago (27,94%).
 // Base = abr-26. Acumulado abr-26 -> ago-26 = +10,48% (aumento que rige desde sep-26).
 // Al cargar un mes nuevo, chequear la variación contra el informe CEDOL de ese mes.
-const CEDOL_MINE={'2026-04':12233.73,'2026-05':12591.92,'2026-06':12841.24,'2026-07':13317.65,'2026-08':13516.08};
+const CEDOL_MINE={'2026-04':12233.48,'2026-05':12591.92,'2026-06':12841.24,'2026-07':13317.65,'2026-08':13516.08};
 const CEDOL_MESES=(function(){var a=[],y=2026,m=4;for(var i=0;i<21;i++){a.push(y+'-'+(m<10?'0':'')+m);if(++m>12){m=1;y++;}}return a;})();
 const CEDOL_MES_LBL=['','ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 function cedolLoad(){try{var v=localStorage.getItem('logistica4-cedol-idx');return v?JSON.parse(v):{};}catch(e){return {};}}
@@ -585,6 +585,13 @@ function tPct(n){return (n==null||isNaN(n))?'—':(n>=0?'+':'')+n.toLocaleString
 function tMesLbl(ym){var p=ym.split('-');return CEDOL_MES_LBL[+p[1]]+'-'+p[0].slice(2);}
 // Meses de corte cuatrimestral. Base=abr-26 en idx 0 => sep-26 idx 5, ene-27 idx 9, may-27 idx 13...
 function tEsCorte(idx){return idx>=5&&(idx-1)%4===0;}
+// CRITERIO DE LA CASA: el aumento de un corte es la SUMA SIMPLE de las variaciones
+// mensuales de los 4 meses previos (may+jun+jul+ago = 10,11%), NO el cociente entre
+// puntas del índice (que daría 10,48% por composición). Se mantiene así por acuerdo
+// con los transportistas. Los cortes SÍ se encadenan entre sí: cada aumento se aplica
+// sobre la tarifa vigente que dejó el corte anterior.
+// Primer mes del cuatrimestre al que pertenece idx (base=idx 0 queda afuera).
+function tIniBloque(idx){return 1+4*Math.floor((idx-1)/4);}
 function tEff(ym,over){return (over[ym]!=null)?over[ym]:(CEDOL_MINE[ym]!=null?CEDOL_MINE[ym]:null);}
 function cedolSetUser(ym,val){
   var o=cedolLoad(), num=parseFloat(String(val).replace(/\./g,'').replace(',','.'));
@@ -595,23 +602,43 @@ function rTarifario(){
   var over=cedolLoad();
   var effArr=CEDOL_MESES.map(function(ym){return tEff(ym,over);});
   var base=effArr[0];
+  // Variación mensual de cada mes según el índice
+  var varMes=effArr.map(function(e,i){
+    var pv=i>0?effArr[i-1]:null;
+    return (e!=null&&pv!=null&&pv!==0)?(e/pv-1)*100:null;
+  });
+  // Suma simple de las variaciones desde el inicio del cuatrimestre hasta idx
+  function tAcumCuatri(idx){
+    if(idx<1)return null;
+    var s=0;
+    for(var j=tIniBloque(idx);j<=idx;j++){if(varMes[j]==null)return null;s+=varMes[j];}
+    return s;
+  }
+  // Aumento que rige desde un mes de corte = suma de los 4 meses previos
+  function tPctCorte(idx){return tAcumCuatri(idx-1);}
+  // Factor de tarifa acumulado: los cortes se encadenan entre sí
+  function tFactorCorte(idxCorte){
+    var f=1;
+    for(var i=5;i<=idxCorte;i++){
+      if(tEsCorte(i)){var pc=tPctCorte(i); if(pc==null)return null; f*=1+pc/100;}
+    }
+    return f;
+  }
   // Panel 1 — base
   var b='<thead><tr><th>Tipo de vehículo</th>'+TARIFA_COLS.map(function(c){return '<th style="text-align:right">'+c+'</th>';}).join('')+'</tr></thead><tbody>';
   TARIFA_BASE.forEach(function(r){b+='<tr><td><b>'+r.cat+'</b></td>'+r.v.map(function(x){return '<td style="text-align:right">'+tMoney(x)+'</td>';}).join('')+'</tr>';});
   var eb=document.getElementById('tb-tarifa-base'); if(eb)eb.innerHTML=b+'</tbody>';
   // Panel 2 — evolución CEDOL
-  var h='<thead><tr><th>Mes</th><th style="text-align:right">Índice (mi dato)</th><th style="text-align:right">Índice (tu dato)</th><th style="text-align:right">Var. mensual</th><th style="text-align:right">Acum. desde abr-26</th><th>Cuatrimestre</th></tr></thead><tbody>';
+  var h='<thead><tr><th>Mes</th><th style="text-align:right">Índice (mi dato)</th><th style="text-align:right">Índice (tu dato)</th><th style="text-align:right">Var. mensual</th><th style="text-align:right">Acum. cuatrimestre</th><th>Cuatrimestre</th></tr></thead><tbody>';
   CEDOL_MESES.forEach(function(ym,idx){
     var mine=CEDOL_MINE[ym], usr=over[ym], eff=effArr[idx], prev=idx>0?effArr[idx-1]:null;
     var mnth=(eff!=null&&prev!=null&&prev!==0)?(eff/prev-1)*100:null;
     var raro=(mnth!=null&&Math.abs(mnth)>50); // variación imposible en un mes -> probable error de tipeo
-    var acum=(eff!=null&&base)?(eff/base-1)*100:null;
-    // Corte cuatrimestral: el aumento que rige DESDE este mes acumula los 4 meses ANTERIORES.
-    // sep-26 (idx 5) = may+jun+jul+ago  ->  indice(idx-1) / indice(idx-5)
+    var acum=tAcumCuatri(idx);
+    // Corte cuatrimestral: el aumento que rige DESDE este mes es la suma de los 4 previos.
     var isCheck=tEsCorte(idx), cuatri='';
     if(isCheck){
-      var hasta=effArr[idx-1], desde=effArr[idx-5];
-      var inc=(hasta!=null&&desde)?(hasta/desde-1)*100:null;
+      var inc=tPctCorte(idx);
       cuatri='<span style="color:#F97171;font-weight:700">Aumento '+tPct(inc)+'</span>'
         +'<span style="color:#888;font-size:10px"> ('+tMesLbl(CEDOL_MESES[idx-4])+'→'+tMesLbl(CEDOL_MESES[idx-1])+')</span>';
     }
@@ -626,7 +653,7 @@ function rTarifario(){
   var sel=document.getElementById('sel-mes-ajuste');
   // Solo cortes calculables: necesitan el indice del mes previo al corte.
   var cortes=[];
-  CEDOL_MESES.forEach(function(ym,idx){if(tEsCorte(idx)&&effArr[idx-1]!=null)cortes.push({ym:ym,idx:idx});});
+  CEDOL_MESES.forEach(function(ym,idx){if(tEsCorte(idx)&&tPctCorte(idx)!=null)cortes.push({ym:ym,idx:idx});});
   if(sel){
     var cur=sel.value;
     sel.innerHTML=cortes.length
@@ -636,7 +663,7 @@ function rTarifario(){
     if(ok)sel.value=cur; else if(cortes.length)sel.value=cortes[cortes.length-1].ym;
   }
   var selCorte=cortes.filter(function(c){return c.ym===(sel?sel.value:'');})[0]||cortes[cortes.length-1];
-  var factor=(selCorte&&effArr[selCorte.idx-1]!=null&&base)?effArr[selCorte.idx-1]/base:1;
+  var factor=selCorte?(tFactorCorte(selCorte.idx)||1):1;
   var lbl=document.getElementById('aj-acum'); if(lbl)lbl.textContent=tPct((factor-1)*100);
   var aj='<thead><tr><th>Tipo de vehículo</th>'+TARIFA_COLS.map(function(c){return '<th style="text-align:right">'+c+'</th>';}).join('')+'</tr></thead><tbody>';
   TARIFA_BASE.forEach(function(r){aj+='<tr><td><b>'+r.cat+'</b></td>'+r.v.map(function(x){var nv=Math.round(x*factor);return '<td style="text-align:right">'+tMoney(nv)+'<br><span style="color:#888;font-size:10px">'+(nv-x>=0?'+':'')+tMoney(nv-x)+'</span></td>';}).join('')+'</tr>';});
